@@ -1,42 +1,34 @@
-/* Hello World Example
-
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
 #include <stdio.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "esp_system.h"
-#include "esp_spi_flash.h"
+#include <stdint.h>
 
 #include "my_ethernet.h"
 
+void my_eth_recv_cb(uint8_t src_mac[6], uint8_t *data, int len) {
+    printf("Eth frame received : \n");
+    printf("\tsrc mac : %02X:%02X:%02X:%02X:%02X:%02X\n", src_mac[0], src_mac[1], src_mac[2], src_mac[3], src_mac[4], src_mac[5]);
+    printf("\tdata :");
+    for(int i=0;i<len;i++) {
+        if(i%4) printf(" ");
+        if(i%8) printf("\n");
+        printf("%02X ", data[i]);
+    }
+    printf("\n");
+}
+
+eth_frame my_frame;
 
 void app_main()
 {
-    printf("Hello world!\n");
+    eth_init();
+    eth_attach_recv_cb(&my_eth_recv_cb);
+    eth_init_frame(&my_frame);
 
-    /* Print chip information */
-    esp_chip_info_t chip_info;
-    esp_chip_info(&chip_info);
-    printf("This is ESP32 chip with %d CPU cores, WiFi%s%s, ",
-            chip_info.cores,
-            (chip_info.features & CHIP_FEATURE_BT) ? "/BT" : "",
-            (chip_info.features & CHIP_FEATURE_BLE) ? "/BLE" : "");
+    while(true) {
+        printf("Sending frame...\n");
+        eth_send_frame(&my_frame);
+        printf("Sent\n");
 
-    printf("silicon revision %d, ", chip_info.revision);
-
-    printf("%dMB %s flash\n", spi_flash_get_chip_size() / (1024 * 1024),
-            (chip_info.features & CHIP_FEATURE_EMB_FLASH) ? "embedded" : "external");
-
-    for (int i = 10; i >= 0; i--) {
-        printf("Restarting in %d seconds...\n", i);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        vTaskDelay(2000 / portTICK_RATE_MS);
     }
-    printf("Restarting now.\n");
-    fflush(stdout);
-    esp_restart();
+
 }

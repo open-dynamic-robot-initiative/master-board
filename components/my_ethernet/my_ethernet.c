@@ -1,5 +1,10 @@
 #include "my_ethernet.h"
 
+uint8_t eth_src_mac[6] = {0xb4, 0xe6, 0x2d, 0xb5, 0x9f, 0x88};
+uint8_t eth_dst_mac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+
+void (*eth_recv_cb)(uint8_t src_mac[6], uint8_t *data, int len) = NULL;
+
 static const char* ETH_TAG = "my_ethernet";
 
 static void eth_gpio_config_rmii(void) {
@@ -56,7 +61,9 @@ static esp_err_t eth_recv_func (void *buffer, uint16_t len, void *eb) {
   } else if(len > sizeof(eth_frame)) {
     ESP_LOGE(ETH_TAG, "The ethernet frame received is too long : frame length = %dB / maximum length = %dB", len, sizeof(eth_frame));
   } else if(frame->ethertype != ETHERTYPE) {
-    ESP_LOGE(ETH_TAG, "Unexpected frame ethertype. Got %d instead of %d", frame->ethertype, ETHERTYPE);
+    ESP_LOGE(ETH_TAG, "Unexpected frame ethertype : got %d instead of %d", frame->ethertype, ETHERTYPE);
+  } else if(frame->data_len > len - sizeof(eth_frame) + CONFIG_MAX_ETH_DATA_LEN) {
+    ESP_LOGE(ETH_TAG, "Data longer than available frame length : data length = %d / available frame length = %d", frame->data_len, len - sizeof(eth_frame) + CONFIG_MAX_ETH_DATA_LEN);
   } else {
     eth_recv_cb(frame->dst_mac, frame->data, frame->data_len);
   }
@@ -71,7 +78,7 @@ void eth_init_frame(eth_frame *p_frame) {
 }
 
 
-esp_err_t send_eth_frame(eth_frame *p_frame)
+esp_err_t eth_send_frame(eth_frame *p_frame)
 {
   int err = esp_eth_tx((uint8_t *) p_frame, sizeof(eth_frame) + (p_frame->data_len) - CONFIG_MAX_ETH_DATA_LEN);
   
