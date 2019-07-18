@@ -1,22 +1,6 @@
 #include "my_ethernet.h"
 
-void eth_init_frame(eth_frame *p_frame) {
-  p_frame->ethertype = 0xb588;
-  memcpy(p_frame->dst_mac, eth_dst_mac, sizeof(uint8_t) * 6);  
-  memcpy(p_frame->src_mac, eth_src_mac, sizeof(uint8_t) * 6);
-}
-
-esp_err_t send_eth_frame(eth_frame *p_frame)
-{
-  int err = esp_eth_tx((uint8_t *) p_frame, sizeof(eth_frame) + (p_frame->data_len) - CONFIG_MAX_ETH_DATA_LEN);
-  
-  if (err < 0) {
-    ESP_LOGE(TAG, "Erromar occurred while sending eth frame: errno %d", errno);
-    return ESP_FAIL;
-  }
-
-  return ESP_OK;
-}
+static const char* ETH_TAG = "my_ethernet";
 
 static void eth_gpio_config_rmii(void) {
     // RMII data pins are fixed:
@@ -30,41 +14,85 @@ static void eth_gpio_config_rmii(void) {
     phy_rmii_smi_configure_pins(PIN_SMI_MDC, PIN_SMI_MDIO);
 }
 
+
 static esp_err_t eth_event_handler(void *ctx, system_event_t *event) {
   tcpip_adapter_ip_info_t ipInfo;
 
   switch(event->event_id) {
     case ETHERNET_EVENT_CONNECTED:
-        ESP_LOGI(TAG, "Ethernet Link Up");
+        ESP_LOGI(ETH_TAG, "Ethernet Link Up");
         break;
     case ETHERNET_EVENT_DISCONNECTED:
-        ESP_LOGI(TAG, "Ethernet Link Down");
+        ESP_LOGI(ETH_TAG, "Ethernet Link Down");
         break;
     case ETHERNET_EVENT_START:
-        ESP_LOGI(TAG, "Ethernet Started");
+        ESP_LOGI(ETH_TAG, "Ethernet Started");
         break;
     case ETHERNET_EVENT_STOP:
-        ESP_LOGI(TAG, "Ethernet Stopped");
+        ESP_LOGI(ETH_TAG, "Ethernet Stopped");
         break;
     case SYSTEM_EVENT_ETH_GOT_IP:
-        ESP_LOGI(TAG, "Ethernet got IP");
+        ESP_LOGI(ETH_TAG, "Ethernet got IP");
         ESP_ERROR_CHECK(tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_ETH, &ipInfo));
-        ESP_LOGI(TAG, "TCP/IP initialization finished.");
-        ESP_LOGI(TAG, "TCP|IP \t IP:"IPSTR, IP2STR(&ipInfo.ip));
-        ESP_LOGI(TAG, "TCP|IP \t MASK:"IPSTR, IP2STR(&ipInfo.netmask));
-        ESP_LOGI(TAG, "TCP|IP \t GW:"IPSTR, IP2STR(&ipInfo.gw));
+        ESP_LOGI(ETH_TAG, "TCP/IP initialization finished.");
+        ESP_LOGI(ETH_TAG, "TCP|IP \t IP:"IPSTR, IP2STR(&ipInfo.ip));
+        ESP_LOGI(ETH_TAG, "TCP|IP \t MASK:"IPSTR, IP2STR(&ipInfo.netmask));
+        ESP_LOGI(ETH_TAG, "TCP|IP \t GW:"IPSTR, IP2STR(&ipInfo.gw));
         xEventGroupSetBits(udp_event_group, WIFI_CONNECTED_BIT);
     default:
-      ESP_LOGI(TAG, "Unhandled Ethernet event (id = %d)", event->event_id);
+      ESP_LOGI(ETH_TAG, "Unhandled Ethernet event (id = %d)", event->event_id);
         break;
     }
   return ESP_OK;
 }
 
-static esp_err_t *my_recv_func (void *buffer, uint16_t len, void *eb) {
+
+static esp_err_t eth_recv_func (void *buffer, uint16_t len, void *eb) {
+  eth_frame *frame = buffer;
+  if(eth_recv_cb == NULL) {
+    ESP_LOGE(ETH_TAG, "Ethernet frame received but no callback function is set on received...");
+  } else if(len < sizeof(eth_frame) - CONFIG_MAX_ETH_DATA_LEN) {
+    ESP_LOGE(ETH_TAG, "The ethernet frame received is too short : frame length = %dB / minimum length expected (for header) = %dB", len, sizeof(eth_frame) - CONFIG_MAX_ETH_DATA_LEN);
+  } else if(len > sizeof(eth_frame)) {
+    ESP_LOGE(ETH_TAG, "The ethernet frame received is too long : frame length = %dB / maximum length = %dB", len, sizeof(eth_frame));
+  } else if(frame->ethertype != ETHERTYPE) {
+    ESP_LOGE(ETH_TAG, "Unexpected frame ethertype. Got %d instead of %d", frame->ethertype, ETHERTYPE);
+  } else {
+    eth_recv_cb(frame->dst_mac, frame->data, frame->data_len);
+  }
+  return ESP_OK;
+}
+
+
+void eth_init_frame(eth_frame *p_frame) {
+  p_frame->ethertype = ETHERTYPE;
+  memcpy(p_frame->dst_mac, eth_dst_mac, sizeof(uint8_t) * 6);  
+  memcpy(p_frame->src_mac, eth_src_mac, sizeof(uint8_t) * 6);
+}
+
+
+esp_err_t send_eth_frame(eth_frame *p_frame)
+{
+  int err = esp_eth_tx((uint8_t *) p_frame, sizeof(eth_frame) + (p_frame->data_len) - CONFIG_MAX_ETH_DATA_LEN);
+  
+  if (err < 0) {
+    ESP_LOGE(ETH_TAG, "Erromar occurred while sending eth frame: errno %d", errno);
+    return ESP_FAIL;
+  }
 
   return ESP_OK;
 }
+
+
+void eth_detach_recv_cb() {
+  eth_recv_cb = NULL;
+}
+
+
+void eth_attach_recv_cb(void (*cb)(uint8_t src_mac[6], uint8_t *data, int len)) {
+  eth_recv_cb = cb;
+}
+
 
 void eth_init() {
   ////////////////////////////////////
@@ -96,13 +124,13 @@ void eth_init() {
     eth_config_t config = ETHERNET_PHY_CONFIG;
     config.phy_addr = PHY1;
     config.gpio_config = eth_gpio_config_rmii;
-    config.tcpip_input = my_recv_func;
+    config.tcpip_input = &eth_recv_func;
     config.clock_mode = CONFIG_PHY_CLOCK_MODE;
 
     ESP_ERROR_CHECK(esp_eth_init(&config));
     ESP_ERROR_CHECK(esp_eth_enable());
 
-    ESP_LOGI(TAG, "Establishing connetion...");
+    ESP_LOGI(ETH_TAG, "Establishing connetion...");
     xEventGroupWaitBits(udp_event_group, WIFI_CONNECTED_BIT,true, true, portMAX_DELAY);
-    ESP_LOGI(TAG, "Connected");
+    ESP_LOGI(ETH_TAG, "Connected");
 }

@@ -24,8 +24,7 @@
 #define DEVICE_GW       "192.168.1.1"
 
 #define WIFI_CONNECTED_BIT BIT0
-
-static const char* TAG = "my_ethernet";
+#define ETHERTYPE 0xb588
 
 EventGroupHandle_t udp_event_group;
 
@@ -36,14 +35,18 @@ typedef struct {
 
   /* Custom payload*/
   uint16_t data_len;
-  char data[CONFIG_MAX_ETH_DATA_LEN];
+  uint8_t data[CONFIG_MAX_ETH_DATA_LEN];
 } eth_frame;
 
 uint8_t eth_src_mac[6] = {0xb4, 0xe6, 0x2d, 0xb5, 0x9f, 0x88};
 uint8_t eth_dst_mac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
+void (*eth_recv_cb)(uint8_t src_mac[6], uint8_t *data, int len)= NULL;
+
 void eth_init();
 void eth_send(eth_frame *p_frame);
 void eth_init_frame(eth_frame *p_frame);
+void eth_attach_recv_cb(void (*cb)(uint8_t src_mac[6], uint8_t *data, int len));
+void eth_detach_recv_cb();
 
 #endif
