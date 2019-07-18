@@ -12,6 +12,8 @@
 #include "esp_system.h"
 #include "esp_spi_flash.h"
 
+#include "my_ethernet.h"
+
 
 void app_main()
 {
