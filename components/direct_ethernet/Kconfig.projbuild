@@ -1,4 +1,4 @@
-menu "My_ethernet"
+menu "Direct_Ethernet"
 
     config MAX_ETH_DATA_LEN
         int "Maximum payload length"
