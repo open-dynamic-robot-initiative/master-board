@@ -7,6 +7,7 @@
 #include "freertos/semphr.h"
 #include "freertos/timers.h"
 #include "esp_event.h"
+#include "nvs_flash.h"
 #include "tcpip_adapter.h"
 #include "esp_wifi.h"
 #include "esp_log.h"

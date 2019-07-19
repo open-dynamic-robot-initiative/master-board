@@ -5,7 +5,7 @@ uint8_t eth_dst_mac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
 void (*eth_recv_cb)(uint8_t src_mac[6], uint8_t *data, int len) = NULL;
 
-static const char* ETH_TAG = "my_ethernet";
+static const char* ETH_TAG = "Direct_Ethernet";
 
 static void eth_gpio_config_rmii(void) {
     // RMII data pins are fixed:

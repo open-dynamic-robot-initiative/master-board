@@ -1,5 +1,7 @@
 #include "direct_wifi.h"
 
+static const char* WIFI_TAG = "Direct_Wifi";
+
 esp_now_peer_info_t peer;
 static uint8_t s_example_broadcast_mac[ESP_NOW_ETH_ALEN] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
@@ -15,11 +17,31 @@ static void wifi_send_cb(const uint8_t *mac_addr, esp_now_send_status_t status)
   }
 }
 
-void wifi_recv_func(const uint8_t *mac, const uint8_t *rxData, int len) {
+void wifi_recv_func(const uint8_t *mac, const uint8_t *data, int len) {
+  if(wifi_recv_cb == NULL) {
+    ESP_LOGE(WIFI_TAG, "Wifi frame received but no callback function is set on received...");
+  } else {
+    wifi_recv_cb(mac, data, len);
+  }
+}
 
+void wifi_attach_recv_cb(void (*cb)(uint8_t src_mac[6], uint8_t *data, int len)) {
+  wifi_recv_cb = cb;
+}
+
+void wifi_detach_recv_cb() {
+  wifi_recv_cb = NULL;
 }
 
 void wifi_init() {
+/* Init NVS */
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_ERROR_CHECK( nvs_flash_erase() );
+        ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK( ret );
+
 /* Init WiFi */
     tcpip_adapter_init();
     ESP_ERROR_CHECK(esp_event_loop_create_default());
@@ -33,7 +55,7 @@ void wifi_init() {
     ESP_ERROR_CHECK( esp_wifi_internal_set_fix_rate(ESP_IF_WIFI_STA, true, WIFI_PHY_RATE_24M) );
 
 
-    /* Init ESPNOW */
+  /* Init ESPNOW */
     ESP_ERROR_CHECK( esp_now_init() );
     ESP_ERROR_CHECK( esp_now_register_send_cb(wifi_send_cb) );
     ESP_ERROR_CHECK( esp_now_register_recv_cb(wifi_recv_func) );
