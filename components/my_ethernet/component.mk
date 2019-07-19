@@ -9,3 +9,10 @@
 
 #include $(IDF_PATH)/make/component_common.mk
 COMPONENT_ADD_INCLUDEDIRS := .
+
+ifeq ($(CONFIG_ESP_GRATUITOUS_ARP), y)
+$(warning Direct Ethernet performances can be optimised by disabling ESP_GRATUITOUS_ARP)
+endif
+ifeq ($(CONFIG_LWIP_DHCP_DOES_ARP_CHECK), y)
+$(warning Direct Ethernet performances can be optimised by disabling CONFIG_LWIP_DHCP_DOES_ARP_CHECK)
+endif

@@ -1,0 +1,3 @@
+#disabling 'Useless' messages for this project
+CONFIG_ESP_GRATUITOUS_ARP=n
+CONFIG_LWIP_DHCP_DOES_ARP_CHECK=n
