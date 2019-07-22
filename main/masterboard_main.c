@@ -1,14 +1,14 @@
 #include <stdio.h>
 #include <stdint.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/timers.h"
 
-#include "direct_wifi.h"
+#include "spi_manager.h"
+#include "spi_quad_packet.h"
 
-uint8_t dummy_data[10] = { 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xA};
+spi_packet rx_packet, tx_packet;
 
-void my_wifi_recv_cb(uint8_t src_mac[6], uint8_t *data, int len) {
-    printf("Wifi frame received : \n");
-    printf("\tsrc mac : %02X:%02X:%02X:%02X:%02X:%02X\n", src_mac[0], src_mac[1], src_mac[2], src_mac[3], src_mac[4], src_mac[5]);
-    printf("\tdata :");
+void print_packet(uint8_t *data, int len) {
     for(int i=0;i<len;i++) {
         if(i%4 == 0) printf(" ");
         if(i%8 == 0) printf("\n\t\t");
@@ -19,15 +19,22 @@ void my_wifi_recv_cb(uint8_t src_mac[6], uint8_t *data, int len) {
 
 void app_main()
 {
-    wifi_init();
-    wifi_attach_recv_cb(&my_wifi_recv_cb);
+    spi_init();
 
     while(true) {
-        printf("Sending frame...\n");
-        wifi_send_data(dummy_data, 10);
-        printf("Sent\n");
-
-        vTaskDelay(2000 / portTICK_RATE_MS);
+        spi_transaction_t *trans = spi_send(1, (uint8_t*) &tx_packet, (uint8_t*) &rx_packet, sizeof(spi_packet));
+        if(trans == NULL) printf("error !\n");
+        printf("Send :");
+        print_packet((uint8_t*) &tx_packet, sizeof(spi_packet));
+        do {
+            printf("%s", spi_is_finished(trans) ? "true" : "false");
+            fflush(stdout);
+        } while(!spi_is_finished(trans));
+        printf("Received :");
+        print_packet((uint8_t*) &rx_packet, sizeof(spi_packet));
+        printf("\n");
+        spi_finish(trans);
+         vTaskDelay(100 / portTICK_RATE_MS);
     }
 
 }
