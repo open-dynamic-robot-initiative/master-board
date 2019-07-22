@@ -3,6 +3,8 @@
 #include "driver/gpio.h"
 #include "spi_manager.h"
 
+static const spi_device_handle_t spi;
+
 void config_demux() {
     gpio_config_t io_conf;
 
@@ -54,7 +56,6 @@ void spi_post_transfer_callback(spi_transaction_t *trans) {
 void spi_init() {
 	config_demux();
 
-    spi_device_handle_t spi;
     spi_bus_config_t buscfg={
         .miso_io_num=PIN_NUM_MISO,
         .mosi_io_num=PIN_NUM_MOSI,
@@ -87,7 +88,7 @@ spi_transaction_t *spi_send(int slave, uint8_t *tx_data, uint8_t *rx_data, int l
 	trans->tx_buffer = tx_data;
 	trans->length=8*len;
 	
-	spi_device_transmit(*spi, &trans)
+	spi_device_transmit(spi, &trans);
 
 	return trans;
 }
