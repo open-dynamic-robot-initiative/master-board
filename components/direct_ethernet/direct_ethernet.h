@@ -38,8 +38,8 @@ typedef struct {
   uint8_t data[CONFIG_MAX_ETH_DATA_LEN];
 } eth_frame;
 
-uint8_t eth_src_mac[6];
-uint8_t eth_dst_mac[6];
+extern uint8_t eth_src_mac[6];
+extern uint8_t eth_dst_mac[6];
 
 void (*eth_recv_cb)(uint8_t src_mac[6], uint8_t *data, int len);
 

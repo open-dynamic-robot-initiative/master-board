@@ -51,8 +51,8 @@ void wifi_init() {
     ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
     ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
     ESP_ERROR_CHECK( esp_wifi_start() );
-    ESP_ERROR_CHECK( esp_wifi_set_channel(CONFIG_CHANNEL, WIFI_SECOND_CHAN_NONE) );
-    ESP_ERROR_CHECK( esp_wifi_internal_set_fix_rate(ESP_IF_WIFI_STA, true, WIFI_PHY_RATE_24M) );
+    ESP_ERROR_CHECK( esp_wifi_set_channel(CONFIG_WIFI_CHANNEL, WIFI_SECOND_CHAN_NONE) );
+    ESP_ERROR_CHECK( esp_wifi_internal_set_fix_rate(ESP_IF_WIFI_STA, true, CONFIG_WIFI_DATARATE) );
 
 
   /* Init ESPNOW */
@@ -61,7 +61,7 @@ void wifi_init() {
     ESP_ERROR_CHECK( esp_now_register_recv_cb(wifi_recv_func) );
     
     memset(&peer, 0, sizeof(esp_now_peer_info_t));
-    peer.channel = CONFIG_CHANNEL;
+    peer.channel = CONFIG_WIFI_CHANNEL;
     peer.ifidx = ESP_IF_WIFI_STA;
     peer.encrypt = false;
     memcpy(peer.peer_addr, s_example_broadcast_mac, ESP_NOW_ETH_ALEN);

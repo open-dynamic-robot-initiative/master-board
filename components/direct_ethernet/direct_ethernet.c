@@ -83,7 +83,7 @@ esp_err_t eth_send_frame(eth_frame *p_frame)
   int err = esp_eth_tx((uint8_t *) p_frame, sizeof(eth_frame) + (p_frame->data_len) - CONFIG_MAX_ETH_DATA_LEN);
   
   if (err < 0) {
-    ESP_LOGE(ETH_TAG, "Erromar occurred while sending eth frame: errno %d", errno);
+    ESP_LOGE(ETH_TAG, "Error occurred while sending eth frame: errno %d", errno);
     return ESP_FAIL;
   }
 
