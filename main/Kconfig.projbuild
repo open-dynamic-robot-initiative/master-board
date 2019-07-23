@@ -1,0 +1,10 @@
+menu "Direct_Wifi"
+	
+	config N_SLAVES
+        int "SPI slave nb"
+        default 6
+        range 0 8
+        help
+            Number of SPI slaves to handle.
+
+endmenu
