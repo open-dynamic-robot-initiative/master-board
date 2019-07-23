@@ -75,7 +75,7 @@ void setup_spi() {
     };
     esp_timer_handle_t periodic_timer;
     ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));
-    ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, 1000));
+    ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, 10000));
 }
 
 void wifi_receive_cb(uint8_t src_mac[6], uint8_t *data, int len) {
