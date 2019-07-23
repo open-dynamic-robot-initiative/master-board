@@ -6,6 +6,7 @@
 #include "direct_wifi.h"
 #include "spi_manager.h"
 #include "spi_quad_packet.h"
+#include "quad_crc.h"
 
 #include <unistd.h>
 #include "esp_timer.h"
@@ -51,7 +52,12 @@ static void periodic_timer_callback(void* arg)
             while(!spi_is_finished(p_trans[i])) {
                 //Wait for it to be finished
             }
-            memcpy(espnow_tx_data + ESPNOW_SUB_DATA_LEN * i, &(spi_rx_packet[i]), ESPNOW_SUB_DATA_LEN);
+            if(packet_check_CRC(&(spi_rx_packet[i]))) {
+                memcpy(espnow_tx_data + ESPNOW_SUB_DATA_LEN * i, &(spi_rx_packet[i]), ESPNOW_SUB_DATA_LEN);
+            } else {
+                memset(espnow_tx_data + ESPNOW_SUB_DATA_LEN * i, 0, ESPNOW_SUB_DATA_LEN);
+            }
+            
             spi_finish(p_trans[i]);
         }
     }
@@ -79,6 +85,7 @@ void wifi_receive_cb(uint8_t src_mac[6], uint8_t *data, int len) {
     
     for(int i=0;i<CONFIG_N_SLAVES;i++) {
         memcpy(&(to_fill[i]), data + ESPNOW_SUB_DATA_LEN*i, ESPNOW_SUB_DATA_LEN);
+        packet_set_CRC(&(to_fill[i]));
     }
 
     spi_use_a = !spi_use_a;
@@ -95,10 +102,8 @@ void app_main()
 {
     nvs_flash_init();
 
+    setup_wifi();
     setup_spi();
     //printf("The core is : %d\n",xPortGetCoreID());
-    setup_wifi();
-    wifi_init();
-
     
 }

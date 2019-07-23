@@ -68,7 +68,7 @@ static const uint32_t crc32_table[] =
   0xbcb4666d, 0xb8757bda, 0xb5365d03, 0xb1f740b4
 };
 
-uint32_t compute_CRC(uint8_t *bytes, int len) {
+uint32_t CRC_compute(uint8_t *bytes, int len) {
     unsigned int ptr = 0;
     uint32_t crc = 0xFFFFFFFF;
 
@@ -78,4 +78,8 @@ uint32_t compute_CRC(uint8_t *bytes, int len) {
       ptr++;
     }
     return crc;
+}
+
+bool CRC_check(uint8_t *bytes, int len) {
+    return (CRC_compute(bytes, len) == 0);
 }

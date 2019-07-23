@@ -2,7 +2,9 @@
 #define QUAD_CRC_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
-uint32_t compute_CRC(uint8_t *bytes, int len);
+bool CRC_check(uint8_t *bytes, int len);
+uint32_t CRC_compute(uint8_t *bytes, int len);
 
 #endif

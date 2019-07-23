@@ -1,6 +1,9 @@
 #ifndef SPI_QUAD_PACKET
 #define SPI_QUAD_PACKET
 
+#include <stdint.h>
+#include <stdbool.h>
+
 struct spi_control_values {
     uint16_t Iq[2];
     uint16_t Kp[2];
@@ -51,5 +54,13 @@ typedef struct {
     } payload;
     uint32_t CRC;
 } spi_packet;
+
+
+uint32_t packet_compute_CRC(spi_packet *packet);
+
+bool packet_check_CRC(spi_packet *packet);
+
+void packet_set_CRC(spi_packet *packet);
+
 
 #endif
