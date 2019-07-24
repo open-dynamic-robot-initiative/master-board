@@ -32,17 +32,23 @@ void config_demux() {
 	gpio_config(&io_conf);
 }
 
+void spi_prepare_packet(spi_packet *packet) {
+    packet_set_CRC(packet);
+
+    uint16_t *raw_data = packet;
+
+    for(int i=0;i<sizeof(spi_packet)-sizeof(packet->CRC);i++) {
+        raw_data[i] = SPI_SWAP_DATA_RX(raw_data[i], 16);
+    }
+
+    packet->CRC = SPI_SWAP_DATA_RX(packet->CRC, 32);
+}
+
 void spi_pre_transfer_callback(spi_transaction_t *trans) {
     uint slave_nb = ((spi_trans_info*) trans->user)->demux_nb;
     gpio_set_level(GPIO_DEMUX_A0, slave_nb&0x1);
     gpio_set_level(GPIO_DEMUX_A1, (slave_nb>>1)&0x1);
     gpio_set_level(GPIO_DEMUX_A2, (slave_nb>>2)&0x1);
-
-
-    uint16_t *data_tx = trans->tx_buffer;
-    for(int i=0;i<trans->length/16;i++) {
-        data_tx[i] = SPI_SWAP_DATA_RX(data_tx[i], 16);
-    }
 }
 
 void spi_post_transfer_callback(spi_transaction_t *trans) {

@@ -12,8 +12,4 @@ bool packet_check_CRC(spi_packet *packet) {
 
 void packet_set_CRC(spi_packet *packet) {
 	packet->CRC = packet_compute_CRC(packet);
-	uint16_t *test = &(packet->CRC);
-    test[0] = SPI_SWAP_DATA_RX(test[0], 16);
-    test[1] = SPI_SWAP_DATA_RX(test[1], 16);
-    packet->CRC = SPI_SWAP_DATA_RX(packet->CRC, 32);
 }

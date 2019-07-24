@@ -2,6 +2,7 @@
 #define SPI_MANAGER_H
 
 #include "driver/spi_master.h"
+#include "spi_quad_packet.h"
 
 #define PIN_NUM_MISO 12
 #define PIN_NUM_MOSI 13
@@ -36,6 +37,8 @@ void spi_init();
 spi_transaction_t *spi_send(int slave, uint8_t *tx_data, uint8_t *rx_data, int len);
 bool spi_is_finished(spi_transaction_t *trans);
 void spi_finish(spi_transaction_t *trans);
+
+void spi_prepare_packet(spi_packet *packet);
 
 
 #endif

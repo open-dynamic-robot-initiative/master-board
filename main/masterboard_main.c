@@ -90,13 +90,10 @@ void wifi_receive_cb(uint8_t src_mac[6], uint8_t *data, int len) {
 
     for(int i=0;i<CONFIG_N_SLAVES;i++) {
         memcpy(&(to_fill[i]), data + ESPNOW_SUB_DATA_LEN*i, ESPNOW_SUB_DATA_LEN);
-        packet_set_CRC(&(to_fill[i]));
-        if(i == 1) print_packet(&(to_fill[i]), sizeof(spi_packet));
+        spi_prepare_packet(&(to_fill[i]));
     }
 
     spi_use_a = !spi_use_a;
-
-    printf("%.02f \n", 600.*nb_ok/nb_recv);
 
     //TODO: be sure that packet cannot be modified from both side at the same time
 }
