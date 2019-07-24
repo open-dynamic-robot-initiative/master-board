@@ -45,17 +45,34 @@ int main(int argc, char **argv) {
 
 	
 	memset(slaves_packets, 0, sizeof(spi_packet)*6);
-	slaves_packets[0].payload.control.payload.values.Iq[0] = 0x1;
-	slaves_packets[1].payload.control.payload.values.Iq[0] = 0xFF;
 
 	handler->set_dst_mac(dest_mac);
 	
+	int n_count = 0;
 
 	while(1) {
+		if(n_count < 10) {
+			slaves_packets[1].payload.control.cmd = 0x1;
+	        slaves_packets[1].payload.control.payload.commands.present_flags.flags = 0;
+	        slaves_packets[1].payload.control.payload.commands.present_flags.recv_Iq_timeout = 0;
+	        slaves_packets[1].payload.control.payload.commands.flags_values.flags = 0;
+
+	        slaves_packets[1].payload.control.payload.commands.present_flags.flags |= SPI_CONTROL_CMD_FLAGS_ENA_SYS | SPI_CONTROL_CMD_FLAGS_ENA_MTR1 | SPI_CONTROL_CMD_FLAGS_ENA_MTR2;
+	        slaves_packets[1].payload.control.payload.commands.flags_values.flags |= SPI_CONTROL_CMD_FLAGS_ENA_SYS | SPI_CONTROL_CMD_FLAGS_ENA_MTR1 | SPI_CONTROL_CMD_FLAGS_ENA_MTR2;
+		} else {
+			slaves_packets[1].payload.control.cmd = 0x0;
+	        slaves_packets[1].payload.control.payload.commands.present_flags.flags = 0;
+	        slaves_packets[1].payload.control.payload.commands.present_flags.recv_Iq_timeout = 0;
+	        slaves_packets[1].payload.control.payload.commands.flags_values.flags = 0;
+
+			slaves_packets[1].payload.control.payload.values.Iq[0] = 25;
+			slaves_packets[1].payload.control.payload.values.Iq[0] = -25;
+		}
 		
 		handler->send((uint8_t *) slaves_packets, sizeof(spi_packet)*6),
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		
+		n_count++;
 		//std::this_thread::yield();
 	}
 
