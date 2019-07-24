@@ -66,7 +66,7 @@ int main(int argc, char **argv) {
 	        slaves_packets[1].payload.control.payload.commands.flags_values.flags = 0;
 
 			slaves_packets[1].payload.control.payload.values.Iq[0] = 25;
-			slaves_packets[1].payload.control.payload.values.Iq[0] = -25;
+			slaves_packets[1].payload.control.payload.values.Iq[1] = -25;
 		}
 		
 		handler->send((uint8_t *) slaves_packets, sizeof(spi_packet)*6),

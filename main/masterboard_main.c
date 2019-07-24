@@ -14,6 +14,9 @@
 
 #define ESPNOW_SUB_DATA_LEN (sizeof(spi_packet)-sizeof(spi_tx_packet_a[0].CRC))
 
+long int nb_recv = 0;
+long int nb_ok = 0;
+
 
 spi_packet spi_rx_packet[CONFIG_N_SLAVES];
 
@@ -52,7 +55,9 @@ static void periodic_timer_callback(void* arg)
             while(!spi_is_finished(p_trans[i])) {
                 //Wait for it to be finished
             }
+            nb_recv++;
             if(packet_check_CRC(&(spi_rx_packet[i]))) {
+                if(i == 1) nb_ok++;
                 memcpy(espnow_tx_data + ESPNOW_SUB_DATA_LEN * i, &(spi_rx_packet[i]), ESPNOW_SUB_DATA_LEN);
             } else {
                 memset(espnow_tx_data + ESPNOW_SUB_DATA_LEN * i, 0, ESPNOW_SUB_DATA_LEN);
@@ -82,15 +87,18 @@ void wifi_receive_cb(uint8_t src_mac[6], uint8_t *data, int len) {
     //TODO: Check CRC
     
     spi_packet *to_fill = spi_use_a ? spi_tx_packet_b : spi_tx_packet_a;
-    
+
     for(int i=0;i<CONFIG_N_SLAVES;i++) {
         memcpy(&(to_fill[i]), data + ESPNOW_SUB_DATA_LEN*i, ESPNOW_SUB_DATA_LEN);
         packet_set_CRC(&(to_fill[i]));
+        if(i == 1) print_packet(&(to_fill[i]), sizeof(spi_packet));
     }
 
     spi_use_a = !spi_use_a;
 
-    //TODO: be sure that opacket cannot be modified from both side at the same time
+    printf("%.02f \n", 600.*nb_ok/nb_recv);
+
+    //TODO: be sure that packet cannot be modified from both side at the same time
 }
 
 void setup_wifi() {
