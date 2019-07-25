@@ -1,0 +1,10 @@
+menu "Direct_Ethernet"
+
+    config MAX_ETH_DATA_LEN
+        int "Maximum payload length"
+        default 250
+        range 0 1500
+        help
+            Maximum length of the payload of the ethernet frame (in bytes).
+
+endmenu

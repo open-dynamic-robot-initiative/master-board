@@ -1,0 +1,34 @@
+menu "Direct_Wifi"
+	
+	config WIFI_CHANNEL
+        int "Channel"
+        default 9
+        range 1 13
+        help
+            The channel on which sending and receiving ESPNOW data.
+
+    choice WIFI_DATARATE
+        prompt "WiFi datarate"
+        default WIFI_DATARATE_24
+        help
+            WiFi datarate.
+
+        config WIFI_DATARATE_6
+            bool "6 MBps"
+        config WIFI_DATARATE_9
+            bool "9 MBps"
+        config WIFI_DATARATE_12
+            bool "12 MBps"
+        config WIFI_DATARATE_18
+            bool "18 MBps"
+        config WIFI_DATARATE_24
+            bool "24 MBps"
+        config WIFI_DATARATE_36
+            bool "36 MBps"
+        config WIFI_DATARATE_48
+            bool "48 MBps"
+        config WIFI_DATARATE_56
+            bool "56 MBps"
+    endchoice
+
+endmenu

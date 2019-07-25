@@ -1,0 +1,23 @@
+menu "Quad_SPI"
+
+    choice SPI_DATARATE
+        prompt "SPI datarate"
+        default SPI_DATARATE_6
+        help
+            SPI datarate.
+
+        config SPI_DATARATE_1
+            bool "1 MHz"
+        config SPI_DATARATE_2
+            bool "2 MHz"
+        config SPI_DATARATE_3
+            bool "3 MHz"
+        config SPI_DATARATE_4
+            bool "4 MHz"
+        config SPI_DATARATE_6
+            bool "6 MHz"
+        config SPI_DATARATE_8
+            bool "8 MHz"
+    endchoice
+
+endmenu
