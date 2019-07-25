@@ -1,4 +1,4 @@
-menu "Direct_Wifi"
+menu "Main App"
 	
 	config N_SLAVES
         int "SPI slave nb"

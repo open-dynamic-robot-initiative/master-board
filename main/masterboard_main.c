@@ -4,6 +4,8 @@
 #include "freertos/timers.h"
 
 #include "direct_wifi.h"
+#include "direct_ethernet.h"
+
 #include "spi_manager.h"
 #include "spi_quad_packet.h"
 #include "quad_crc.h"
@@ -13,6 +15,7 @@
 
 
 #define ESPNOW_SUB_DATA_LEN (sizeof(spi_packet)-sizeof(spi_tx_packet_a[0].CRC))
+#define useWIFI false
 
 long int nb_recv = 0;
 long int nb_ok = 0;
@@ -67,8 +70,12 @@ static void periodic_timer_callback(void* arg)
         }
     }
 
-    wifi_send_data(espnow_tx_data, CONFIG_N_SLAVES * ESPNOW_SUB_DATA_LEN);
-
+    if(useWIFI) {
+        wifi_send_data(espnow_tx_data, CONFIG_N_SLAVES * ESPNOW_SUB_DATA_LEN);
+    } else {
+        //TODO: Replace this function by eth_send_frame() -> SAVES one memcpy() and memory allocation...
+        eth_send_data(espnow_tx_data, CONFIG_N_SLAVES * ESPNOW_SUB_DATA_LEN);
+    }
 }
 
 void setup_spi() {
@@ -83,8 +90,8 @@ void setup_spi() {
     ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, 1000));
 }
 
-void wifi_receive_cb(uint8_t src_mac[6], uint8_t *data, int len) {
-    //TODO: Check CRC
+void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len) {
+    //TODO: Check CRC ?s
     
     spi_packet *to_fill = spi_use_a ? spi_tx_packet_b : spi_tx_packet_a;
 
@@ -94,21 +101,21 @@ void wifi_receive_cb(uint8_t src_mac[6], uint8_t *data, int len) {
     }
 
     spi_use_a = !spi_use_a;
-
-    //TODO: be sure that packet cannot be modified from both side at the same time
-}
-
-void setup_wifi() {
-    wifi_init();
-    wifi_attach_recv_cb(wifi_receive_cb);
 }
 
 void app_main()
 {
     nvs_flash_init();
 
-    setup_wifi();
-    setup_spi();
     //printf("The core is : %d\n",xPortGetCoreID());
+
+    if(useWIFI) {
+        wifi_init();
+        wifi_attach_recv_cb(wifi_eth_receive_cb);
+    } else {
+        eth_attach_recv_cb(wifi_eth_receive_cb);
+        eth_init();
+    }
     
+    setup_spi();
 }
