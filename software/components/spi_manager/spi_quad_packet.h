@@ -4,56 +4,41 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-struct spi_control_values {
-    uint16_t Iq[2];
+struct spi_sensor {
+    uint16_t status;
+    uint16_t timestamp;
+    uint32_t pos[2];
+    uint16_t vel[2];
+    uint16_t iq[2];
+    uint16_t temp[2];
+    uint16_t adc[2];
+} __attribute__ ((packed));
+
+#define SPI_COMMAND_MODE_ES (1<<15)         //enable system
+#define SPI_COMMAND_MODE_EM1 (1<<14)        //enable motor 1
+#define SPI_COMMAND_MODE_EM2 (1<<13)        //enable motor 2
+#define SPI_COMMAND_CALIBRATE_EM1 (1<<12)   //calibrate motor 1
+#define SPI_COMMAND_CALIBRATE_EM2 (1<<11)   //calibrate motor 2
+#define SPI_COMMAND_MODE_TIMEOUT (0xFF<<0)  //Timeout
+
+struct spi_command {
+    uint16_t mode;
+    uint32_t pos[2];
+    uint16_t vel[2];
+    uint16_t iq[2];
     uint16_t Kp[2];
     uint16_t Kd[2];
-    uint16_t Pos[2];
-    uint16_t Vel[2];
-};
-
-#define SPI_CONTROL_CMD_FLAGS_ENA_SYS (1 << 0)
-#define SPI_CONTROL_CMD_FLAGS_ENA_MTR1 (1 << 1)
-#define SPI_CONTROL_CMD_FLAGS_ENA_MTR2 (1 << 2)
-#define SPI_CONTROL_CMD_FLAGS_ENA_VSPR1 (1 << 3)
-#define SPI_CONTROL_CMD_FLAGS_ENA_VSPR2 (1 << 4)
-#define SPI_CONTROL_CMD_FLAGS_ENA_RLVRERR (1 << 5)
-
-struct spi_control_cmd_flags {
-    uint16_t flags;
-    uint32_t recv_Iq_timeout;
-};
-
-struct spi_control_cmd {
-    struct spi_control_cmd_flags present_flags;
-    struct spi_control_cmd_flags flags_values;
-};
-
-struct spi_control {
-    uint16_t cmd;
-    union {
-        struct spi_control_values values;
-        struct spi_control_cmd commands;
-    } payload;
-};
-
-struct spi_measures {
-    uint16_t status;
-
-    uint16_t Pos[2];
-    uint16_t Vel[2];
-    uint16_t Iq[2];
-    uint16_t Temp[2];
-    uint16_t ADC[2];
-};
+    uint16_t notUsed;
+} __attribute__ ((packed));
 
 typedef struct {
     union {
-        struct spi_control control;
-        struct spi_measures measures;
+        struct spi_command command;
+        struct spi_sensor sensor;
     } payload;
+    uint16_t index;
     uint32_t CRC;
-} spi_packet;
+} __attribute__ ((packed)) spi_packet;
 
 
 uint32_t packet_compute_CRC(spi_packet *packet);

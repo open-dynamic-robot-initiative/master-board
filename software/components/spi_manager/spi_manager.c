@@ -32,7 +32,8 @@ void config_demux() {
 	gpio_config(&io_conf);
 }
 
-void spi_prepare_packet(spi_packet *packet) {
+void spi_prepare_packet(spi_packet *packet, uint16_t index) {
+    packet->index = index;
     packet_set_CRC(packet);
 
     uint16_t *raw_data = packet;

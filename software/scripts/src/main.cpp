@@ -18,7 +18,11 @@ LINK_manager *handler;
 
 uint8_t payload[127];
 
-spi_packet slaves_packets[6];
+
+struct wifi_eth_packet_command {
+    struct spi_command command[6];
+    uint16_t sensor_index;
+}__attribute__ ((packed)) my_command;
 
 void callback(uint8_t src_mac[6], uint8_t *data, int len) {
 	/*
@@ -45,8 +49,8 @@ int main(int argc, char **argv) {
 
 	//((ESPNOW_manager *) handler)->bind_filter();
 
-	
-	memset(slaves_packets, 0, sizeof(spi_packet)*6);
+	printf("Payload size : %ld\n", sizeof(wifi_eth_packet_command));
+	memset(&my_command, 0, sizeof(wifi_eth_packet_command));
 
 	handler->set_dst_mac(dest_mac);
 	
@@ -56,26 +60,19 @@ int main(int argc, char **argv) {
 	while(1) {
 		if(((std::chrono::duration<double>) (std::chrono::system_clock::now() - last)).count() > 0.001) {
 			if(n_count < 10) {
-				slaves_packets[1].payload.control.cmd = 0x1;
-		        slaves_packets[1].payload.control.payload.commands.present_flags.flags = 0;
-		        slaves_packets[1].payload.control.payload.commands.present_flags.recv_Iq_timeout = 0;
-		        slaves_packets[1].payload.control.payload.commands.flags_values.flags = 0;
-
-		        slaves_packets[1].payload.control.payload.commands.present_flags.flags |= SPI_CONTROL_CMD_FLAGS_ENA_SYS | SPI_CONTROL_CMD_FLAGS_ENA_MTR1 | SPI_CONTROL_CMD_FLAGS_ENA_MTR2;
-		        slaves_packets[1].payload.control.payload.commands.flags_values.flags |= SPI_CONTROL_CMD_FLAGS_ENA_SYS | SPI_CONTROL_CMD_FLAGS_ENA_MTR1 | SPI_CONTROL_CMD_FLAGS_ENA_MTR2;
+				my_command.command[1].mode = SPI_COMMAND_MODE_ES | SPI_COMMAND_MODE_EM1 | SPI_COMMAND_MODE_EM2 | SPI_COMMAND_CALIBRATE_EM1 | SPI_COMMAND_CALIBRATE_EM2;
 			} else {
-				slaves_packets[1].payload.control.cmd = 0x0;
-		        slaves_packets[1].payload.control.payload.commands.present_flags.flags = 0;
-		        slaves_packets[1].payload.control.payload.commands.present_flags.recv_Iq_timeout = 0;
-		        slaves_packets[1].payload.control.payload.commands.flags_values.flags = 0;
+				my_command.command[1].mode = SPI_COMMAND_MODE_ES | SPI_COMMAND_MODE_EM1 | SPI_COMMAND_MODE_EM2;
 
-				slaves_packets[1].payload.control.payload.values.Iq[0] = 25;
-				slaves_packets[1].payload.control.payload.values.Iq[1] = -25;
+				my_command.command[1].iq[0] = 25;
+				my_command.command[1].iq[1] = -25;
 			}
 			
 			last = std::chrono::system_clock::now();
 
-			handler->send((uint8_t *) slaves_packets, sizeof(spi_packet)*6),
+			my_command.sensor_index++;
+
+			handler->send((uint8_t *) &my_command, sizeof(wifi_eth_packet_command)),
 
 			n_count++;
 		} else {

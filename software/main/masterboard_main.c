@@ -20,13 +20,33 @@
 long int nb_recv = 0;
 long int nb_ok = 0;
 
+static uint16_t curr_index = 0;
 
-spi_packet spi_rx_packet[CONFIG_N_SLAVES];
+//TODO : handle this 32bits padding properly
+typedef struct {
+    spi_packet packet;
+    uint16_t padding;
+} __attribute__ ((packed)) padded_spi_packet;
 
-spi_packet spi_tx_packet_a[CONFIG_N_SLAVES];
-spi_packet spi_tx_packet_b[CONFIG_N_SLAVES];
+static padded_spi_packet spi_rx_packet[CONFIG_N_SLAVES];
 
-uint8_t espnow_tx_data[CONFIG_N_SLAVES * ESPNOW_SUB_DATA_LEN];
+static spi_packet spi_tx_packet_a[CONFIG_N_SLAVES];
+static spi_packet spi_tx_packet_b[CONFIG_N_SLAVES];
+
+struct wifi_eth_packet_command {
+    struct spi_command command[CONFIG_N_SLAVES];
+    uint16_t sensor_index;
+} __attribute__ ((packed));
+
+struct wifi_eth_packet_sensor {
+    struct spi_sensor sensor[CONFIG_N_SLAVES];
+    uint8_t IMU[18]; //TODO create the appropriate struct
+    uint16_t sensor_index;
+    uint16_t last_index
+} __attribute__ ((packed));
+
+
+struct wifi_eth_packet_sensor wifi_eth_tx_data;
 
 
 bool spi_use_a = true;
@@ -61,9 +81,9 @@ static void periodic_timer_callback(void* arg)
             nb_recv++;
             if(packet_check_CRC(&(spi_rx_packet[i]))) {
                 if(i == 1) nb_ok++;
-                memcpy(espnow_tx_data + ESPNOW_SUB_DATA_LEN * i, &(spi_rx_packet[i]), ESPNOW_SUB_DATA_LEN);
+                memcpy(&(wifi_eth_tx_data.sensor[i]), &(spi_rx_packet[i]), sizeof(struct spi_sensor));
             } else {
-                memset(espnow_tx_data + ESPNOW_SUB_DATA_LEN * i, 0, ESPNOW_SUB_DATA_LEN);
+                memset(&(wifi_eth_tx_data.sensor[i]), 0, sizeof(struct spi_sensor));
             }
             
             spi_finish(p_trans[i]);
@@ -71,10 +91,10 @@ static void periodic_timer_callback(void* arg)
     }
 
     if(useWIFI) {
-        wifi_send_data(espnow_tx_data, CONFIG_N_SLAVES * ESPNOW_SUB_DATA_LEN);
+        wifi_send_data(&wifi_eth_tx_data, sizeof(struct wifi_eth_packet_sensor));
     } else {
         //TODO: Replace this function by eth_send_frame() -> SAVES one memcpy() and memory allocation...
-        eth_send_data(espnow_tx_data, CONFIG_N_SLAVES * ESPNOW_SUB_DATA_LEN);
+        eth_send_data(&wifi_eth_tx_data, sizeof(struct wifi_eth_packet_sensor));
     }
 }
 
@@ -91,14 +111,16 @@ void setup_spi() {
 }
 
 void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len) {
-    //TODO: Check CRC ?s
+    //TODO: Check CRC ?
     
     spi_packet *to_fill = spi_use_a ? spi_tx_packet_b : spi_tx_packet_a;
 
     for(int i=0;i<CONFIG_N_SLAVES;i++) {
-        memcpy(&(to_fill[i]), data + ESPNOW_SUB_DATA_LEN*i, ESPNOW_SUB_DATA_LEN);
-        spi_prepare_packet(&(to_fill[i]));
+        memcpy(&(to_fill[i]), &(((struct wifi_eth_packet_command*) data)->command[i]), sizeof(struct spi_command));
+        spi_prepare_packet(&(to_fill[i]), curr_index);
     }
+
+    wifi_eth_tx_data.last_index = ((struct wifi_eth_packet_command*) data)->sensor_index;
 
     spi_use_a = !spi_use_a;
 }
@@ -109,6 +131,8 @@ void app_main()
 
     //printf("The core is : %d\n",xPortGetCoreID());
 
+    printf("ETH/WIFI command size %u\n", sizeof(struct wifi_eth_packet_command));
+    printf("ETH/WIFI sensor size %u\n", sizeof(struct wifi_eth_packet_sensor));
     if(useWIFI) {
         wifi_init();
         wifi_attach_recv_cb(wifi_eth_receive_cb);
@@ -117,5 +141,6 @@ void app_main()
         eth_init();
     }
     
+    printf("SPI size %u\n", sizeof(spi_packet));
     setup_spi();
 }
