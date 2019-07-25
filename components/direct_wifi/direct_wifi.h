@@ -36,8 +36,6 @@
   #error No valid WIFI datarate specified
 #endif
 
-void (*wifi_recv_cb)(uint8_t src_mac[6], uint8_t *data, int len);
-
 void wifi_init();
 void wifi_send_data(uint8_t *data, int len);
 void wifi_attach_recv_cb(void (*cb)(uint8_t src_mac[6], uint8_t *data, int len));

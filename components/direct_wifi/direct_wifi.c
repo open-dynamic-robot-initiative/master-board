@@ -17,20 +17,12 @@ static void wifi_send_cb(const uint8_t *mac_addr, esp_now_send_status_t status)
   }
 }
 
-void wifi_recv_func(const uint8_t *mac, const uint8_t *data, int len) {
-  if(wifi_recv_cb == NULL) {
-    ESP_LOGE(WIFI_TAG, "Wifi frame received but no callback function is set on received...");
-  } else {
-    wifi_recv_cb(mac, data, len);
-  }
-}
-
 void wifi_attach_recv_cb(void (*cb)(uint8_t src_mac[6], uint8_t *data, int len)) {
-  wifi_recv_cb = cb;
+  ESP_ERROR_CHECK( esp_now_register_recv_cb(cb) );
 }
 
 void wifi_detach_recv_cb() {
-  wifi_recv_cb = NULL;
+  esp_now_unregister_recv_cb();
 }
 
 void wifi_init() {
@@ -57,8 +49,6 @@ void wifi_init() {
 
   /* Init ESPNOW */
     ESP_ERROR_CHECK( esp_now_init() );
-    ESP_ERROR_CHECK( esp_now_register_send_cb(wifi_send_cb) );
-    ESP_ERROR_CHECK( esp_now_register_recv_cb(wifi_recv_func) );
     
     memset(&peer, 0, sizeof(esp_now_peer_info_t));
     peer.channel = CONFIG_WIFI_CHANNEL;
