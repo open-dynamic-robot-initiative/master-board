@@ -1,3 +1,10 @@
 #disabling 'Useless' messages for this project
+
 CONFIG_ESP_GRATUITOUS_ARP=n
 CONFIG_LWIP_DHCP_DOES_ARP_CHECK=n
+
+
+# main app and SPI should be running on core 0
+# So attach WiFi and ESPNOW tasks to core 1
+CONFIG_ESP32_WIFI_TASK_PINNED_TO_CORE_0=
+CONFIG_ESP32_WIFI_TASK_PINNED_TO_CORE_1=y
