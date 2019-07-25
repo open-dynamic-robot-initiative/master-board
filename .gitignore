@@ -4,3 +4,5 @@ build/
 sdkconfig\.old
 
 scripts/bin/
+
+software/scripts/bin/
