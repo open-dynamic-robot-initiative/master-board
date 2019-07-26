@@ -20,7 +20,7 @@ uint8_t payload[127];
 
 
 struct wifi_eth_packet_command {
-    struct spi_command command[6];
+    uint16_t command[6][SPI_TOTAL_INDEX];
     uint16_t sensor_index;
 }__attribute__ ((packed)) my_command;
 
@@ -60,12 +60,13 @@ int main(int argc, char **argv) {
 	while(1) {
 		if(((std::chrono::duration<double>) (std::chrono::system_clock::now() - last)).count() > 0.001) {
 			if(n_count < 10) {
-				my_command.command[1].mode = SPI_COMMAND_MODE_ES | SPI_COMMAND_MODE_EM1 | SPI_COMMAND_MODE_EM2 | SPI_COMMAND_CALIBRATE_EM1 | SPI_COMMAND_CALIBRATE_EM2;
+				spi_get16(my_command.command[1], SPI_COMMAND_MODE) = SPI_COMMAND_MODE_ES | SPI_COMMAND_MODE_EM1 | SPI_COMMAND_MODE_EM2 | SPI_COMMAND_MODE_CALIBRATE_M1 | SPI_COMMAND_MODE_CALIBRATE_M2;
 			} else {
-				my_command.command[1].mode = SPI_COMMAND_MODE_ES | SPI_COMMAND_MODE_EM1 | SPI_COMMAND_MODE_EM2;
+				spi_get16(my_command.command[1], SPI_COMMAND_MODE) = SPI_COMMAND_MODE_ES | SPI_COMMAND_MODE_EM1 | SPI_COMMAND_MODE_EM2;
 
-				my_command.command[1].iq[0] = 25;
-				my_command.command[1].iq[1] = -25;
+				spi_get16(my_command.command[1], SPI_COMMAND_IQ_1) = FLOAT_TO_D16QN(0.1, SPI_QN_IQ);
+				//TODO: Negative float values don't work -> motor spins way to fast
+				spi_get16(my_command.command[1], SPI_COMMAND_IQ_2) = 0;//FLOAT_TO_D16QN(-0.1, SPI_QN_IQ);
 			}
 			
 			last = std::chrono::system_clock::now();

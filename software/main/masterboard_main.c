@@ -20,6 +20,8 @@
 long int nb_recv = 0;
 long int nb_ok = 0;
 
+static uint16_t spi_index_trans = 0;
+
 static uint16_t curr_index = 0;
 
 //TODO : handle this 32bits padding properly
@@ -65,8 +67,12 @@ static void periodic_timer_callback(void* arg)
     spi_transaction_t* p_trans[CONFIG_N_SLAVES];
     spi_packet *p_tx = spi_use_a ? spi_tx_packet_a : spi_tx_packet_b;
 
+    //spi_index_trans++;
+
     //Add to queue all transaction
     for(int i=0;i<CONFIG_N_SLAVES;i++) {
+        //p_tx[i].index = spi_index_trans;
+        //packet_set_CRC(&(p_tx[i]));
         p_trans[i] = spi_send(i, (uint8_t*) &(p_tx[i]), (uint8_t*) &(spi_rx_packet[i]), sizeof(spi_packet));
     }
 
@@ -80,15 +86,18 @@ static void periodic_timer_callback(void* arg)
             }
             nb_recv++;
             if(packet_check_CRC(&(spi_rx_packet[i]))) {
-                if(i == 1) nb_ok++;
-                memcpy(&(wifi_eth_tx_data.sensor[i]), &(spi_rx_packet[i]), sizeof(struct spi_sensor));
+                if(i == 1) nb_ok++; 
+                memcpy(&(wifi_eth_tx_data.sensor[i]), &(spi_rx_packet[i].packet.payload.sensor), sizeof(struct spi_sensor));
             } else {
+                //if(i==1) print_packet(&(spi_rx_packet[i].packet), sizeof(spi_packet));
                 memset(&(wifi_eth_tx_data.sensor[i]), 0, sizeof(struct spi_sensor));
             }
             
             spi_finish(p_trans[i]);
         }
     }
+
+    //printf("Nb_ok %ld / recv %ld = %.02f\n", nb_ok, nb_recv, 600. * nb_ok / nb_recv);
 
     if(useWIFI) {
         wifi_send_data(&wifi_eth_tx_data, sizeof(struct wifi_eth_packet_sensor));
@@ -117,6 +126,11 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len) {
 
     for(int i=0;i<CONFIG_N_SLAVES;i++) {
         memcpy(&(to_fill[i]), &(((struct wifi_eth_packet_command*) data)->command[i]), sizeof(struct spi_command));
+        
+        //TODO: better prepare
+        //  1- increment index @ every SPI transaction
+        //  2- recalculate CRC
+        //  3- SWAP data accordingly
         spi_prepare_packet(&(to_fill[i]), curr_index);
     }
 
