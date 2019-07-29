@@ -18,12 +18,19 @@
 #define SPI_COMMAND_ISAT_12 13
 
 /* Command packet -> mode : bits */
-#define SPI_COMMAND_MODE_ES (1<<15)         //enable system
-#define SPI_COMMAND_MODE_EM1 (1<<14)        //enable motor 1
-#define SPI_COMMAND_MODE_EM2 (1<<13)        //enable motor 2
-#define SPI_COMMAND_MODE_CALIBRATE_M1 (1<<12)   //calibrate motor 1
-#define SPI_COMMAND_MODE_CALIBRATE_M2 (1<<11)   //calibrate motor 2
+//! \brief Enable system
+#define SPI_COMMAND_MODE_ES (1<<15)
+//! \brief Enable motor 1
+#define SPI_COMMAND_MODE_EM1 (1<<14)
+//! \brief Enable motor 2
+#define SPI_COMMAND_MODE_EM2 (1<<13)
+//! \brief Calibrate motor 1
+#define SPI_COMMAND_MODE_CALIBRATE_M1 (1<<12)
+//! \brief Calibrate motor 2
+#define SPI_COMMAND_MODE_CALIBRATE_M2 (1<<11)
+//! \brief Raise an error when position rollover
 #define SPI_COMMAND_MODE_ROLLOVER (1<<10)
+//! \brief Disable system if no valid SPI packet is received during this time [in ms]. (0 = disabled)
 #define SPI_COMMAND_MODE_TIMEOUT (0xFF<<0)  //Timeout
 
 /* Qvalues for each fields */
@@ -51,11 +58,17 @@
 #define SPI_SENSOR_ADC_2 13
 
 /* sensor packet -> status : bits */
+//! \brief System is enabled
 #define SPI_SENSOR_STATUS_SE (1<<15)
+//! \brief Motor 1 is enabled
 #define SPI_SENSOR_STATUS_M1E (1<<14)
+//! \brief Motor 1 is ready
 #define SPI_SENSOR_STATUS_M1R (1<<13)
+//! \brief Motor 2 is enabled
 #define SPI_SENSOR_STATUS_M2E (1<<12)
+//! \brief Motor 2 is ready
 #define SPI_SENSOR_STATUS_M2R (1<<11)
+//! \brief Error code
 #define SPI_SENSOR_STATUS_ERROR (0xF<<0)
 
 /* sensor packet -> status -> ERROR : values */
@@ -82,8 +95,13 @@
 #define SPI_TOTAL_LEN 17
 
 /* To properly handle SPI type conversion */
-#define spi_get16(p_packet, pos) (*((uint16_t *) ((p_packet) + (pos))))
-#define spi_get32(p_packet, pos) (*((uint32_t *) ((p_packet) + (pos))))
+#define SPI_REG_u16(p_packet, pos) (*((uint16_t *) ((p_packet) + (pos))))
+#define SPI_REG_u32(p_packet, pos) (*((uint32_t *) ((p_packet) + (pos))))
+
+#define SPI_REG_16(p_packet, pos) (*((int16_t *) ((p_packet) + (pos))))
+#define SPI_REG_32(p_packet, pos) (*((int32_t *) ((p_packet) + (pos))))
+
+
 
 #define D32Q24_TO_D16QN(a,n)      ((a)>>(24-(n))&0xFFFF)
 #define D32Q24_TO_D8QN(a,n)       ((a)>>(24-(n))&0xFF)
@@ -105,5 +123,6 @@
 #define FLOAT_TO_D32QN(a,n)       ((int32_t) ((a) * (1<<(n))))
 #define FLOAT_TO_D16QN(a,n)       ((int16_t) ((a) * (1<<(n))))
 #define FLOAT_TO_D8QN (a,n)       ((int8_t)  ((a) * (1<<(n))))
+
 
 #endif

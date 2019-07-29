@@ -60,13 +60,13 @@ int main(int argc, char **argv) {
 	while(1) {
 		if(((std::chrono::duration<double>) (std::chrono::system_clock::now() - last)).count() > 0.001) {
 			if(n_count < 10) {
-				spi_get16(my_command.command[1], SPI_COMMAND_MODE) = SPI_COMMAND_MODE_ES | SPI_COMMAND_MODE_EM1 | SPI_COMMAND_MODE_EM2 | SPI_COMMAND_MODE_CALIBRATE_M1 | SPI_COMMAND_MODE_CALIBRATE_M2;
+				SPI_REG_u16(my_command.command[1], SPI_COMMAND_MODE) = SPI_COMMAND_MODE_ES | SPI_COMMAND_MODE_EM1 | SPI_COMMAND_MODE_EM2 | SPI_COMMAND_MODE_CALIBRATE_M1 | SPI_COMMAND_MODE_CALIBRATE_M2;
 			} else {
-				spi_get16(my_command.command[1], SPI_COMMAND_MODE) = SPI_COMMAND_MODE_ES | SPI_COMMAND_MODE_EM1 | SPI_COMMAND_MODE_EM2;
+				SPI_REG_u16(my_command.command[1], SPI_COMMAND_MODE) = SPI_COMMAND_MODE_ES | SPI_COMMAND_MODE_EM1 | SPI_COMMAND_MODE_EM2;
 
-				spi_get16(my_command.command[1], SPI_COMMAND_IQ_1) = FLOAT_TO_D16QN(0.1, SPI_QN_IQ);
+				SPI_REG_16(my_command.command[1], SPI_COMMAND_IQ_1) = FLOAT_TO_D16QN(0.1, SPI_QN_IQ);
 				//TODO: Negative float values don't work -> motor spins way to fast
-				spi_get16(my_command.command[1], SPI_COMMAND_IQ_2) = 0;//FLOAT_TO_D16QN(-0.1, SPI_QN_IQ);
+				SPI_REG_16(my_command.command[1], SPI_COMMAND_IQ_2) = FLOAT_TO_D16QN(-0.1, SPI_QN_IQ);
 			}
 			
 			last = std::chrono::system_clock::now();
