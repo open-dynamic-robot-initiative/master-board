@@ -38,11 +38,18 @@ uint16_t adc[2];
 
 sensor_data uDrivers_sensor_data[N_SLAVES]  = {0};
 
+void print_hex_table(uint8_t * data,int len)
+{
+	for (int i=0; i<len;i++)
+		printf("%x ",data[i]);
+}
+
+
 void callback(uint8_t src_mac[6], uint8_t *data, int len) {
-	
-	printf("received a %d long packet",len);
-	if (len!=170) return;
-	memcpy(data,uDrivers_sensor_data,sizeof(sensor_data)*N_SLAVES);
+	printf("\e[1;1H\e[2J");
+	printf("received a %d long packet\n",len);
+	if (len!=190) return;
+	memcpy(uDrivers_sensor_data,data,sizeof(sensor_data)*N_SLAVES);
 	/*
 	 * //echo
 	handler->mypacket->set_payload_len(127 + 5);
@@ -50,11 +57,20 @@ void callback(uint8_t src_mac[6], uint8_t *data, int len) {
 	//handler->set_dst_mac(dest_mac);
 	handler->send();
 	*/
+	//print_hex_table(data,len);
 	for(int i=0; i<N_SLAVES;i++)
 	{
-	    printf("posA_%d:%x\t",i,uDrivers_sensor_data[i].position[0]);
-	    printf("posB_%d:%x\n",i,uDrivers_sensor_data[i].position[1]);
+		printf("\n%d ",i);
+		printf("status:%8x ",uDrivers_sensor_data[i].status);
+		printf("timestamp:%8x ",uDrivers_sensor_data[i].timestamp);
+	    printf("posA:%8x ",uDrivers_sensor_data[i].position[0]);
+	    printf("posB:%8x ",uDrivers_sensor_data[i].position[1]);
+	    printf("velA:%8x ",uDrivers_sensor_data[i].velocity[0]);
+	    printf("velB:%8x ",uDrivers_sensor_data[i].velocity[1]);
+	    printf("curA:%8x ",uDrivers_sensor_data[i].current[0]);
+	    printf("curB:%8x ",uDrivers_sensor_data[i].current[1]);
 	}
+	
 }
 
 int main(int argc, char **argv) {
@@ -83,8 +99,8 @@ int main(int argc, char **argv) {
 
 	while(1) {
 		if(((std::chrono::duration<double>) (std::chrono::system_clock::now() - last)).count() > 0.001) {
-			if(n_count < 10) {
-				//SPI_REG_u16(my_command.command[1], SPI_COMMAND_MODE) = SPI_COMMAND_MODE_ES | SPI_COMMAND_MODE_EM1 | SPI_COMMAND_MODE_EM2 | SPI_COMMAND_MODE_CALIBRATE_M1 | SPI_COMMAND_MODE_CALIBRATE_M2;
+			if(n_count < 100) {
+				SPI_REG_u16(my_command.command[1], SPI_COMMAND_MODE) = SPI_COMMAND_MODE_ES | SPI_COMMAND_MODE_EM1 | SPI_COMMAND_MODE_EM2 | SPI_COMMAND_MODE_CALIBRATE_M1 | SPI_COMMAND_MODE_CALIBRATE_M2;
 			} else {
 				SPI_REG_u16(my_command.command[1], SPI_COMMAND_MODE) = SPI_COMMAND_MODE_ES | SPI_COMMAND_MODE_EM1 | SPI_COMMAND_MODE_EM2;
 				SPI_REG_16(my_command.command[1], SPI_COMMAND_IQ_1) = FLOAT_TO_D16QN(0.1, SPI_QN_IQ);
