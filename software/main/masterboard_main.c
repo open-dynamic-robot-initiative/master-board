@@ -29,7 +29,8 @@ typedef struct {
     uint16_t padding;
 } __attribute__ ((packed)) padded_spi_packet;
 
-static padded_spi_packet spi_rx_packet[CONFIG_N_SLAVES];
+static uint16_t spi_rx_packet[CONFIG_N_SLAVES][SPI_TOTAL_LEN+1]; //SPI write DMA by blocks of 32bits. +1 prevents any overflow
+static struct sensor_data spi_rx_data[CONFIG_N_SLAVES];
 
 static uint16_t spi_tx_packet_a[CONFIG_N_SLAVES][SPI_TOTAL_LEN];
 static uint16_t spi_tx_packet_b[CONFIG_N_SLAVES][SPI_TOTAL_LEN];
@@ -40,7 +41,7 @@ struct wifi_eth_packet_command {
 } __attribute__ ((packed));
 
 struct wifi_eth_packet_sensor {
-    uint16_t sensor[CONFIG_N_SLAVES][SPI_TOTAL_INDEX];
+    struct sensor_data sensor[CONFIG_N_SLAVES];
     uint8_t IMU[18]; //TODO create the appropriate struct
     uint16_t sensor_index;
     uint16_t last_index
@@ -72,7 +73,7 @@ static void periodic_timer_callback(void* arg)
     for(int i=0;i<CONFIG_N_SLAVES;i++) {
         //p_tx[i].index = spi_index_trans;
         //packet_set_CRC(p_tx[i]);
-        p_trans[i] = spi_send(i, (uint8_t*) p_tx[i], (uint8_t*) &(spi_rx_packet[i]), SPI_TOTAL_LEN*2);
+        p_trans[i] = spi_send(i, (uint8_t*) p_tx[i], (uint8_t*) spi_rx_packet[i], SPI_TOTAL_LEN*2);
     }
 
     //wait for every transaction to finish
@@ -84,12 +85,35 @@ static void periodic_timer_callback(void* arg)
                 //Wait for it to be finished
             }
             nb_recv++;
-            if(packet_check_CRC(&(spi_rx_packet[i]))) {
-                if(i == 1) nb_ok++; 
-                memcpy(&(wifi_eth_tx_data.sensor[i]), spi_rx_packet[i].packet, SPI_TOTAL_LEN*2);
+            
+            /* Flip all the data (Cf endianness) */
+            for(int j=0;j<SPI_TOTAL_LEN;j++) {
+                spi_rx_packet[i][j] = SPI_SWAP_DATA_RX(spi_rx_packet[i][j], 16);
+            }
+
+            if(packet_check_CRC(spi_rx_packet[i])) {
+                if(i == 1) nb_ok++;
+
+                for(int j=0;j<SPI_TOTAL_LEN;j++) {
+                    spi_rx_packet[i][j] = SPI_SWAP_DATA_RX(spi_rx_packet[i][j], 16);
+                }
+
+                spi_rx_data[i].status = SPI_SWAP_DATA_RX(SPI_REG_u16(spi_rx_packet[i], SPI_SENSOR_STATUS), 16);
+                spi_rx_data[i].timestamp = SPI_SWAP_DATA_RX(SPI_REG_u16(spi_rx_packet[i], SPI_SENSOR_TIMESTAMP), 16);
+                spi_rx_data[i].position[0] = SPI_SWAP_DATA_RX(SPI_REG_32(spi_rx_packet[i], SPI_SENSOR_POS_1), 32);
+                spi_rx_data[i].position[1] = SPI_SWAP_DATA_RX(SPI_REG_32(spi_rx_packet[i], SPI_SENSOR_POS_2), 32);
+                spi_rx_data[i].velocity[0] = SPI_SWAP_DATA_RX(SPI_REG_16(spi_rx_packet[i], SPI_SENSOR_VEL_1), 16);
+                spi_rx_data[i].velocity[1] = SPI_SWAP_DATA_RX(SPI_REG_16(spi_rx_packet[i], SPI_SENSOR_VEL_2), 16);
+                spi_rx_data[i].current[0] = SPI_SWAP_DATA_RX(SPI_REG_16(spi_rx_packet[i], SPI_SENSOR_IQ_1), 16);
+                spi_rx_data[i].current[1] = SPI_SWAP_DATA_RX(SPI_REG_16(spi_rx_packet[i], SPI_SENSOR_IQ_2), 16);
+                spi_rx_data[i].coil_resistance[0] = SPI_SWAP_DATA_RX(SPI_REG_u16(spi_rx_packet[i], SPI_SENSOR_CR_1), 16);
+                spi_rx_data[i].coil_resistance[1] = SPI_SWAP_DATA_RX(SPI_REG_u16(spi_rx_packet[i], SPI_SENSOR_CR_2), 16);
+                spi_rx_data[i].adc[0] = SPI_SWAP_DATA_RX(SPI_REG_u16(spi_rx_packet[i], SPI_SENSOR_ADC_1), 16);
+                spi_rx_data[i].adc[1] = SPI_SWAP_DATA_RX(SPI_REG_u16(spi_rx_packet[i], SPI_SENSOR_ADC_2), 16);
+
+                memcpy(&(wifi_eth_tx_data.sensor[i]), &(spi_rx_data[i]), sizeof(struct sensor_data));
             } else {
-                //if(i==1) print_packet(&(spi_rx_packet[i].packet), sizeof(spi_packet));
-                memset(&(wifi_eth_tx_data.sensor[i]), 0, SPI_TOTAL_LEN*2);
+                memset(&(wifi_eth_tx_data.sensor[i]), 0, sizeof(struct sensor_data));
             }
             
             spi_finish(p_trans[i]);

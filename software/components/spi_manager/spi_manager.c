@@ -51,10 +51,6 @@ void spi_pre_transfer_callback(spi_transaction_t *trans) {
 }
 
 void spi_post_transfer_callback(spi_transaction_t *trans) {
-    uint16_t *data_rx = trans->rx_buffer;
-    for(int i=0;i<trans->length/16;i++) {
-        data_rx[i] = SPI_SWAP_DATA_RX(data_rx[i], 16);
-    }
     ((spi_trans_info*) trans->user)->is_finished = true;
 }
 

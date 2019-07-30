@@ -133,4 +133,13 @@ bool packet_check_CRC(uint16_t *packet);
 void packet_set_CRC(uint16_t *packet);
 
 
+struct sensor_data {
+	uint16_t status;
+	uint16_t timestamp;
+	int32_t position[2];
+	int16_t velocity[2];
+	int16_t current[2];
+	uint16_t coil_resistance[2];
+	uint16_t adc[2];
+} __attribute__((packed));
 #endif
