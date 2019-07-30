@@ -2,14 +2,14 @@
 #include "driver/spi_master.h"
 #include "quad_crc.h"
 
-uint32_t packet_compute_CRC(spi_packet *packet) {
-  return CRC_compute((void*) packet, sizeof(spi_packet) - sizeof(uint32_t));
+uint32_t packet_compute_CRC(uint16_t *packet) {
+  return CRC_compute((uint8_t*) packet, SPI_TOTAL_CRC*2);
 }
 
-bool packet_check_CRC(spi_packet *packet) {
-    return (packet_compute_CRC(packet) == packet->CRC);
+bool packet_check_CRC(uint16_t *packet) {
+    return (packet_compute_CRC(packet) == SPI_REG_u32(packet, SPI_TOTAL_CRC));
 }
 
-void packet_set_CRC(spi_packet *packet) {
-	packet->CRC = packet_compute_CRC(packet);
+void packet_set_CRC(uint16_t *packet) {
+	SPI_REG_u32(packet, SPI_TOTAL_CRC) = packet_compute_CRC(packet);
 }

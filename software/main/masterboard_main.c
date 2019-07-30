@@ -14,7 +14,6 @@
 #include "esp_timer.h"
 
 
-#define ESPNOW_SUB_DATA_LEN (sizeof(spi_packet)-sizeof(spi_tx_packet_a[0].CRC))
 #define useWIFI false
 
 long int nb_recv = 0;
@@ -26,22 +25,22 @@ static uint16_t curr_index = 0;
 
 //TODO : handle this 32bits padding properly
 typedef struct {
-    spi_packet packet;
+    uint16_t packet[SPI_TOTAL_LEN];
     uint16_t padding;
 } __attribute__ ((packed)) padded_spi_packet;
 
 static padded_spi_packet spi_rx_packet[CONFIG_N_SLAVES];
 
-static spi_packet spi_tx_packet_a[CONFIG_N_SLAVES];
-static spi_packet spi_tx_packet_b[CONFIG_N_SLAVES];
+static uint16_t spi_tx_packet_a[CONFIG_N_SLAVES][SPI_TOTAL_LEN];
+static uint16_t spi_tx_packet_b[CONFIG_N_SLAVES][SPI_TOTAL_LEN];
 
 struct wifi_eth_packet_command {
-    struct spi_command command[CONFIG_N_SLAVES];
+    uint16_t command[CONFIG_N_SLAVES][SPI_TOTAL_INDEX];
     uint16_t sensor_index;
 } __attribute__ ((packed));
 
 struct wifi_eth_packet_sensor {
-    struct spi_sensor sensor[CONFIG_N_SLAVES];
+    uint16_t sensor[CONFIG_N_SLAVES][SPI_TOTAL_INDEX];
     uint8_t IMU[18]; //TODO create the appropriate struct
     uint16_t sensor_index;
     uint16_t last_index
@@ -65,15 +64,15 @@ void print_packet(uint8_t *data, int len) {
 static void periodic_timer_callback(void* arg)
 {
     spi_transaction_t* p_trans[CONFIG_N_SLAVES];
-    spi_packet *p_tx = spi_use_a ? spi_tx_packet_a : spi_tx_packet_b;
+    uint16_t (*p_tx)[SPI_TOTAL_LEN] = spi_use_a ? spi_tx_packet_a : spi_tx_packet_b;
 
     //spi_index_trans++;
 
     //Add to queue all transaction
     for(int i=0;i<CONFIG_N_SLAVES;i++) {
         //p_tx[i].index = spi_index_trans;
-        //packet_set_CRC(&(p_tx[i]));
-        p_trans[i] = spi_send(i, (uint8_t*) &(p_tx[i]), (uint8_t*) &(spi_rx_packet[i]), sizeof(spi_packet));
+        //packet_set_CRC(p_tx[i]);
+        p_trans[i] = spi_send(i, (uint8_t*) p_tx[i], (uint8_t*) &(spi_rx_packet[i]), SPI_TOTAL_LEN*2);
     }
 
     //wait for every transaction to finish
@@ -87,10 +86,10 @@ static void periodic_timer_callback(void* arg)
             nb_recv++;
             if(packet_check_CRC(&(spi_rx_packet[i]))) {
                 if(i == 1) nb_ok++; 
-                memcpy(&(wifi_eth_tx_data.sensor[i]), &(spi_rx_packet[i].packet.payload.sensor), sizeof(struct spi_sensor));
+                memcpy(&(wifi_eth_tx_data.sensor[i]), spi_rx_packet[i].packet, SPI_TOTAL_LEN*2);
             } else {
                 //if(i==1) print_packet(&(spi_rx_packet[i].packet), sizeof(spi_packet));
-                memset(&(wifi_eth_tx_data.sensor[i]), 0, sizeof(struct spi_sensor));
+                memset(&(wifi_eth_tx_data.sensor[i]), 0, SPI_TOTAL_LEN*2);
             }
             
             spi_finish(p_trans[i]);
@@ -122,16 +121,16 @@ void setup_spi() {
 void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len) {
     //TODO: Check CRC ?
     
-    spi_packet *to_fill = spi_use_a ? spi_tx_packet_b : spi_tx_packet_a;
+    uint16_t (*to_fill)[SPI_TOTAL_LEN] = spi_use_a ? spi_tx_packet_b : spi_tx_packet_a;
 
     for(int i=0;i<CONFIG_N_SLAVES;i++) {
-        memcpy(&(to_fill[i]), &(((struct wifi_eth_packet_command*) data)->command[i]), sizeof(struct spi_command));
-        
+        memcpy(to_fill[i], &(((struct wifi_eth_packet_command*) data)->command[i]), SPI_TOTAL_INDEX*2);
+
         //TODO: better prepare
         //  1- increment index @ every SPI transaction
         //  2- recalculate CRC
         //  3- SWAP data accordingly
-        spi_prepare_packet(&(to_fill[i]), curr_index);
+        spi_prepare_packet(to_fill[i], curr_index);
     }
 
     wifi_eth_tx_data.last_index = ((struct wifi_eth_packet_command*) data)->sensor_index;
@@ -155,6 +154,6 @@ void app_main()
         eth_init();
     }
     
-    printf("SPI size %u\n", sizeof(spi_packet));
+    printf("SPI size %u\n", SPI_TOTAL_LEN*2);
     setup_spi();
 }

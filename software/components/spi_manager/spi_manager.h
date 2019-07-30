@@ -38,7 +38,7 @@ spi_transaction_t *spi_send(int slave, uint8_t *tx_data, uint8_t *rx_data, int l
 bool spi_is_finished(spi_transaction_t *trans);
 void spi_finish(spi_transaction_t *trans);
 
-void spi_prepare_packet(spi_packet *packet, uint16_t index);
+void spi_prepare_packet(uint16_t *packet, uint16_t index);
 
 
 #endif
