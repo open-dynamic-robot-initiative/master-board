@@ -99,6 +99,8 @@ void convert_raw_to_si_sensor_data(raw_sensor_data raw,si_sensor_data &si)
 	
 }
 
+uint16_t nb_recv = 0;
+
 void callback(uint8_t src_mac[6], uint8_t *data, int len) {
 
 	if (len!=190) 
@@ -108,6 +110,7 @@ void callback(uint8_t src_mac[6], uint8_t *data, int len) {
 		return;
 	}
 	memcpy(uDrivers_raw_sensor_data,data,sizeof(raw_sensor_data)*N_SLAVES);
+	nb_recv++;
 	/*
 	 * //echo
 	handler->mypacket->set_payload_len(127 + 5);
@@ -116,7 +119,7 @@ void callback(uint8_t src_mac[6], uint8_t *data, int len) {
 	handler->send();
 	*/
 	//print_hex_table(data,len);
-	if (uDrivers_raw_sensor_data[1].timestamp%100==1)
+	if (nb_recv%100 == 1)
 	{
 		printf("\e[1;1H\e[2J");
 		for(int i=0; i<N_SLAVES;i++)
@@ -179,12 +182,17 @@ int main(int argc, char **argv) {
 	while(1) {
 		if(((std::chrono::duration<double>) (std::chrono::system_clock::now() - last)).count() > 0.001) {
 			if(n_count < 100) {
-				//SPI_REG_u16(my_command.command[1], SPI_COMMAND_MODE) = SPI_COMMAND_MODE_ES | SPI_COMMAND_MODE_EM1 | SPI_COMMAND_MODE_EM2 | SPI_COMMAND_MODE_CALIBRATE_M1 | SPI_COMMAND_MODE_CALIBRATE_M2;
+				SPI_REG_u16(my_command.command[1], SPI_COMMAND_MODE) = SPI_COMMAND_MODE_ES | SPI_COMMAND_MODE_EM1 | SPI_COMMAND_MODE_EM2 | SPI_COMMAND_MODE_CALIBRATE_M1 | SPI_COMMAND_MODE_CALIBRATE_M2;
+
+				SPI_REG_u16(my_command.command[2], SPI_COMMAND_MODE) = SPI_COMMAND_MODE_ES | SPI_COMMAND_MODE_EM1 | SPI_COMMAND_MODE_EM2 | SPI_COMMAND_MODE_CALIBRATE_M1 | SPI_COMMAND_MODE_CALIBRATE_M2;
 			} else {
 				SPI_REG_u16(my_command.command[1], SPI_COMMAND_MODE) = SPI_COMMAND_MODE_ES | SPI_COMMAND_MODE_EM1 | SPI_COMMAND_MODE_EM2;
 				SPI_REG_16(my_command.command[1], SPI_COMMAND_IQ_1) = FLOAT_TO_D16QN(0.1, SPI_QN_IQ);
 				SPI_REG_16(my_command.command[1], SPI_COMMAND_IQ_2) = FLOAT_TO_D16QN(-0.1, SPI_QN_IQ);
 				
+				SPI_REG_u16(my_command.command[2], SPI_COMMAND_MODE) = SPI_COMMAND_MODE_ES | SPI_COMMAND_MODE_EM1 | SPI_COMMAND_MODE_EM2;
+				SPI_REG_16(my_command.command[2], SPI_COMMAND_IQ_1) = FLOAT_TO_D16QN(0.1, SPI_QN_IQ);
+				SPI_REG_16(my_command.command[2], SPI_COMMAND_IQ_2) = FLOAT_TO_D16QN(-0.1, SPI_QN_IQ);
 			}
 			
 			last = std::chrono::system_clock::now();
