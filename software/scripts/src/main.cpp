@@ -12,6 +12,7 @@ Etienne Arlaud
 #include <math.h>
 
 #define N_SLAVES 6
+#define N_SLAVES_CONTROLED 3
 
 #define D32Q24_TO_D16QN(a,n)      ((a)>>(24-(n))&0xFFFF)
 #define D32Q24_TO_D8QN(a,n)       ((a)>>(24-(n))&0xFF)
@@ -220,14 +221,20 @@ int main(int argc, char **argv) {
 
 	int state = 0;
 	int slave_idx = 1;
-	float pos_ref0 = 0;
-	float pos_err0=0;
-	float vel_ref0=0;
-	float vel_err0=0;
+	float pos_refA[N_SLAVES_CONTROLED]={0};
+	float pos_errA[N_SLAVES_CONTROLED]={0};
+	float vel_refA[N_SLAVES_CONTROLED]={0};
+	float vel_errA[N_SLAVES_CONTROLED]={0};
+	float iqA[N_SLAVES_CONTROLED]={0};
+	float pos_refB[N_SLAVES_CONTROLED]={0};
+	float pos_errB[N_SLAVES_CONTROLED]={0};
+	float vel_refB[N_SLAVES_CONTROLED]={0};
+	float vel_errB[N_SLAVES_CONTROLED]={0};
+	float iqB[N_SLAVES_CONTROLED]={0};
+	
 	float Kp = 3.0;
 	float Kd = 1.0;
 	float iq_sat = 2.0;
-	float iq0=0;
 	float PI=3.14;//todo find PI
 	float freq = 2;
 	float t=0;
@@ -244,11 +251,18 @@ int main(int argc, char **argv) {
 			{
 				case 0:
 					//Initialisation, send the init commands
-					SPI_REG_u16(my_command.command[slave_idx], SPI_COMMAND_MODE) = SPI_COMMAND_MODE_ES | SPI_COMMAND_MODE_EM1 | SPI_COMMAND_MODE_EM2 | SPI_COMMAND_MODE_CALIBRATE_M1 | SPI_COMMAND_MODE_CALIBRATE_M2;
-					//check the end of calibration (are the two motor ready?)
-					if (uDrivers_si_sensor_data[slave_idx].is_motor_enabled[0] && uDrivers_si_sensor_data[slave_idx].is_motor_enabled[1])
+					for(int i=0; i<N_SLAVES_CONTROLED; i++)
 					{
-						state = 1;
+						SPI_REG_u16(my_command.command[i], SPI_COMMAND_MODE) = SPI_COMMAND_MODE_ES | SPI_COMMAND_MODE_EM1 | SPI_COMMAND_MODE_EM2 | SPI_COMMAND_MODE_CALIBRATE_M1 | SPI_COMMAND_MODE_CALIBRATE_M2;
+					}
+					//check the end of calibration (are the all ontrolled motor ready?)
+					state = 1;
+					for(int i=0; i<N_SLAVES_CONTROLED; i++)
+					{
+						if (!(uDrivers_si_sensor_data[slave_idx].is_motor_enabled[0] && uDrivers_si_sensor_data[slave_idx].is_motor_enabled[1]))
+						{
+							state = 0; //calibration is not finished
+						}
 					}
 					break;
 				case 1:
@@ -264,20 +278,31 @@ int main(int argc, char **argv) {
 					//~ SPI_REG_16(my_command.command[slave_idx], SPI_COMMAND_IQ_2) = FLOAT_TO_D16QN(-0.1, SPI_QN_IQ);
 					
 					//closed loop, position
-					pos_ref0 = sin(2*PI*freq*t);
-					pos_err0 = pos_ref0 - uDrivers_si_sensor_data[slave_idx].position[0];
-					vel_err0 = vel_ref0 - uDrivers_si_sensor_data[slave_idx].velocity[0];
-					iq0 = Kp * pos_err0 + Kd * vel_err0;
-					if (iq0 >  iq_sat) iq0= iq_sat;
-					if (iq0 < -iq_sat) iq0=-iq_sat;
-					
-
-					
-					SPI_REG_u16(my_command.command[slave_idx], SPI_COMMAND_MODE) = SPI_COMMAND_MODE_ES | SPI_COMMAND_MODE_EM1 | SPI_COMMAND_MODE_EM2;
-					SPI_REG_16(my_command.command[slave_idx], SPI_COMMAND_IQ_1) = FLOAT_TO_D16QN(iq0, SPI_QN_IQ);
-					SPI_REG_16(my_command.command[slave_idx], SPI_COMMAND_IQ_2) = FLOAT_TO_D16QN(-0.1, SPI_QN_IQ);
-					
+					for(int i=0; i<N_SLAVES_CONTROLED; i++)
+					{
+						pos_refA[i] = sin(2*PI*freq*t);
+						pos_errA[i] = pos_refA[i] - uDrivers_si_sensor_data[slave_idx].position[0];
+						vel_errA[i] = vel_refA[i] - uDrivers_si_sensor_data[slave_idx].velocity[0];
+						iqA[i] = Kp * pos_errA[i] + Kd * vel_errA[i];
+						if (iqA[i] >  iq_sat) iqA[i]= iq_sat;
+						if (iqA[i] < -iq_sat) iqA[i]=-iq_sat;
+						
+						pos_refB[i] = sin(2*PI*freq*t);
+						pos_errB[i] = pos_refB[i] - uDrivers_si_sensor_data[slave_idx].position[0];
+						vel_errB[i] = vel_refB[i] - uDrivers_si_sensor_data[slave_idx].velocity[0];
+						iqB[i] = Kp * pos_errB[i] + Kd * vel_errB[i];
+						if (iqB[i] >  iq_sat) iqB[i]= iq_sat;
+						if (iqB[i] < -iq_sat) iqB[i]=-iq_sat;				
+						
+						SPI_REG_u16(my_command.command[i], SPI_COMMAND_MODE) = SPI_COMMAND_MODE_ES | SPI_COMMAND_MODE_EM1 | SPI_COMMAND_MODE_EM2;
+						SPI_REG_16(my_command.command[i], SPI_COMMAND_IQ_1) = FLOAT_TO_D16QN(iqA[i], SPI_QN_IQ);
+						SPI_REG_16(my_command.command[i], SPI_COMMAND_IQ_2) = FLOAT_TO_D16QN(iqB[i], SPI_QN_IQ);
+					}
 					break;
+					
+					
+					
+					
 			}
 			//~ if(n_count < 100) {
 				//~ SPI_REG_u16(my_command.command[1], SPI_COMMAND_MODE) = SPI_COMMAND_MODE_ES | SPI_COMMAND_MODE_EM1 | SPI_COMMAND_MODE_EM2 | SPI_COMMAND_MODE_CALIBRATE_M1 | SPI_COMMAND_MODE_CALIBRATE_M2;
