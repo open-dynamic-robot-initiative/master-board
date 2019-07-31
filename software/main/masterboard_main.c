@@ -13,12 +13,12 @@
 #include <unistd.h>
 #include "esp_timer.h"
 
-#define useWIFI true
+#define useWIFI false
 
 #define CONFIG_SPI_WDT 100
 
-long int nb_recv = 0;
-long int nb_ok = 0;
+long int spi_count = 0;
+long int spi_ok[CONFIG_N_SLAVES] = {0};
 
 int spi_wdt = 0;
 int spi_stop = false;
@@ -71,10 +71,18 @@ void print_packet(uint8_t *data, int len) {
 static void periodic_timer_callback(void* arg)
 {
     spi_wdt++;
+    spi_count++;
+
+    if(spi_count%1000 == 0) {
+        printf("\e[1;1H\e[2J");
+        printf("--- SPI ---\n");
+        for(int i=0;i<CONFIG_N_SLAVES;i++) {
+            printf("[%d] sent : %ld, ok : %ld, ratio : %.02f\n", i, spi_count, spi_ok[i], 100. * spi_ok[i] / spi_count);
+        }
+    }
 
     spi_transaction_t* p_trans[CONFIG_N_SLAVES];
     
-
     //spi_index_trans++;
     uint16_t (*p_tx)[SPI_TOTAL_LEN];
 
@@ -100,7 +108,6 @@ static void periodic_timer_callback(void* arg)
             while(!spi_is_finished(p_trans[i])) {
                 //Wait for it to be finished
             }
-            nb_recv++;
             
             /* Flip all the data (Cf endianness) */
             for(int j=0;j<SPI_TOTAL_LEN;j++) {
@@ -108,7 +115,7 @@ static void periodic_timer_callback(void* arg)
             }
 
             if(packet_check_CRC(spi_rx_packet[i])) {
-                if(i == 1) nb_ok++;
+                spi_ok[i]++;
 
                 for(int j=0;j<SPI_TOTAL_LEN;j++) {
                     spi_rx_packet[i][j] = SPI_SWAP_DATA_RX(spi_rx_packet[i][j], 16);
