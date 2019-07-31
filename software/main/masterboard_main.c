@@ -137,7 +137,7 @@ static void periodic_timer_callback(void* arg)
     }
 
     //printf("Nb_ok %ld / recv %ld = %.02f\n", nb_ok, nb_recv, 600. * nb_ok / nb_recv);
-
+    wifi_eth_tx_data.sensor_index++; 
     if(useWIFI) {
         wifi_send_data(&wifi_eth_tx_data, sizeof(struct wifi_eth_packet_sensor));
     } else {
@@ -153,6 +153,8 @@ void setup_spi() {
         memset(spi_tx_packet_stop[i], 0, SPI_TOTAL_INDEX*2);
         spi_prepare_packet(spi_tx_packet_stop[i], curr_index);
     }
+    wifi_eth_tx_data.sensor_index = 0;
+    wifi_eth_tx_data.last_index = 0;
 
     const esp_timer_create_args_t periodic_timer_args = {
             .callback = &periodic_timer_callback,
