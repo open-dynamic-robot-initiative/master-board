@@ -13,11 +13,16 @@
 #include <unistd.h>
 #include "esp_timer.h"
 
+#define useWIFI true
 
-#define useWIFI false
+#define CONFIG_SPI_WDT 100
 
 long int nb_recv = 0;
 long int nb_ok = 0;
+
+int spi_wdt = 0;
+int spi_stop = false;
+int wifi_eth_first_recv = false;
 
 static uint16_t spi_index_trans = 0;
 
@@ -34,6 +39,7 @@ static struct sensor_data spi_rx_data[CONFIG_N_SLAVES];
 
 static uint16_t spi_tx_packet_a[CONFIG_N_SLAVES][SPI_TOTAL_LEN];
 static uint16_t spi_tx_packet_b[CONFIG_N_SLAVES][SPI_TOTAL_LEN];
+static uint16_t spi_tx_packet_stop[CONFIG_N_SLAVES][SPI_TOTAL_LEN];
 
 struct wifi_eth_packet_command {
     uint16_t command[CONFIG_N_SLAVES][SPI_TOTAL_INDEX];
@@ -64,10 +70,20 @@ void print_packet(uint8_t *data, int len) {
 
 static void periodic_timer_callback(void* arg)
 {
+    spi_wdt++;
+
     spi_transaction_t* p_trans[CONFIG_N_SLAVES];
-    uint16_t (*p_tx)[SPI_TOTAL_LEN] = spi_use_a ? spi_tx_packet_a : spi_tx_packet_b;
+    
 
     //spi_index_trans++;
+    uint16_t (*p_tx)[SPI_TOTAL_LEN];
+
+    if(spi_wdt < CONFIG_SPI_WDT && !spi_stop) {
+        p_tx = spi_use_a ? spi_tx_packet_a : spi_tx_packet_b;
+    } else {
+        spi_stop = wifi_eth_first_recv;
+        p_tx = spi_tx_packet_stop;
+    }
 
     //Add to queue all transaction
     for(int i=0;i<CONFIG_N_SLAVES;i++) {
@@ -133,6 +149,11 @@ static void periodic_timer_callback(void* arg)
 void setup_spi() {
     spi_init();
 
+    for(int i=0;i<CONFIG_N_SLAVES;i++) {
+        memset(spi_tx_packet_stop[i], 0, SPI_TOTAL_INDEX*2);
+        spi_prepare_packet(spi_tx_packet_stop[i], curr_index);
+    }
+
     const esp_timer_create_args_t periodic_timer_args = {
             .callback = &periodic_timer_callback,
             .name = "spi_send"
@@ -144,6 +165,7 @@ void setup_spi() {
 
 void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len) {
     //TODO: Check CRC ?
+    wifi_eth_first_recv = true;
     
     uint16_t (*to_fill)[SPI_TOTAL_LEN] = spi_use_a ? spi_tx_packet_b : spi_tx_packet_a;
 
@@ -159,6 +181,7 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len) {
 
     wifi_eth_tx_data.last_index = ((struct wifi_eth_packet_command*) data)->sensor_index;
 
+    spi_wdt = 0;
     spi_use_a = !spi_use_a;
 }
 
