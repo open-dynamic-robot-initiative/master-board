@@ -13,9 +13,9 @@
 #include <unistd.h>
 #include "esp_timer.h"
 
-#define useWIFI false
+#define useWIFI true
 
-#define CONFIG_SPI_WDT 100
+#define CONFIG_SPI_WDT 20
 
 long int spi_count = 0;
 long int spi_ok[CONFIG_N_SLAVES] = {0};
