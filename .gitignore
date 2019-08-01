@@ -2,3 +2,7 @@
 software/build/
 
 software/scripts/bin/
+
+software/sdkconfig
+
+software/sdkconfig\.old
