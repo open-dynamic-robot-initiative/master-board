@@ -171,6 +171,7 @@ int main(int argc, char **argv) {
 	if (argv[1][0]=='e')
 	{
 	/*Ethernet*/
+	    printf("Using Ethenet (%s)\n", sizeof(wifi_eth_packet_command));
 		handler = new ETHERNET_manager(argv[1], my_mac, dest_mac);
 		handler->set_recv_callback(&callback);
 		handler->start();
@@ -206,12 +207,13 @@ int main(int argc, char **argv) {
 	float vel_errB[N_SLAVES_CONTROLED]={0};
 	float iqB[N_SLAVES_CONTROLED]={0};
 	
-	float Kp = 3.0;
-	float Kd = 1.0;
+	float Kp = 10.0;
+	float Kd = 4.0;
 	float iq_sat = 2.0;
 	float PI=3.14;//todo find PI
 	float freq = 1;
 	float t=0;
+	float mean_pos = 0;
 	while(1) {
 		if(((std::chrono::duration<double>) (std::chrono::system_clock::now() - last)).count() > 0.001) {
 
@@ -221,6 +223,7 @@ int main(int argc, char **argv) {
 			n_count++;
 			
 			t +=0.001;
+			
 			switch (state)
 			{
 				case 0:
@@ -246,19 +249,28 @@ int main(int argc, char **argv) {
 					//~ SPI_REG_16(my_command.command[slave_idx], SPI_COMMAND_IQ_1) = FLOAT_TO_D16QN(0.1, SPI_QN_IQ);
 					//~ SPI_REG_16(my_command.command[slave_idx], SPI_COMMAND_IQ_2) = FLOAT_TO_D16QN(-0.1, SPI_QN_IQ);
 					
+					
+					int n_mean_pos = 0;
+					
 					//closed loop, position
 					for(int i=0; i<N_SLAVES_CONTROLED; i++)
 					{
 						if (uDrivers_si_sensor_data[i].is_system_enabled)
 						{
-							pos_refA[i] = sin(2*PI*freq*t);
+							//~ pos_refA[i] = sin(2*PI*freq*t);
+							if (i==0) mean_pos = uDrivers_si_sensor_data[i].position[0];
+							pos_refA[i] = mean_pos;
 							pos_errA[i] = pos_refA[i] - uDrivers_si_sensor_data[i].position[0];
 							vel_errA[i] = vel_refA[i] - uDrivers_si_sensor_data[i].velocity[0];
 							iqA[i] = Kp * pos_errA[i] + Kd * vel_errA[i];
 							if (iqA[i] >  iq_sat) iqA[i]= iq_sat;
 							if (iqA[i] < -iq_sat) iqA[i]=-iq_sat;
 							
-							pos_refB[i] = sin(2*PI*freq*t);
+							if (i==0) iqA[i] = 0.;//todo rem
+							
+							
+							//~ pos_refB[i] = sin(2*PI*freq*t);
+							pos_refB[i] = mean_pos;
 							pos_errB[i] = pos_refB[i] - uDrivers_si_sensor_data[i].position[1];
 							vel_errB[i] = vel_refB[i] - uDrivers_si_sensor_data[i].velocity[1];
 							iqB[i] = Kp * pos_errB[i] + Kd * vel_errB[i];
@@ -268,12 +280,17 @@ int main(int argc, char **argv) {
 							SPI_REG_u16(my_command.command[i], SPI_COMMAND_MODE) = SPI_COMMAND_MODE_ES | SPI_COMMAND_MODE_EM1 | SPI_COMMAND_MODE_EM2;
 							SPI_REG_16(my_command.command[i], SPI_COMMAND_IQ_1) = FLOAT_TO_D16QN(iqA[i], SPI_QN_IQ);
 							SPI_REG_16(my_command.command[i], SPI_COMMAND_IQ_2) = FLOAT_TO_D16QN(iqB[i], SPI_QN_IQ);
+							//~ mean_pos+=uDrivers_si_sensor_data[i].position[0];
+							//~ mean_pos+=uDrivers_si_sensor_data[i].position[1];
+							//~ n_mean_pos+=2;
 						}
 						else
 						{
 						    printf("E%d ",i);
 						}
 					}
+					//~ if (n_mean_pos>0) mean_pos = mean_pos / (n_mean_pos + 1);
+					//~ printf("mean_pos %lf ",mean_pos);
 					break;
 			}
 
