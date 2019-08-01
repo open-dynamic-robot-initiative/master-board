@@ -12,61 +12,15 @@ Etienne Arlaud
 #include <math.h>
 #include <defines.h>
 
-
-
 static uint8_t my_mac[6] = {0xa0, 0x1d, 0x48, 0x12, 0xa0, 0xc5};//{0xF8, 0x1A, 0x67, 0xb7, 0xEB, 0x0B};
-static uint8_t dest_mac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-static uint8_t ESP_mac[6] = {0xb4, 0xe6, 0x2d, 0xb5, 0x9f, 0x85}; //{0xcc,0x50,0xe3,0xB6,0xb4,0x58};
+static uint8_t dest_mac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}; //Broatcast to prevent acknoledgment behaviour
 
 LINK_manager *handler;
 uint8_t payload[127];
 
-
-
-struct wifi_eth_packet_command {
-    uint16_t command[N_SLAVES][SPI_TOTAL_INDEX];
-    uint16_t sensor_index;
-}__attribute__ ((packed)) my_command;
-
-
-struct raw_sensor_data {
-uint16_t status;
-uint16_t timestamp;
-int32_t position[2];
-int16_t velocity[2];
-int16_t current[2];
-uint16_t coil_resistance[2];
-uint16_t adc[2];
-}__attribute__ ((packed));
-
-struct si_sensor_data {
-	uint16_t status;
-	uint16_t timestamp;// to be removed
-	bool is_system_enabled; 
-	bool is_motor_enabled[2];
-	bool is_motor_ready[2];
-	uint8_t error_code;  
-	float position[2];
-	float velocity[2];
-	float current[2];
-	float coil_resistance[2];
-	float adc[2];
-
-}__attribute__ ((packed));
-
-
-
-struct wifi_eth_packet_sensor {
-    struct raw_sensor_data raw_uDriver_sensor_data[N_SLAVES];
-    uint8_t IMU[18]; //TODO create the appropriate struct
-    uint16_t sensor_index;
-    uint16_t last_index;
-} __attribute__ ((packed));
-
-
+wifi_eth_packet_command my_command = {0};
 wifi_eth_packet_sensor raw_sensor_packet = {0};
-si_sensor_data  uDrivers_si_sensor_data[N_SLAVES]  = {0};
-
+si_sensor_data uDrivers_si_sensor_data[N_SLAVES]  = {0};
 
 void print_hex_table(uint8_t * data,int len)
 {
@@ -101,17 +55,8 @@ void callback(uint8_t src_mac[6], uint8_t *data, int len) {
 		printf("received a %d long packet\n",len);
 		return;
 	}
-	//~ memcpy(uDrivers_raw_sensor_data,data,sizeof(raw_sensor_data)*N_SLAVES);
 	memcpy(&raw_sensor_packet,data,sizeof(wifi_eth_packet_sensor));
 	nb_recv++;
-	/*
-	 * //echo
-	handler->mypacket->set_payload_len(127 + 5);
-	memcpy(handler->mypacket->get_payload_ptr(), data, 6);
-	//handler->set_dst_mac(dest_mac);
-	handler->send();
-	*/
-	//print_hex_table(data,len);
 	for(int i=0; i<N_SLAVES;i++)
 	{
 		convert_raw_to_si_sensor_data(raw_sensor_packet.raw_uDriver_sensor_data[i],uDrivers_si_sensor_data[i]);
@@ -121,10 +66,10 @@ void callback(uint8_t src_mac[6], uint8_t *data, int len) {
 		last_sensor_index = raw_sensor_packet.sensor_index -1;
 	}
 	//Check for packet loss
-	uint16_t sensor_packets_loss = raw_sensor_packet.sensor_index - last_sensor_index - (uint16_t)1;
+	uint16_t actual_sensor_packets_loss = raw_sensor_packet.sensor_index - last_sensor_index - (uint16_t)1;
 	
-	nb_sensors_lost+=sensor_packets_loss;
-	nb_sensors_sent+=sensor_packets_loss+1;
+	nb_sensors_lost+=actual_sensor_packets_loss;
+	nb_sensors_sent+=actual_sensor_packets_loss+1;
 	last_sensor_index = raw_sensor_packet.sensor_index;
 	if (nb_recv%100 == 0)
 	{
@@ -150,10 +95,10 @@ void callback(uint8_t src_mac[6], uint8_t *data, int len) {
 			
 		}
 		printf("\n");
-		printf("nb_sensors_sent: %lu \n ",nb_sensors_sent);
-		printf("nb_sensors_lost: %lu \n",nb_sensors_lost);
-		printf("sensor-packet-lost: %lu \n",sensor_packets_loss);
-		printf("ratio: %4f\n ",100.0*nb_sensors_lost/nb_sensors_sent);
+		printf("nb_sensors_sent: %u \n ",nb_sensors_sent);
+		printf("nb_sensors_lost: %u \n",nb_sensors_lost);
+		printf("sensor-packet-lost: %u \n",actual_sensor_packets_loss);
+		printf("ratio: %2f\n ",100.0*nb_sensors_lost/nb_sensors_sent);
 	}
 	
 	fflush(stdout);
@@ -171,6 +116,7 @@ int main(int argc, char **argv) {
 	if (argv[1][0]=='e')
 	{
 	/*Ethernet*/
+		printf("Using Ethernet (%s)",argv[1]);
 		handler = new ETHERNET_manager(argv[1], my_mac, dest_mac);
 		handler->set_recv_callback(&callback);
 		handler->start();
@@ -178,20 +124,17 @@ int main(int argc, char **argv) {
 	else if (argv[1][0]=='w')
 	{
 	/*WiFi*/
+		printf("Using WiFi (%s)",argv[1]);
 		handler = new ESPNOW_manager(argv[1], DATARATE_24Mbps, CHANNEL_freq_9, my_mac, dest_mac, false);
 		((ESPNOW_manager *) handler)->set_filter(my_mac, dest_mac);
 		handler->set_recv_callback(&callback);
 		handler->start();
 		((ESPNOW_manager *) handler)->bind_filter();
 	}
-	printf("Payload size : %ld\n", sizeof(wifi_eth_packet_command));
-	memset(&my_command, 0, sizeof(wifi_eth_packet_command));
 
 	handler->set_dst_mac(dest_mac);
-	
 	int n_count = 0;
 	std::chrono::time_point<std::chrono::system_clock> last;
-
 
 	int state = 0;
 	int slave_idx = 1;
@@ -240,12 +183,6 @@ int main(int argc, char **argv) {
 					}
 					break;
 				case 1:
-					//Command the motor!
-					//open loop, constant current
-					//~ SPI_REG_u16(my_command.command[slave_idx], SPI_COMMAND_MODE) = SPI_COMMAND_MODE_ES | SPI_COMMAND_MODE_EM1 | SPI_COMMAND_MODE_EM2;
-					//~ SPI_REG_16(my_command.command[slave_idx], SPI_COMMAND_IQ_1) = FLOAT_TO_D16QN(0.1, SPI_QN_IQ);
-					//~ SPI_REG_16(my_command.command[slave_idx], SPI_COMMAND_IQ_2) = FLOAT_TO_D16QN(-0.1, SPI_QN_IQ);
-					
 					//closed loop, position
 					for(int i=0; i<N_SLAVES_CONTROLED; i++)
 					{
