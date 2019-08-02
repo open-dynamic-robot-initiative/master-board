@@ -15,7 +15,7 @@
 #include <unistd.h>
 #include "esp_timer.h"
 
-#define useWIFI false
+#define useWIFI true
 
 #define CONFIG_SPI_WDT 20
 
@@ -46,15 +46,17 @@ static uint16_t spi_tx_packet_stop[CONFIG_N_SLAVES][SPI_TOTAL_LEN];
 
 struct wifi_eth_packet_command {
     uint16_t command[CONFIG_N_SLAVES][SPI_TOTAL_INDEX];
-    uint16_t sensor_index;
+    uint16_t command_index;
 } __attribute__ ((packed));
 
 struct wifi_eth_packet_sensor {
     struct sensor_data sensor[CONFIG_N_SLAVES];
     uint8_t IMU[18]; //TODO create the appropriate struct
     uint16_t sensor_index;
-    uint16_t last_index
+    uint16_t packet_loss;
 } __attribute__ ((packed));
+
+uint16_t command_index_prev = 0;
 
 
 struct wifi_eth_packet_sensor wifi_eth_tx_data;
@@ -166,7 +168,7 @@ void setup_spi() {
         spi_prepare_packet(spi_tx_packet_stop[i], curr_index);
     }
     wifi_eth_tx_data.sensor_index = 0;
-    wifi_eth_tx_data.last_index = 0;
+    wifi_eth_tx_data.packet_loss = 0;
 
     const esp_timer_create_args_t periodic_timer_args = {
             .callback = &periodic_timer_callback,
@@ -182,8 +184,11 @@ void setup_spi() {
 
 void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len) {
     //TODO: Check CRC ?
-    wifi_eth_first_recv = true;
-    wifi_eth_start_spi = true;
+    if(!wifi_eth_first_recv) {
+        wifi_eth_first_recv = true;
+        wifi_eth_start_spi = true;
+        command_index_prev = ((struct wifi_eth_packet_command*) data)->command_index - 1;
+    }
     
     uint16_t (*to_fill)[SPI_TOTAL_LEN] = spi_use_a ? spi_tx_packet_b : spi_tx_packet_a;
 
@@ -197,7 +202,8 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len) {
         spi_prepare_packet(to_fill[i], curr_index);
     }
 
-    wifi_eth_tx_data.last_index = ((struct wifi_eth_packet_command*) data)->sensor_index;
+    wifi_eth_tx_data.packet_loss += ((struct wifi_eth_packet_command*) data)->command_index - command_index_prev -1;
+    command_index_prev = ((struct wifi_eth_packet_command*) data)->command_index;
 
     spi_wdt = 0;
     spi_use_a = !spi_use_a;
