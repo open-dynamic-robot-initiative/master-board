@@ -118,18 +118,9 @@ static void periodic_timer_callback(void* arg)
             while(!spi_is_finished(p_trans[i])) {
                 //Wait for it to be finished
             }
-            
-            /* Flip all the data (Cf endianness) */
-            for(int j=0;j<SPI_TOTAL_LEN;j++) {
-                spi_rx_packet[i][j] = SPI_SWAP_DATA_RX(spi_rx_packet[i][j], 16);
-            }
 
             if(packet_check_CRC(spi_rx_packet[i])) {
                 spi_ok[i]++;
-
-                for(int j=0;j<SPI_TOTAL_LEN;j++) {
-                    spi_rx_packet[i][j] = SPI_SWAP_DATA_RX(spi_rx_packet[i][j], 16);
-                }
 
                 spi_rx_data[i].status = SPI_SWAP_DATA_RX(SPI_REG_u16(spi_rx_packet[i], SPI_SENSOR_STATUS), 16);
                 spi_rx_data[i].timestamp = SPI_SWAP_DATA_RX(SPI_REG_u16(spi_rx_packet[i], SPI_SENSOR_TIMESTAMP), 16);
@@ -146,6 +137,7 @@ static void periodic_timer_callback(void* arg)
 
                 memcpy(&(wifi_eth_tx_data.sensor[i]), &(spi_rx_data[i]), sizeof(struct sensor_data));
             } else {
+                if(i==1) printf("Wrong CRC should be %04X, got %04X\n", packet_compute_CRC(spi_rx_packet[i]), packet_get_CRC(spi_rx_packet[i]));
                 memset(&(wifi_eth_tx_data.sensor[i]), 0, sizeof(struct sensor_data));
             }
             

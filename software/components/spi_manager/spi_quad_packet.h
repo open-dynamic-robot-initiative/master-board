@@ -132,6 +132,7 @@ bool packet_check_CRC(uint16_t *packet);
 
 void packet_set_CRC(uint16_t *packet);
 
+uint32_t packet_get_CRC(uint16_t *packet);
 
 struct sensor_data {
 	uint16_t status;
