@@ -25,6 +25,7 @@ long int spi_ok[CONFIG_N_SLAVES] = {0};
 int spi_wdt = 0;
 int spi_stop = false;
 int wifi_eth_first_recv = false;
+int wifi_eth_start_spi = false;
 
 static uint16_t spi_index_trans = 0;
 
@@ -72,6 +73,8 @@ void print_packet(uint8_t *data, int len) {
 
 static void periodic_timer_callback(void* arg)
 {
+    if(!wifi_eth_start_spi) return;
+
     spi_wdt++;
     spi_count++;
 
@@ -180,6 +183,7 @@ void setup_spi() {
 void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len) {
     //TODO: Check CRC ?
     wifi_eth_first_recv = true;
+    wifi_eth_start_spi = true;
     
     uint16_t (*to_fill)[SPI_TOTAL_LEN] = spi_use_a ? spi_tx_packet_b : spi_tx_packet_a;
 
