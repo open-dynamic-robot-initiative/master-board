@@ -12,7 +12,7 @@ Etienne Arlaud
 #include <math.h>
 #include <defines.h>
 
-static uint8_t my_mac[6] = {0xa0, 0x1d, 0x48, 0x12, 0xa0, 0xc5};//{0xF8, 0x1A, 0x67, 0xb7, 0xEB, 0x0B};
+static uint8_t my_mac[6] = {0xa0, 0x1d, 0x48, 0x12, 0xa0, 0xc5};   //{0xF8, 0x1A, 0x67, 0xb7, 0xEB, 0x0B};
 static uint8_t dest_mac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}; //Broatcast to prevent acknoledgment behaviour
 
 LINK_manager *handler;
@@ -21,6 +21,11 @@ uint8_t payload[127];
 wifi_eth_packet_command my_command = {0};
 wifi_eth_packet_sensor raw_sensor_packet = {0};
 si_sensor_data uDrivers_si_sensor_data[N_SLAVES]  = {0};
+#define MAX_HIST 10
+int histogram_lost_sensor_packets[MAX_HIST]; //histogram_lost_packets[0] is the number of single packet loss, histogram_lost_packets[1] is the number of two consecutive packet loss, etc...
+int histogram_lost_cmd_packets[MAX_HIST];    //histogram_lost_packets[0] is the number of single packet loss, histogram_lost_packets[1] is the number of two consecutive packet loss, etc...
+
+
 
 void print_hex_table(uint8_t * data,int len)
 {
@@ -49,6 +54,10 @@ uint16_t last_sensor_index = 0;
 uint32_t nb_sensors_sent = 0; //this variable deduce the total number of received sensor packet from sensot index and previous sensor index
 uint32_t nb_sensors_lost = 0; 
 
+uint16_t last_cmd_index = 0;
+uint32_t nb_cmd_sent = 0; 
+uint32_t nb_cmd_lost = 0; 
+
 void callback(uint8_t src_mac[6], uint8_t *data, int len) {
 	if (len!=190) 
 	{
@@ -65,12 +74,31 @@ void callback(uint8_t src_mac[6], uint8_t *data, int len) {
 	{
 		last_sensor_index = raw_sensor_packet.sensor_index -1;
 	}
-	//Check for packet loss
-	uint16_t actual_sensor_packets_loss = raw_sensor_packet.sensor_index - last_sensor_index - (uint16_t)1;
-	
+	//Check for sensor packet loss
+	uint16_t actual_sensor_packets_loss = raw_sensor_packet.sensor_index - last_sensor_index - 1;
 	nb_sensors_lost+=actual_sensor_packets_loss;
 	nb_sensors_sent+=actual_sensor_packets_loss+1;
 	last_sensor_index = raw_sensor_packet.sensor_index;
+	if (actual_sensor_packets_loss>0)
+	{
+		if ((actual_sensor_packets_loss-1)<MAX_HIST)
+			histogram_lost_sensor_packets[actual_sensor_packets_loss]++;
+		else
+			histogram_lost_sensor_packets[MAX_HIST-1]++;
+	}	
+	
+	
+	//chech for cmd packet loss (This does'nt realy work. for debug raw_sensor_packet.last_index field return the number of lost packet computed in the ESP32, and not the last command packet)
+	uint16_t actual_cmd_packets_loss = my_command.sensor_index - raw_sensor_packet.last_index - 1;
+	nb_cmd_lost+=actual_cmd_packets_loss;
+	nb_cmd_sent+=actual_cmd_packets_loss+1;
+	if (actual_cmd_packets_loss>0)
+	{
+		if ((actual_cmd_packets_loss-1)<MAX_HIST)
+			histogram_lost_cmd_packets[actual_cmd_packets_loss-1]++;
+		else
+			histogram_lost_cmd_packets[MAX_HIST-1]++;
+	}
 	if (nb_recv%100 == 0)
 	{
 		printf("\e[1;1H\e[2J");
@@ -99,6 +127,14 @@ void callback(uint8_t src_mac[6], uint8_t *data, int len) {
 		printf("nb_sensors_lost: %u \n",nb_sensors_lost);
 		printf("sensor-packet-lost: %u \n",actual_sensor_packets_loss);
 		printf("ratio: %2f\n ",100.0*nb_sensors_lost/nb_sensors_sent);
+		printf("\n%d ",raw_sensor_packet.sensor_index);
+		printf("n_cmd_lost: %u \n",raw_sensor_packet.last_index);
+		printf("\nPacket lost in groups of: \n");
+		printf("       \t sensors \t commands \n");
+		for(int i=0;i<MAX_HIST;i++)
+		{
+			printf("  %3d : \t%d \t %d\n ",i+1,histogram_lost_sensor_packets[i],histogram_lost_cmd_packets[i]);
+		}
 	}
 	
 	fflush(stdout);
@@ -106,10 +142,7 @@ void callback(uint8_t src_mac[6], uint8_t *data, int len) {
 
 int main(int argc, char **argv) {
 	assert(argc > 1);
-
 	nice(-20);
-	
-	
 	argv[1];
 	printf("Payload size : %ld\n", sizeof(wifi_eth_packet_command));
 	
@@ -137,7 +170,6 @@ int main(int argc, char **argv) {
 	std::chrono::time_point<std::chrono::system_clock> last;
 
 	int state = 0;
-	int slave_idx = 1;
 	float pos_refA[N_SLAVES_CONTROLED]={0};
 	float pos_errA[N_SLAVES_CONTROLED]={0};
 	float vel_refA[N_SLAVES_CONTROLED]={0};
@@ -159,9 +191,7 @@ int main(int argc, char **argv) {
 		if(((std::chrono::duration<double>) (std::chrono::system_clock::now() - last)).count() > 0.001) {
 
 			last = std::chrono::system_clock::now();
-			my_command.sensor_index++;
-			handler->send((uint8_t *) &my_command, sizeof(wifi_eth_packet_command)),
-			n_count++;
+
 			
 			t +=0.001;
 			switch (state)
@@ -176,7 +206,7 @@ int main(int argc, char **argv) {
 					state = 1;
 					for(int i=0; i<N_SLAVES_CONTROLED; i++)
 					{
-						if (!(uDrivers_si_sensor_data[slave_idx].is_motor_enabled[0] && uDrivers_si_sensor_data[slave_idx].is_motor_enabled[1]))
+						if (!(uDrivers_si_sensor_data[i].is_motor_enabled[0] && uDrivers_si_sensor_data[i].is_motor_enabled[1]))
 						{
 							state = 0; //calibration is not finished
 						}
@@ -202,9 +232,12 @@ int main(int argc, char **argv) {
 							if (iqB[i] >  iq_sat) iqB[i]= iq_sat;
 							if (iqB[i] < -iq_sat) iqB[i]=-iq_sat;				
 							
+
 							SPI_REG_u16(my_command.command[i], SPI_COMMAND_MODE) = SPI_COMMAND_MODE_ES | SPI_COMMAND_MODE_EM1 | SPI_COMMAND_MODE_EM2;
 							SPI_REG_16(my_command.command[i], SPI_COMMAND_IQ_1) = FLOAT_TO_D16QN(iqA[i], SPI_QN_IQ);
 							SPI_REG_16(my_command.command[i], SPI_COMMAND_IQ_2) = FLOAT_TO_D16QN(iqB[i], SPI_QN_IQ);
+							my_command.command[i][SPI_COMMAND_MODE]&=0xff00; //Set timeout to 0
+							my_command.command[i][SPI_COMMAND_MODE]|=0x00ff; //Set timeout to 10
 						}
 						else
 						{
@@ -213,6 +246,9 @@ int main(int argc, char **argv) {
 					}
 					break;
 			}
+			my_command.sensor_index++;
+			handler->send((uint8_t *) &my_command, sizeof(wifi_eth_packet_command)),
+			n_count++;
 
 		} else {
 			std::this_thread::yield();
