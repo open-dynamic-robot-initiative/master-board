@@ -10,10 +10,12 @@
 #include "spi_quad_packet.h"
 #include "quad_crc.h"
 
+#include "driver/gpio.h"
+
 #include <unistd.h>
 #include "esp_timer.h"
 
-#define useWIFI true
+#define useWIFI false
 
 #define CONFIG_SPI_WDT 20
 
@@ -89,9 +91,17 @@ static void periodic_timer_callback(void* arg)
     if(spi_wdt < CONFIG_SPI_WDT && !spi_stop) {
         p_tx = spi_use_a ? spi_tx_packet_a : spi_tx_packet_b;
     } else {
+        //Stop if we already received the first packet
         spi_stop = wifi_eth_first_recv;
         p_tx = spi_tx_packet_stop;
     }
+
+    if(!gpio_get_level(CONFIG_BUTTON_GPIO)) {
+        spi_stop = false;
+        wifi_eth_first_recv = false;
+    }
+
+    gpio_set_level(CONFIG_LED_GPIO, spi_stop ? 0 : 1);
 
     //Add to queue all transaction
     for(int i=0;i<CONFIG_N_SLAVES;i++) {
@@ -170,6 +180,9 @@ void setup_spi() {
     esp_timer_handle_t periodic_timer;
     ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));
     ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, 1000));
+
+    gpio_set_direction(CONFIG_LED_GPIO, GPIO_MODE_OUTPUT);
+    gpio_set_direction(CONFIG_BUTTON_GPIO, GPIO_MODE_INPUT);
 }
 
 void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len) {
