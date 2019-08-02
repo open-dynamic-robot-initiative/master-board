@@ -34,11 +34,13 @@ void config_demux() {
 
 void spi_prepare_packet(uint16_t *packet, uint16_t index) {
     SPI_REG_u16(packet, SPI_TOTAL_INDEX) = index;
-    packet_set_CRC(packet);
+    
 
     for(int i=0;i<SPI_TOTAL_LEN;i++) {
         packet[i] = SPI_SWAP_DATA_RX(packet[i], 16);
     }
+
+    packet_set_CRC(packet);
 
     SPI_REG_u32(packet, SPI_TOTAL_CRC) = SPI_SWAP_DATA_RX(SPI_REG_u32(packet, SPI_TOTAL_CRC), 32);
 }

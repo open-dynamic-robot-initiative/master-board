@@ -10,12 +10,14 @@
 #include "spi_quad_packet.h"
 #include "quad_crc.h"
 
+#include "driver/gpio.h"
+
 #include <unistd.h>
 #include "esp_timer.h"
 
-#define useWIFI false
+#define useWIFI true
 
-#define CONFIG_SPI_WDT 100
+#define CONFIG_SPI_WDT 20
 
 long int spi_count = 0;
 long int spi_ok[CONFIG_N_SLAVES] = {0};
@@ -23,6 +25,7 @@ long int spi_ok[CONFIG_N_SLAVES] = {0};
 int spi_wdt = 0;
 int spi_stop = false;
 int wifi_eth_first_recv = false;
+int wifi_eth_start_spi = false;
 
 static uint16_t spi_index_trans = 0;
 
@@ -43,15 +46,17 @@ static uint16_t spi_tx_packet_stop[CONFIG_N_SLAVES][SPI_TOTAL_LEN];
 
 struct wifi_eth_packet_command {
     uint16_t command[CONFIG_N_SLAVES][SPI_TOTAL_INDEX];
-    uint16_t sensor_index;
+    uint16_t command_index;
 } __attribute__ ((packed));
 
 struct wifi_eth_packet_sensor {
     struct sensor_data sensor[CONFIG_N_SLAVES];
     uint8_t IMU[18]; //TODO create the appropriate struct
     uint16_t sensor_index;
-    uint16_t last_index
+    uint16_t packet_loss;
 } __attribute__ ((packed));
+
+uint16_t command_index_prev = 0;
 
 
 struct wifi_eth_packet_sensor wifi_eth_tx_data;
@@ -70,6 +75,8 @@ void print_packet(uint8_t *data, int len) {
 
 static void periodic_timer_callback(void* arg)
 {
+    if(!wifi_eth_start_spi) return;
+
     spi_wdt++;
     spi_count++;
 
@@ -89,9 +96,17 @@ static void periodic_timer_callback(void* arg)
     if(spi_wdt < CONFIG_SPI_WDT && !spi_stop) {
         p_tx = spi_use_a ? spi_tx_packet_a : spi_tx_packet_b;
     } else {
+        //Stop if we already received the first packet
         spi_stop = wifi_eth_first_recv;
         p_tx = spi_tx_packet_stop;
     }
+
+    if(!gpio_get_level(CONFIG_BUTTON_GPIO)) {
+        spi_stop = false;
+        wifi_eth_first_recv = false;
+    }
+
+    gpio_set_level(CONFIG_LED_GPIO, spi_stop ? 0 : 1);
 
     //Add to queue all transaction
     for(int i=0;i<CONFIG_N_SLAVES;i++) {
@@ -108,18 +123,9 @@ static void periodic_timer_callback(void* arg)
             while(!spi_is_finished(p_trans[i])) {
                 //Wait for it to be finished
             }
-            
-            /* Flip all the data (Cf endianness) */
-            for(int j=0;j<SPI_TOTAL_LEN;j++) {
-                spi_rx_packet[i][j] = SPI_SWAP_DATA_RX(spi_rx_packet[i][j], 16);
-            }
 
             if(packet_check_CRC(spi_rx_packet[i])) {
                 spi_ok[i]++;
-
-                for(int j=0;j<SPI_TOTAL_LEN;j++) {
-                    spi_rx_packet[i][j] = SPI_SWAP_DATA_RX(spi_rx_packet[i][j], 16);
-                }
 
                 spi_rx_data[i].status = SPI_SWAP_DATA_RX(SPI_REG_u16(spi_rx_packet[i], SPI_SENSOR_STATUS), 16);
                 spi_rx_data[i].timestamp = SPI_SWAP_DATA_RX(SPI_REG_u16(spi_rx_packet[i], SPI_SENSOR_TIMESTAMP), 16);
@@ -136,6 +142,7 @@ static void periodic_timer_callback(void* arg)
 
                 memcpy(&(wifi_eth_tx_data.sensor[i]), &(spi_rx_data[i]), sizeof(struct sensor_data));
             } else {
+                if(i==1) printf("Wrong CRC should be %04X, got %04X\n", packet_compute_CRC(spi_rx_packet[i]), packet_get_CRC(spi_rx_packet[i]));
                 memset(&(wifi_eth_tx_data.sensor[i]), 0, sizeof(struct sensor_data));
             }
             
@@ -161,7 +168,7 @@ void setup_spi() {
         spi_prepare_packet(spi_tx_packet_stop[i], curr_index);
     }
     wifi_eth_tx_data.sensor_index = 0;
-    wifi_eth_tx_data.last_index = 0;
+    wifi_eth_tx_data.packet_loss = 0;
 
     const esp_timer_create_args_t periodic_timer_args = {
             .callback = &periodic_timer_callback,
@@ -170,11 +177,18 @@ void setup_spi() {
     esp_timer_handle_t periodic_timer;
     ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));
     ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, 1000));
+
+    gpio_set_direction(CONFIG_LED_GPIO, GPIO_MODE_OUTPUT);
+    gpio_set_direction(CONFIG_BUTTON_GPIO, GPIO_MODE_INPUT);
 }
 
 void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len) {
     //TODO: Check CRC ?
-    wifi_eth_first_recv = true;
+    if(!wifi_eth_first_recv) {
+        wifi_eth_first_recv = true;
+        wifi_eth_start_spi = true;
+        command_index_prev = ((struct wifi_eth_packet_command*) data)->command_index - 1;
+    }
     
     uint16_t (*to_fill)[SPI_TOTAL_LEN] = spi_use_a ? spi_tx_packet_b : spi_tx_packet_a;
 
@@ -188,7 +202,8 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len) {
         spi_prepare_packet(to_fill[i], curr_index);
     }
 
-    wifi_eth_tx_data.last_index = ((struct wifi_eth_packet_command*) data)->sensor_index;
+    wifi_eth_tx_data.packet_loss += ((struct wifi_eth_packet_command*) data)->command_index - command_index_prev -1;
+    command_index_prev = ((struct wifi_eth_packet_command*) data)->command_index;
 
     spi_wdt = 0;
     spi_use_a = !spi_use_a;

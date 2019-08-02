@@ -7,4 +7,18 @@ menu "Main App"
         help
             Number of SPI slaves to handle.
 
+	config LED_GPIO
+        int "Built-In LED GPIO"
+        default 2
+        range 0 39
+        help
+            Output GPIO on which the built-in led is wired.    
+
+	config BUTTON_GPIO
+	        int "Intput button GPIO"
+	        default 36
+	        range 0 39
+	        help
+	            Input GPIO on which the button (pull-down) is wired.
+
 endmenu
