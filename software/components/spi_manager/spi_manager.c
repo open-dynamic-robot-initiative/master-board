@@ -34,7 +34,6 @@ void config_demux() {
 
 void spi_prepare_packet(uint16_t *packet, uint16_t index) {
     SPI_REG_u16(packet, SPI_TOTAL_INDEX) = index;
-    
 
     for(int i=0;i<SPI_TOTAL_LEN;i++) {
         packet[i] = SPI_SWAP_DATA_RX(packet[i], 16);
@@ -75,6 +74,7 @@ void spi_init() {
         .queue_size=10,                            //We want to be able to queue 7 transactions at a time
         .pre_cb=spi_pre_transfer_callback,        //Specify pre-transfer callback to handle D/C line
         .post_cb=spi_post_transfer_callback,      //Specify pre-transfer callback to handle D/C line
+        .cs_ena_pretrans=16,
     };
 
     //Initialize the SPI bus

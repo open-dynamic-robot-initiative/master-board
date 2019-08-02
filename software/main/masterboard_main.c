@@ -15,17 +15,17 @@
 #include <unistd.h>
 #include "esp_timer.h"
 
-#define useWIFI true
+#define useWIFI false
 
-#define CONFIG_SPI_WDT 20
+#define CONFIG_WIFI_ETH_TIMEOUT_US 20000
 
 long int spi_count = 0;
 long int spi_ok[CONFIG_N_SLAVES] = {0};
 
-int spi_wdt = 0;
-int spi_stop = false;
 int wifi_eth_first_recv = false;
-int wifi_eth_start_spi = false;
+
+volatile bool wifi_eth_packet_received = false;
+volatile uint32_t wifi_eth_last_reception = 0;
 
 static uint16_t spi_index_trans = 0;
 
@@ -73,11 +73,8 @@ void print_packet(uint8_t *data, int len) {
     printf("\n");
 }
 
-static void periodic_timer_callback(void* arg)
+static void send_spi()
 {
-    if(!wifi_eth_start_spi) return;
-
-    spi_wdt++;
     spi_count++;
 
     if(spi_count%1000 == 0) {
@@ -91,22 +88,7 @@ static void periodic_timer_callback(void* arg)
     spi_transaction_t* p_trans[CONFIG_N_SLAVES];
     
     //spi_index_trans++;
-    uint16_t (*p_tx)[SPI_TOTAL_LEN];
-
-    if(spi_wdt < CONFIG_SPI_WDT && !spi_stop) {
-        p_tx = spi_use_a ? spi_tx_packet_a : spi_tx_packet_b;
-    } else {
-        //Stop if we already received the first packet
-        spi_stop = wifi_eth_first_recv;
-        p_tx = spi_tx_packet_stop;
-    }
-
-    if(!gpio_get_level(CONFIG_BUTTON_GPIO)) {
-        spi_stop = false;
-        wifi_eth_first_recv = false;
-    }
-
-    gpio_set_level(CONFIG_LED_GPIO, spi_stop ? 0 : 1);
+    uint16_t (*p_tx)[SPI_TOTAL_LEN] = spi_use_a ? spi_tx_packet_a : spi_tx_packet_b;
 
     //Add to queue all transaction
     for(int i=0;i<CONFIG_N_SLAVES;i++) {
@@ -167,16 +149,9 @@ void setup_spi() {
         memset(spi_tx_packet_stop[i], 0, SPI_TOTAL_INDEX*2);
         spi_prepare_packet(spi_tx_packet_stop[i], curr_index);
     }
+
     wifi_eth_tx_data.sensor_index = 0;
     wifi_eth_tx_data.packet_loss = 0;
-
-    const esp_timer_create_args_t periodic_timer_args = {
-            .callback = &periodic_timer_callback,
-            .name = "spi_send"
-    };
-    esp_timer_handle_t periodic_timer;
-    ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));
-    ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, 1000));
 
     gpio_set_direction(CONFIG_LED_GPIO, GPIO_MODE_OUTPUT);
     gpio_set_direction(CONFIG_BUTTON_GPIO, GPIO_MODE_INPUT);
@@ -186,7 +161,6 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len) {
     //TODO: Check CRC ?
     if(!wifi_eth_first_recv) {
         wifi_eth_first_recv = true;
-        wifi_eth_start_spi = true;
         command_index_prev = ((struct wifi_eth_packet_command*) data)->command_index - 1;
     }
     
@@ -205,8 +179,9 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len) {
     wifi_eth_tx_data.packet_loss += ((struct wifi_eth_packet_command*) data)->command_index - command_index_prev -1;
     command_index_prev = ((struct wifi_eth_packet_command*) data)->command_index;
 
-    spi_wdt = 0;
     spi_use_a = !spi_use_a;
+    wifi_eth_last_reception = esp_timer_get_time();
+    wifi_eth_packet_received = true;
 }
 
 void app_main()
@@ -227,4 +202,28 @@ void app_main()
     
     printf("SPI size %u\n", SPI_TOTAL_LEN*2);
     setup_spi();
+
+    while(true) {
+
+        gpio_set_level(CONFIG_LED_GPIO, true);
+
+        while(!wifi_eth_first_recv) {
+            //Wait
+        }
+
+        while(esp_timer_get_time() - wifi_eth_last_reception < CONFIG_WIFI_ETH_TIMEOUT_US ) {
+            if(wifi_eth_packet_received) {
+                send_spi();
+                wifi_eth_packet_received = false;
+            }
+        }
+
+        gpio_set_level(CONFIG_LED_GPIO, false);
+
+        while(gpio_get_level(CONFIG_BUTTON_GPIO) == true) {
+            //Do nothing
+        }
+
+        wifi_eth_first_recv = false;
+    }
 }
