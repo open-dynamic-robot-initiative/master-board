@@ -24,7 +24,7 @@ long int spi_ok[CONFIG_N_SLAVES] = {0};
 
 int wifi_eth_first_recv = false;
 
-volatile bool wifi_eth_packet_received = false;
+volatile bool wifi_eth_timed_out = false;
 volatile uint32_t wifi_eth_last_reception = 0;
 
 static uint16_t spi_index_trans = 0;
@@ -162,8 +162,21 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len) {
     if(!wifi_eth_first_recv) {
         wifi_eth_first_recv = true;
         command_index_prev = ((struct wifi_eth_packet_command*) data)->command_index - 1;
+        wifi_eth_last_reception = esp_timer_get_time();
     }
-    
+
+    if(esp_timer_get_time() - wifi_eth_last_reception > CONFIG_WIFI_ETH_TIMEOUT_US || wifi_eth_timed_out) {
+        if(gpio_get_level(CONFIG_BUTTON_GPIO) == true) {
+            wifi_eth_timed_out = true;
+            gpio_set_level(CONFIG_LED_GPIO, false);
+        } else {
+            wifi_eth_first_recv = false;
+            wifi_eth_timed_out = false;
+            gpio_set_level(CONFIG_LED_GPIO, false);
+        }
+        return;
+    }
+
     uint16_t (*to_fill)[SPI_TOTAL_LEN] = spi_use_a ? spi_tx_packet_b : spi_tx_packet_a;
 
     for(int i=0;i<CONFIG_N_SLAVES;i++) {
@@ -180,8 +193,7 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len) {
     command_index_prev = ((struct wifi_eth_packet_command*) data)->command_index;
 
     spi_use_a = !spi_use_a;
-    wifi_eth_last_reception = esp_timer_get_time();
-    wifi_eth_packet_received = true;
+    send_spi();
 }
 
 void app_main()
@@ -203,27 +215,5 @@ void app_main()
     printf("SPI size %u\n", SPI_TOTAL_LEN*2);
     setup_spi();
 
-    while(true) {
-
-        gpio_set_level(CONFIG_LED_GPIO, true);
-
-        while(!wifi_eth_first_recv) {
-            //Wait
-        }
-
-        while(esp_timer_get_time() - wifi_eth_last_reception < CONFIG_WIFI_ETH_TIMEOUT_US ) {
-            if(wifi_eth_packet_received) {
-                send_spi();
-                wifi_eth_packet_received = false;
-            }
-        }
-
-        gpio_set_level(CONFIG_LED_GPIO, false);
-
-        while(gpio_get_level(CONFIG_BUTTON_GPIO) == true) {
-            //Do nothing
-        }
-
-        wifi_eth_first_recv = false;
-    }
+    gpio_set_level(CONFIG_LED_GPIO, true);
 }
