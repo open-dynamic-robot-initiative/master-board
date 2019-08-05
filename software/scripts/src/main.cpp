@@ -21,7 +21,7 @@ uint8_t payload[127];
 wifi_eth_packet_command my_command = {0};
 wifi_eth_packet_sensor raw_sensor_packet = {0};
 si_sensor_data uDrivers_si_sensor_data[N_SLAVES]  = {0};
-#define MAX_HIST 10
+#define MAX_HIST 20
 int histogram_lost_sensor_packets[MAX_HIST]; //histogram_lost_packets[0] is the number of single packet loss, histogram_lost_packets[1] is the number of two consecutive packet loss, etc...
 int histogram_lost_cmd_packets[MAX_HIST];    //histogram_lost_packets[0] is the number of single packet loss, histogram_lost_packets[1] is the number of two consecutive packet loss, etc...
 
@@ -54,9 +54,8 @@ uint16_t last_sensor_index = 0;
 uint32_t nb_sensors_sent = 0; //this variable deduce the total number of received sensor packet from sensot index and previous sensor index
 uint32_t nb_sensors_lost = 0; 
 
-uint16_t last_cmd_index = 0;
-uint32_t nb_cmd_sent = 0; 
-uint32_t nb_cmd_lost = 0; 
+uint32_t nb_cmd_lost_offset = -1;
+uint32_t last_cmd_lost = 0; 
 
 void callback(uint8_t src_mac[6], uint8_t *data, int len) {
 	if (len!=190) 
@@ -74,6 +73,13 @@ void callback(uint8_t src_mac[6], uint8_t *data, int len) {
 	{
 		last_sensor_index = raw_sensor_packet.sensor_index -1;
 	}
+	if(last_cmd_lost == 0) {
+		last_cmd_lost = raw_sensor_packet.last_index - 1;
+	}
+	if(nb_cmd_lost_offset > raw_sensor_packet.last_index) {
+		nb_cmd_lost_offset = raw_sensor_packet.last_index;
+	}
+
 	//Check for sensor packet loss
 	uint16_t actual_sensor_packets_loss = raw_sensor_packet.sensor_index - last_sensor_index - 1;
 	nb_sensors_lost+=actual_sensor_packets_loss;
@@ -89,9 +95,9 @@ void callback(uint8_t src_mac[6], uint8_t *data, int len) {
 	
 	
 	//chech for cmd packet loss (This does'nt realy work. for debug raw_sensor_packet.last_index field return the number of lost packet computed in the ESP32, and not the last command packet)
-	uint16_t actual_cmd_packets_loss = my_command.sensor_index - raw_sensor_packet.last_index - 1;
-	nb_cmd_lost+=actual_cmd_packets_loss;
-	nb_cmd_sent+=actual_cmd_packets_loss+1;
+	int16_t actual_cmd_packets_loss = raw_sensor_packet.last_index - last_cmd_lost - 1;
+	last_cmd_lost = raw_sensor_packet.last_index;
+
 	if (actual_cmd_packets_loss>0)
 	{
 		if ((actual_cmd_packets_loss-1)<MAX_HIST)
@@ -123,12 +129,14 @@ void callback(uint8_t src_mac[6], uint8_t *data, int len) {
 			
 		}
 		printf("\n");
-		printf("nb_sensors_sent: %u \n ",nb_sensors_sent);
+		printf("nb_sensors_sent: %u \n",nb_sensors_sent);
+		printf("\n");
 		printf("nb_sensors_lost: %u \n",nb_sensors_lost);
-		printf("sensor-packet-lost: %u \n",actual_sensor_packets_loss);
-		printf("ratio: %2f\n ",100.0*nb_sensors_lost/nb_sensors_sent);
-		printf("\n%d ",raw_sensor_packet.sensor_index);
-		printf("n_cmd_lost: %u \n",raw_sensor_packet.last_index);
+		printf("sensor ratio (lost): %2f\n ",100.0*nb_sensors_lost/nb_sensors_sent);
+		printf("\n");
+		printf("nb_cmd_lost: %u\n",raw_sensor_packet.last_index - nb_cmd_lost_offset);
+		printf("~cmd ratio (lost): %2f\n ",100.0*(raw_sensor_packet.last_index - nb_cmd_lost_offset)/nb_sensors_sent);
+		printf("\n");
 		printf("\nPacket lost in groups of: \n");
 		printf("       \t sensors \t commands \n");
 		for(int i=0;i<MAX_HIST;i++)
