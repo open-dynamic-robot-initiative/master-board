@@ -32,19 +32,6 @@ void config_demux() {
 	gpio_config(&io_conf);
 }
 
-void spi_prepare_packet(uint16_t *packet, uint16_t index) {
-    SPI_REG_u16(packet, SPI_TOTAL_INDEX) = index;
-    
-
-    for(int i=0;i<SPI_TOTAL_LEN;i++) {
-        packet[i] = SPI_SWAP_DATA_RX(packet[i], 16);
-    }
-
-    packet_set_CRC(packet);
-
-    SPI_REG_u32(packet, SPI_TOTAL_CRC) = SPI_SWAP_DATA_RX(SPI_REG_u32(packet, SPI_TOTAL_CRC), 32);
-}
-
 void spi_pre_transfer_callback(spi_transaction_t *trans) {
     uint slave_nb = ((spi_trans_info*) trans->user)->demux_nb;
     gpio_set_level(GPIO_DEMUX_A0, slave_nb&0x1);
