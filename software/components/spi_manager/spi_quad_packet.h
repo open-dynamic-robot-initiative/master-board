@@ -25,12 +25,8 @@
 #define SPI_COMMAND_MODE_EM1 (1<<14)
 //! \brief Enable motor 2
 #define SPI_COMMAND_MODE_EM2 (1<<13)
-//! \brief Calibrate motor 1
-#define SPI_COMMAND_MODE_CALIBRATE_M1 (1<<12)
-//! \brief Calibrate motor 2
-#define SPI_COMMAND_MODE_CALIBRATE_M2 (1<<11)
-//! \brief Raise an error when position rollover
-#define SPI_COMMAND_MODE_ROLLOVER (1<<10)
+//! \brief Raise an error if position rollover
+#define SPI_COMMAND_MODE_EPRE (1<<12)
 //! \brief Disable system if no valid SPI packet is received during this time [in ms]. (0 = disabled)
 #define SPI_COMMAND_MODE_TIMEOUT (0xFF<<0)  //Timeout
 

@@ -208,7 +208,7 @@ int main(int argc, char **argv) {
 					//Initialisation, send the init commands
 					for(int i=0; i<N_SLAVES_CONTROLED; i++)
 					{
-						SPI_REG_u16(my_command.command[i], SPI_COMMAND_MODE) = SPI_COMMAND_MODE_ES | SPI_COMMAND_MODE_EM1 | SPI_COMMAND_MODE_EM2 | SPI_COMMAND_MODE_CALIBRATE_M1 | SPI_COMMAND_MODE_CALIBRATE_M2;
+						SPI_REG_u16(my_command.command[i], SPI_COMMAND_MODE) = SPI_COMMAND_MODE_ES | SPI_COMMAND_MODE_EM1 | SPI_COMMAND_MODE_EM2;
 					}
 					//check the end of calibration (are the all ontrolled motor ready?)
 					state = 1;
