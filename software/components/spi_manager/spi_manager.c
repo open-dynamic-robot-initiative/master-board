@@ -87,13 +87,12 @@ spi_transaction_t *spi_send(int slave, uint8_t *tx_data, uint8_t *rx_data, int l
 	return p_trans;
 }
 
-bool spi_is_finished(spi_transaction_t *trans) {
-    return ((spi_trans_info*) trans->user)->is_finished;
-}
-
-void spi_finish(spi_transaction_t *trans) {
-	if(trans != NULL) {
-        if(trans->user != NULL) free(trans->user);
-        free(trans);  
-    } 
+bool spi_is_finished(spi_transaction_t **p_trans) {
+    if( ((spi_trans_info*) (*p_trans)->user)->is_finished ) {
+        if((*p_trans)->user != NULL) free((*p_trans)->user);
+        free((*p_trans));
+        *p_trans = NULL;
+        return true;
+    }
+    return false;
 }

@@ -20,8 +20,6 @@
 
 #define useWIFI false
 
-#define CONFIG_SPI_WDT 20
-
 long int spi_count = 0;
 long int spi_ok[CONFIG_N_SLAVES] = {0};
 
@@ -104,35 +102,37 @@ static void periodic_timer_callback(void* arg)
     }
 
     /* Wait for transactions to finish */
-    for(int i=0;i<CONFIG_N_SLAVES;i++) {
-        if(p_trans[i] == NULL) {
-          printf("Error with SPI transaction number %d !\n", i);  
-        } else {
-            while(!spi_is_finished(p_trans[i])) {
-                //Wait for it to be finished
-            }
-
-            if(packet_check_CRC(spi_rx_packet[i])) {
-                spi_ok[i]++;
-
-                wifi_eth_tx_data.sensor[i].status = SPI_SWAP_DATA_RX(SPI_REG_u16(spi_rx_packet[i], SPI_SENSOR_STATUS), 16);
-                wifi_eth_tx_data.sensor[i].timestamp = SPI_SWAP_DATA_RX(SPI_REG_u16(spi_rx_packet[i], SPI_SENSOR_TIMESTAMP), 16);
-                wifi_eth_tx_data.sensor[i].position[0] = SPI_SWAP_DATA_RX(SPI_REG_32(spi_rx_packet[i], SPI_SENSOR_POS_1), 32);
-                wifi_eth_tx_data.sensor[i].position[1] = SPI_SWAP_DATA_RX(SPI_REG_32(spi_rx_packet[i], SPI_SENSOR_POS_2), 32);
-                wifi_eth_tx_data.sensor[i].velocity[0] = SPI_SWAP_DATA_RX(SPI_REG_16(spi_rx_packet[i], SPI_SENSOR_VEL_1), 16);
-                wifi_eth_tx_data.sensor[i].velocity[1] = SPI_SWAP_DATA_RX(SPI_REG_16(spi_rx_packet[i], SPI_SENSOR_VEL_2), 16);
-                wifi_eth_tx_data.sensor[i].current[0] = SPI_SWAP_DATA_RX(SPI_REG_16(spi_rx_packet[i], SPI_SENSOR_IQ_1), 16);
-                wifi_eth_tx_data.sensor[i].current[1] = SPI_SWAP_DATA_RX(SPI_REG_16(spi_rx_packet[i], SPI_SENSOR_IQ_2), 16);
-                wifi_eth_tx_data.sensor[i].coil_resistance[0] = SPI_SWAP_DATA_RX(SPI_REG_u16(spi_rx_packet[i], SPI_SENSOR_CR_1), 16);
-                wifi_eth_tx_data.sensor[i].coil_resistance[1] = SPI_SWAP_DATA_RX(SPI_REG_u16(spi_rx_packet[i], SPI_SENSOR_CR_2), 16);
-                wifi_eth_tx_data.sensor[i].adc[0] = SPI_SWAP_DATA_RX(SPI_REG_u16(spi_rx_packet[i], SPI_SENSOR_ADC_1), 16);
-                wifi_eth_tx_data.sensor[i].adc[1] = SPI_SWAP_DATA_RX(SPI_REG_u16(spi_rx_packet[i], SPI_SENSOR_ADC_2), 16);
+    for(int spi_try=0;spi_try<CONFIG_SPI_N_ATTEMPT;spi_try++) {   
+        for(int i=0;i<CONFIG_N_SLAVES;i++) {
+            if(p_trans[i] == NULL) {
+              //Either the transaction failed or there it was not re-sent
             } else {
-                //if(i==1) printf("Wrong CRC should be %04X, got %04X\n", packet_compute_CRC(spi_rx_packet[i]), packet_get_CRC(spi_rx_packet[i]));
-                memset(&(wifi_eth_tx_data.sensor[i]), 0, sizeof(struct sensor_data));
+                while(!spi_is_finished(&(p_trans[i]))) {
+                    //Wait for it to be finished
+                }
+
+                if(packet_check_CRC(spi_rx_packet[i])) {
+                    spi_ok[i]++;
+
+                    wifi_eth_tx_data.sensor[i].status = SPI_SWAP_DATA_RX(SPI_REG_u16(spi_rx_packet[i], SPI_SENSOR_STATUS), 16);
+                    wifi_eth_tx_data.sensor[i].timestamp = SPI_SWAP_DATA_RX(SPI_REG_u16(spi_rx_packet[i], SPI_SENSOR_TIMESTAMP), 16);
+                    wifi_eth_tx_data.sensor[i].position[0] = SPI_SWAP_DATA_RX(SPI_REG_32(spi_rx_packet[i], SPI_SENSOR_POS_1), 32);
+                    wifi_eth_tx_data.sensor[i].position[1] = SPI_SWAP_DATA_RX(SPI_REG_32(spi_rx_packet[i], SPI_SENSOR_POS_2), 32);
+                    wifi_eth_tx_data.sensor[i].velocity[0] = SPI_SWAP_DATA_RX(SPI_REG_16(spi_rx_packet[i], SPI_SENSOR_VEL_1), 16);
+                    wifi_eth_tx_data.sensor[i].velocity[1] = SPI_SWAP_DATA_RX(SPI_REG_16(spi_rx_packet[i], SPI_SENSOR_VEL_2), 16);
+                    wifi_eth_tx_data.sensor[i].current[0] = SPI_SWAP_DATA_RX(SPI_REG_16(spi_rx_packet[i], SPI_SENSOR_IQ_1), 16);
+                    wifi_eth_tx_data.sensor[i].current[1] = SPI_SWAP_DATA_RX(SPI_REG_16(spi_rx_packet[i], SPI_SENSOR_IQ_2), 16);
+                    wifi_eth_tx_data.sensor[i].coil_resistance[0] = SPI_SWAP_DATA_RX(SPI_REG_u16(spi_rx_packet[i], SPI_SENSOR_CR_1), 16);
+                    wifi_eth_tx_data.sensor[i].coil_resistance[1] = SPI_SWAP_DATA_RX(SPI_REG_u16(spi_rx_packet[i], SPI_SENSOR_CR_2), 16);
+                    wifi_eth_tx_data.sensor[i].adc[0] = SPI_SWAP_DATA_RX(SPI_REG_u16(spi_rx_packet[i], SPI_SENSOR_ADC_1), 16);
+                    wifi_eth_tx_data.sensor[i].adc[1] = SPI_SWAP_DATA_RX(SPI_REG_u16(spi_rx_packet[i], SPI_SENSOR_ADC_2), 16);
+                } else {
+                    //transaction failed, try to re-send
+                    if(spi_try+1<CONFIG_SPI_N_ATTEMPT) p_trans[i] = spi_send(i, (uint8_t*) p_tx[i], (uint8_t*) spi_rx_packet[i], SPI_TOTAL_LEN*2);
+
+                    memset(&(wifi_eth_tx_data.sensor[i]), 0, sizeof(struct sensor_data));
+                }
             }
-            
-            spi_finish(p_trans[i]);
         }
     }
 
@@ -177,7 +177,6 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len) {
         wifi_eth_start_spi = true;
         command_index_prev = packet_recv->command_index - 1;
     }
-    
 
     /* Prepare SPI packets */
     uint16_t (*to_fill)[SPI_TOTAL_LEN] = spi_use_a ? spi_tx_packet_b : spi_tx_packet_a;
@@ -197,7 +196,6 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len) {
         SPI_REG_u16(to_fill[i], SPI_COMMAND_ISAT_12) = SPI_SWAP_DATA_TX(packet_recv->command[i].isat, 16);
     }
     spi_use_a = !spi_use_a;
-
 
     /* Compute data for next wifi_eth_sensor packet */
     wifi_eth_tx_data.packet_loss += ((struct wifi_eth_packet_command*) data)->command_index - command_index_prev -1;
