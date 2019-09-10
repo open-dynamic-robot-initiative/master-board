@@ -12,6 +12,7 @@
 
 int imu_init();
 int parse_IMU_data();
+void print_imu();
 
 uint16_t get_acc_x_in_D16QN();
 uint16_t get_acc_y_in_D16QN();

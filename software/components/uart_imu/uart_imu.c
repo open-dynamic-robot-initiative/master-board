@@ -111,16 +111,31 @@ inline int parse_IMU_data()
 }
 
 uint16_t get_acc_x_in_D16QN() { return FLOAT_TO_D16QN(imu.acc_x.f, IMU_QN_ACC); }
-uint16_t get_acc_y_in_D16QN() { return FLOAT_TO_D16QN(imu.acc_x.f, IMU_QN_ACC); }
-uint16_t get_acc_z_in_D16QN() { return FLOAT_TO_D16QN(imu.acc_x.f, IMU_QN_ACC); }
+uint16_t get_acc_y_in_D16QN() { return FLOAT_TO_D16QN(imu.acc_y.f, IMU_QN_ACC); }
+uint16_t get_acc_z_in_D16QN() { return FLOAT_TO_D16QN(imu.acc_z.f, IMU_QN_ACC); }
 
-uint16_t get_gyr_x_in_D16QN() { return FLOAT_TO_D16QN(imu.acc_x.f, IMU_QN_GYR); }
-uint16_t get_gyr_y_in_D16QN() { return FLOAT_TO_D16QN(imu.acc_x.f, IMU_QN_GYR); }
-uint16_t get_gyr_z_in_D16QN() { return FLOAT_TO_D16QN(imu.acc_x.f, IMU_QN_GYR); }
+uint16_t get_gyr_x_in_D16QN() { return FLOAT_TO_D16QN(imu.gyr_x.f, IMU_QN_GYR); }
+uint16_t get_gyr_y_in_D16QN() { return FLOAT_TO_D16QN(imu.gyr_y.f, IMU_QN_GYR); }
+uint16_t get_gyr_z_in_D16QN() { return FLOAT_TO_D16QN(imu.gyr_z.f, IMU_QN_GYR); }
 
 uint16_t get_roll_in_D16QN() { return FLOAT_TO_D16QN(imu.roll.f, IMU_QN_EF); }
 uint16_t get_pitch_in_D16QN() { return FLOAT_TO_D16QN(imu.pitch.f, IMU_QN_EF); }
 uint16_t get_yaw_in_D16QN() { return FLOAT_TO_D16QN(imu.yaw.f, IMU_QN_EF); }
+
+void print_imu()
+{
+    printf("\n%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t",
+           imu.acc_x.f,
+           imu.acc_y.f,
+           imu.acc_z.f,
+           imu.gyr_x.f,
+           imu.gyr_y.f,
+           imu.gyr_z.f,
+           imu.roll.f,
+           imu.pitch.f,
+           imu.yaw.f);
+}
+
 
 int imu_init()
 {
@@ -188,16 +203,7 @@ int imu_init()
   while (0) //for debug
   {
     parse_IMU_data();
-    printf("\n%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f",
-           imu.acc_x.f,
-           imu.acc_y.f,
-           imu.acc_z.f,
-           imu.gyr_x.f,
-           imu.gyr_y.f,
-           imu.gyr_z.f,
-           imu.roll.f,
-           imu.pitch.f,
-           imu.yaw.f);
+    print_imu();
     vTaskDelay(10);
   }
   return 0;
