@@ -12,6 +12,18 @@ uint16_t coil_resistance[2];
 uint16_t adc[2];
 }__attribute__ ((packed));
 
+struct raw_imu_data {
+	int16_t accelerometer[3];
+	int16_t gyroscope[3];
+	int16_t attitude[3];
+} __attribute__((packed));
+
+struct si_imu_data {
+	float accelerometer[3];
+	float gyroscope[3];
+	float attitude[3];
+} __attribute__((packed));
+
 struct si_sensor_data {
 	uint16_t status;
 	uint16_t timestamp;// to be removed
@@ -30,7 +42,7 @@ struct si_sensor_data {
 
 struct wifi_eth_packet_sensor {
     struct raw_sensor_data raw_uDriver_sensor_data[N_SLAVES];
-    uint8_t IMU[18]; //TODO create the appropriate struct
+    struct raw_imu_data imu;
     uint16_t sensor_index;
     uint16_t last_index;
 } __attribute__ ((packed));

@@ -39,6 +39,10 @@
 #define SPI_QN_KP   16
 #define SPI_QN_KD   16
 
+#define IMU_QN_ACC 11
+#define IMU_QN_GYR 11
+#define IMU_QN_EF 13
+
 /* Position of the values in the sensor packet */
 #define SPI_SENSOR_STATUS 0
 #define SPI_SENSOR_TIMESTAMP 1
