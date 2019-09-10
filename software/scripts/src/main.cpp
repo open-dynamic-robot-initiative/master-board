@@ -122,6 +122,10 @@ void callback(uint8_t src_mac[6], uint8_t *data, int len)
 	if (nb_recv % 100 == 0)
 	{
 		printf("\e[1;1H\e[2J");
+		for (int i=0;i<len;i++)
+		{
+			printf(" %02x",data[i]);
+		}
 		for (int i = 0; i < N_SLAVES; i++)
 		{
 			printf("\n%d ", i);
@@ -140,7 +144,7 @@ void callback(uint8_t src_mac[6], uint8_t *data, int len)
 			printf("cur1:%8f ", uDrivers_si_sensor_data[i].current[0]);
 			printf("cur2:%8f ", uDrivers_si_sensor_data[i].current[1]);
 		}
-		printf("\nIMU:%8f %8f %8f %8f %8f %8f ",
+		printf("\nIMU:%8f %8f %8f %8f %8f %8f %8f %8f %8f",
 					 my_imu_si_data.accelerometer[0],
 					 my_imu_si_data.accelerometer[1],
 					 my_imu_si_data.accelerometer[2],
@@ -212,14 +216,17 @@ int main(int argc, char **argv)
 	float vel_errB[N_SLAVES_CONTROLED] = {0};
 	float iqB[N_SLAVES_CONTROLED] = {0};
 
-	float Kp = 3.0;
+	float Kp = 4.0;
 	float Kd = 1.0;
-	float iq_sat = 2.0;
-	float PI = 3.14; //todo find PI
+	float iq_sat = 3.0;
+	float PI = 3.14159265359; //todo find PI
 	float freq = 1;
 	float t = 0;
 	while (1)
 	{
+		//~ float pos_ref = 
+		float pos_ref = 9.0*my_imu_si_data.attitude[2]/(2*PI);
+		
 		if (((std::chrono::duration<double>)(std::chrono::system_clock::now() - last)).count() > 0.001)
 		{
 
@@ -250,7 +257,7 @@ int main(int argc, char **argv)
 				{
 					if (uDrivers_si_sensor_data[i].is_system_enabled)
 					{
-						pos_refA[i] = sin(2 * PI * freq * t);
+						pos_refA[i] = pos_ref;//sin(2 * PI * freq * t);
 						pos_errA[i] = pos_refA[i] - uDrivers_si_sensor_data[i].position[0];
 						vel_errA[i] = vel_refA[i] - uDrivers_si_sensor_data[i].velocity[0];
 						iqA[i] = Kp * pos_errA[i] + Kd * vel_errA[i];
@@ -259,7 +266,7 @@ int main(int argc, char **argv)
 						if (iqA[i] < -iq_sat)
 							iqA[i] = -iq_sat;
 
-						pos_refB[i] = sin(2 * PI * freq * t);
+						pos_refB[i] = pos_ref;//sin(2 * PI * freq * t);
 						pos_errB[i] = pos_refB[i] - uDrivers_si_sensor_data[i].position[1];
 						vel_errB[i] = vel_refB[i] - uDrivers_si_sensor_data[i].velocity[1];
 						iqB[i] = Kp * pos_errB[i] + Kd * vel_errB[i];

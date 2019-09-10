@@ -1,6 +1,6 @@
 
 #define N_SLAVES 6
-#define N_SLAVES_CONTROLED 2
+#define N_SLAVES_CONTROLED 1
 
 struct raw_sensor_data {
 uint16_t status;
