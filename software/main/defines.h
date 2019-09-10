@@ -23,6 +23,12 @@ struct command_data {
 	uint16_t isat;
 } __attribute__((packed));
 
+struct imu_data {
+	int16_t accelerometer[3];
+	int16_t gyroscope[3];
+	int16_t attitude[3];
+} __attribute__((packed));
+
 
 struct wifi_eth_packet_command {
     struct command_data command[CONFIG_N_SLAVES];
@@ -31,7 +37,7 @@ struct wifi_eth_packet_command {
 
 struct wifi_eth_packet_sensor {
     struct sensor_data sensor[CONFIG_N_SLAVES];
-    uint8_t IMU[18]; //TODO create the appropriate struct
+    struct imu_data imu;
     uint16_t sensor_index;
     uint16_t packet_loss;
 } __attribute__ ((packed));

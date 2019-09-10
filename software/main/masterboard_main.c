@@ -15,6 +15,7 @@
 #include "spi_manager.h"
 #include "spi_quad_packet.h"
 #include "quad_crc.h"
+#include "uart_imu.h"
 
 #include "defines.h"
 
@@ -29,8 +30,6 @@ int wifi_eth_first_recv = false;
 int wifi_eth_start_spi = false;
 
 static uint16_t spi_index_trans = 0;
-
-static uint16_t curr_index = 0;
 
 static uint16_t spi_rx_packet[CONFIG_N_SLAVES][SPI_TOTAL_LEN+1]; //SPI write DMA by blocks of 32bits. +1 prevents any overflow
 
@@ -94,14 +93,33 @@ static void periodic_timer_callback(void* arg)
 
 
     /* Complete and send each packet */
+
+    //for debug:
+    if (spi_count%1000==0) 
+    {
+        printf("\nlast CMD packet:\n");
+        print_packet(p_tx[0],SPI_TOTAL_LEN*2);
+    }
     for(int i=0;i<CONFIG_N_SLAVES;i++) {
         SPI_REG_u16(p_tx[i], SPI_TOTAL_INDEX) = SPI_SWAP_DATA_TX(spi_index_trans, 16);
         SPI_REG_u32(p_tx[i], SPI_TOTAL_CRC) = SPI_SWAP_DATA_TX(packet_compute_CRC(p_tx[i]), 32);
-
         p_trans[i] = spi_send(i, (uint8_t*) p_tx[i], (uint8_t*) spi_rx_packet[i], SPI_TOTAL_LEN*2);
     }
+    /* Get IMU latest data*/
+    parse_IMU_data();
+    wifi_eth_tx_data.imu.accelerometer[0]=get_acc_x_in_D16QN;
+    wifi_eth_tx_data.imu.accelerometer[1]=get_acc_y_in_D16QN;
+    wifi_eth_tx_data.imu.accelerometer[2]=get_acc_z_in_D16QN;
 
-    /* Wait for transactions to finish */
+    wifi_eth_tx_data.imu.gyroscope[0]=get_gyr_x_in_D16QN;
+    wifi_eth_tx_data.imu.gyroscope[1]=get_gyr_y_in_D16QN;
+    wifi_eth_tx_data.imu.gyroscope[2]=get_gyr_z_in_D16QN;
+
+    wifi_eth_tx_data.imu.attitude[0]=get_roll_in_D16QN;
+    wifi_eth_tx_data.imu.attitude[1]=get_pitch_in_D16QN;
+    wifi_eth_tx_data.imu.attitude[2]=get_yaw_in_D16QN;
+
+    /* Wait for SPI transactions to finish */
     for(int spi_try=0;spi_try<CONFIG_SPI_N_ATTEMPT;spi_try++) {   
         for(int i=0;i<CONFIG_N_SLAVES;i++) {
             if(p_trans[i] == NULL) {
@@ -113,7 +131,12 @@ static void periodic_timer_callback(void* arg)
 
                 if(packet_check_CRC(spi_rx_packet[i])) {
                     spi_ok[i]++;
-
+                    //for debug:
+                    if (spi_count%1000==0 && i==0) 
+                    {
+                        printf("\nlast SENSOR packet:\n");
+                        print_packet(spi_rx_packet[i],SPI_TOTAL_LEN*2);
+                    }
                     wifi_eth_tx_data.sensor[i].status = SPI_SWAP_DATA_RX(SPI_REG_u16(spi_rx_packet[i], SPI_SENSOR_STATUS), 16);
                     wifi_eth_tx_data.sensor[i].timestamp = SPI_SWAP_DATA_RX(SPI_REG_u16(spi_rx_packet[i], SPI_SENSOR_TIMESTAMP), 16);
                     wifi_eth_tx_data.sensor[i].position[0] = SPI_SWAP_DATA_RX(SPI_REG_32(spi_rx_packet[i], SPI_SENSOR_POS_1), 32);
@@ -208,12 +231,21 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len) {
 
 void app_main()
 {
+    uart_set_baudrate(UART_NUM_0, 2000000);
     nvs_flash_init();
 
     //printf("The core is : %d\n",xPortGetCoreID());
 
     printf("ETH/WIFI command size %u\n", sizeof(struct wifi_eth_packet_command));
     printf("ETH/WIFI sensor size %u\n", sizeof(struct wifi_eth_packet_sensor));
+
+    printf("SPI size %u\n", SPI_TOTAL_LEN*2);
+    setup_spi();
+
+    printf("initialise IMU\n");
+    imu_init();
+    printf("done?\n");
+
     if(useWIFI) {
         wifi_init();
         wifi_attach_recv_cb(wifi_eth_receive_cb);
@@ -221,7 +253,4 @@ void app_main()
         eth_attach_recv_cb(wifi_eth_receive_cb);
         eth_init();
     }
-    
-    printf("SPI size %u\n", SPI_TOTAL_LEN*2);
-    setup_spi();
 }
