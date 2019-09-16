@@ -12,5 +12,6 @@ The version 2 is under developpment:
  Wish list:
  * Add a RGB LED to ease the feedback while developping.
  * make a dedicated IMU connector
+ * Add a 5V regulator to power 3DM-CX5-25
  * Switch to a more capable 3.3V voltage regulator
  
