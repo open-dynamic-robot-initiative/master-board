@@ -12,6 +12,10 @@ Etienne Arlaud
 #include <math.h>
 #include <defines.h>
 
+#include <stdio.h>
+#include <sys/stat.h>
+
+#define PI 3.141592654
 static uint8_t my_mac[6] = {0xa0, 0x1d, 0x48, 0x12, 0xa0, 0xc5};	 //{0xF8, 0x1A, 0x67, 0xb7, 0xEB, 0x0B};
 static uint8_t dest_mac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}; //Broatcast to prevent acknoledgment behaviour
 
@@ -28,12 +32,27 @@ si_imu_data my_imu_si_data = {0};
 int histogram_lost_sensor_packets[MAX_HIST]; //histogram_lost_packets[0] is the number of single packet loss, histogram_lost_packets[1] is the number of two consecutive packet loss, etc...
 int histogram_lost_cmd_packets[MAX_HIST];		 //histogram_lost_packets[0] is the number of single packet loss, histogram_lost_packets[1] is the number of two consecutive packet loss, etc...
 
+FILE *log_file;
+int fd_log_file;
 void print_hex_table(uint8_t *data, int len)
 {
 	for (int i = 0; i < len; i++)
 		printf("%x ", data[i]);
 }
 
+void print_imu_data(si_imu_data data)
+{
+	printf("\nIMU:%8f %8f %8f %8f %8f %8f %8f %8f %8f",
+				 data.accelerometer[0],
+				 data.accelerometer[1],
+				 data.accelerometer[2],
+				 data.gyroscope[0],
+				 data.gyroscope[1],
+				 data.gyroscope[2],
+				 data.attitude[0],
+				 data.attitude[1],
+				 data.attitude[2]);
+}
 void convert_raw_to_si_sensor_data(raw_sensor_data raw, si_sensor_data &si)
 {
 	si.is_system_enabled = raw.status & SPI_SENSOR_STATUS_SE;
@@ -62,7 +81,7 @@ void convert_raw_to_si_imu_data(raw_imu_data raw, si_imu_data &si)
 
 uint16_t nb_recv = 0;
 uint16_t last_sensor_index = 0;
-uint32_t nb_sensors_sent = 0; //this variable deduce the total number of received sensor packet from sensot index and previous sensor index
+uint32_t nb_sensors_sent = 0; //this variable deduce the total number of received sensor packet from sensor index and previous sensor index
 uint32_t nb_sensors_lost = 0;
 
 uint32_t nb_cmd_lost_offset = -1;
@@ -122,10 +141,6 @@ void callback(uint8_t src_mac[6], uint8_t *data, int len)
 	if (nb_recv % 100 == 0)
 	{
 		printf("\e[1;1H\e[2J");
-		for (int i=0;i<len;i++)
-		{
-			printf(" %02x",data[i]);
-		}
 		for (int i = 0; i < N_SLAVES; i++)
 		{
 			printf("\n%d ", i);
@@ -144,16 +159,7 @@ void callback(uint8_t src_mac[6], uint8_t *data, int len)
 			printf("cur1:%8f ", uDrivers_si_sensor_data[i].current[0]);
 			printf("cur2:%8f ", uDrivers_si_sensor_data[i].current[1]);
 		}
-		printf("\nIMU:%8f %8f %8f %8f %8f %8f %8f %8f %8f",
-					 my_imu_si_data.accelerometer[0],
-					 my_imu_si_data.accelerometer[1],
-					 my_imu_si_data.accelerometer[2],
-					 my_imu_si_data.gyroscope[0],
-					 my_imu_si_data.gyroscope[1],
-					 my_imu_si_data.gyroscope[2],
-					 my_imu_si_data.attitude[0],
-					 my_imu_si_data.attitude[1],
-					 my_imu_si_data.attitude[2]);
+		print_imu_data(my_imu_si_data);
 		printf("\n");
 		printf("nb_sensors_sent: %u \n", nb_sensors_sent);
 		printf("\n");
@@ -172,11 +178,45 @@ void callback(uint8_t src_mac[6], uint8_t *data, int len)
 	}
 
 	fflush(stdout);
+
+	/*log imu*/
+	fprintf(log_file, "%8f, %8f, %8f, %8f, %8f\n",
+					-my_imu_si_data.attitude[2],
+					uDrivers_si_sensor_data[0].position[1] * 2 * PI,
+					-my_imu_si_data.gyroscope[2],
+					uDrivers_si_sensor_data[0].velocity[1] * (2 * PI / 60.0) * 1000.0,
+					uDrivers_si_sensor_data[0].position[0] * 2 * PI);
+	//fprintf(log_file,"Yaw, PositionM2, GyrZ, VelocityM2, PositionM1\n");
 }
 
 int main(int argc, char **argv)
 {
 	assert(argc > 1);
+	log_file = NULL;
+	if (argc > 2)
+	{
+		log_file = fopen(argv[2], "w");
+		//fprintf(log_file,"Ax, Ay, Az, Gx, Gy, Gz, R, P, Y\n");
+		fprintf(log_file, "Yaw, PositionM2, GyrZ, VelocityM2, PositionM1\n");
+		if (log_file == NULL)
+		{
+			printf("Could not write to '%s', do data will be saved! Continue? (Y/N)", argv[2]);
+			char c = getchar();
+			if (c == 'n' || c == 'N')
+			{
+				exit(1);
+			}
+		}
+		else
+		{
+			chmod(argv[2], S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
+			printf("All data will be saved to '%s'", argv[2]);
+		}
+	}
+	else
+	{
+		printf("No output file specified, data will not be saved");
+	}
 	nice(-20);
 	argv[1];
 	printf("Payload size : %ld\n", sizeof(wifi_eth_packet_command));
@@ -216,17 +256,13 @@ int main(int argc, char **argv)
 	float vel_errB[N_SLAVES_CONTROLED] = {0};
 	float iqB[N_SLAVES_CONTROLED] = {0};
 
-	float Kp = 4.0;
+	float Kp = 3.0;
 	float Kd = 1.0;
-	float iq_sat = 3.0;
-	float PI = 3.14159265359; //todo find PI
+	float iq_sat = 2.0;
 	float freq = 1;
 	float t = 0;
 	while (1)
 	{
-		//~ float pos_ref = 
-		float pos_ref = 9.0*my_imu_si_data.attitude[2]/(2*PI);
-		
 		if (((std::chrono::duration<double>)(std::chrono::system_clock::now() - last)).count() > 0.001)
 		{
 
@@ -257,7 +293,7 @@ int main(int argc, char **argv)
 				{
 					if (uDrivers_si_sensor_data[i].is_system_enabled)
 					{
-						pos_refA[i] = pos_ref;//sin(2 * PI * freq * t);
+						pos_refA[i] = sin(2 * PI * freq * t);
 						pos_errA[i] = pos_refA[i] - uDrivers_si_sensor_data[i].position[0];
 						vel_errA[i] = vel_refA[i] - uDrivers_si_sensor_data[i].velocity[0];
 						iqA[i] = Kp * pos_errA[i] + Kd * vel_errA[i];
@@ -266,7 +302,7 @@ int main(int argc, char **argv)
 						if (iqA[i] < -iq_sat)
 							iqA[i] = -iq_sat;
 
-						pos_refB[i] = pos_ref;//sin(2 * PI * freq * t);
+						pos_refB[i] = sin(2 * PI * freq * t);
 						pos_errB[i] = pos_refB[i] - uDrivers_si_sensor_data[i].position[1];
 						vel_errB[i] = vel_refB[i] - uDrivers_si_sensor_data[i].velocity[1];
 						iqB[i] = Kp * pos_errB[i] + Kd * vel_errB[i];
@@ -297,6 +333,6 @@ int main(int argc, char **argv)
 			std::this_thread::yield();
 		}
 	}
-
+	fclose(log_file);
 	handler->end();
 }
