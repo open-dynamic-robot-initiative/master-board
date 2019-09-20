@@ -60,6 +60,10 @@ void convert_raw_to_si_sensor_data(raw_sensor_data raw, si_sensor_data &si)
 	si.is_motor_enabled[1] = raw.status & SPI_SENSOR_STATUS_M2E;
 	si.is_motor_ready[0] = raw.status & SPI_SENSOR_STATUS_M1R;
 	si.is_motor_ready[1] = raw.status & SPI_SENSOR_STATUS_M2R;
+	si.has_index_been_detected[0] = raw.status & SPI_SENSOR_STATUS_IDX1D;
+	si.has_index_been_detected[1] = raw.status & SPI_SENSOR_STATUS_IDX2D;
+	si.index_toggle_bit[0]=raw.status & SPI_SENSOR_STATUS_IDX1T;
+	si.index_toggle_bit[1]=raw.status & SPI_SENSOR_STATUS_IDX2T;
 	si.error_code = raw.status & SPI_SENSOR_STATUS_ERROR;
 	si.position[0] = D32QN_TO_FLOAT(raw.position[0], SPI_QN_POS);
 	si.position[1] = D32QN_TO_FLOAT(raw.position[1], SPI_QN_POS);
@@ -150,7 +154,10 @@ void callback(uint8_t src_mac[6], uint8_t *data, int len)
 			printf("M2E:%d ", uDrivers_si_sensor_data[i].is_motor_enabled[1]);
 			printf("M1R:%d ", uDrivers_si_sensor_data[i].is_motor_ready[0]);
 			printf("M2R:%d ", uDrivers_si_sensor_data[i].is_motor_ready[1]);
-
+			printf("IDX1D:%d ", uDrivers_si_sensor_data[i].has_index_been_detected[0]);
+			printf("IDX2D:%d ", uDrivers_si_sensor_data[i].has_index_been_detected[1]);
+			printf("IDX1T:%d ", uDrivers_si_sensor_data[i].index_toggle_bit[0]);
+			printf("IDX2T:%d ", uDrivers_si_sensor_data[i].index_toggle_bit[1]);
 			printf("timestamp:%8x ", uDrivers_si_sensor_data[i].timestamp);
 			printf("pos1:%8f ", uDrivers_si_sensor_data[i].position[0]);
 			printf("pos2:%8f ", uDrivers_si_sensor_data[i].position[1]);
@@ -275,7 +282,7 @@ int main(int argc, char **argv)
 				//Initialisation, send the init commands
 				for (int i = 0; i < N_SLAVES_CONTROLED; i++)
 				{
-					SPI_REG_u16(my_command.command[i], SPI_COMMAND_MODE) = SPI_COMMAND_MODE_ES | SPI_COMMAND_MODE_EM1 | SPI_COMMAND_MODE_EM2;
+					SPI_REG_u16(my_command.command[i], SPI_COMMAND_MODE) = SPI_COMMAND_MODE_ES | SPI_COMMAND_MODE_EM1 | SPI_COMMAND_MODE_EM2 ; // | SPI_COMMAND_MODE_EI1OC | SPI_COMMAND_MODE_EI2OC
 				}
 				//check the end of calibration (are the all ontrolled motor ready?)
 				state = 1;
@@ -311,7 +318,7 @@ int main(int argc, char **argv)
 						if (iqB[i] < -iq_sat)
 							iqB[i] = -iq_sat;
 
-						SPI_REG_u16(my_command.command[i], SPI_COMMAND_MODE) = SPI_COMMAND_MODE_ES | SPI_COMMAND_MODE_EM1 | SPI_COMMAND_MODE_EM2;
+						SPI_REG_u16(my_command.command[i], SPI_COMMAND_MODE) = SPI_COMMAND_MODE_ES | SPI_COMMAND_MODE_EM1 | SPI_COMMAND_MODE_EM2 ; //| SPI_COMMAND_MODE_EI1OC | SPI_COMMAND_MODE_EI2OC
 						SPI_REG_16(my_command.command[i], SPI_COMMAND_IQ_1) = FLOAT_TO_D16QN(iqA[i], SPI_QN_IQ);
 						SPI_REG_16(my_command.command[i], SPI_COMMAND_IQ_2) = FLOAT_TO_D16QN(iqB[i], SPI_QN_IQ);
 						my_command.command[i][SPI_COMMAND_MODE] &= 0xff00; //Set timeout to 0

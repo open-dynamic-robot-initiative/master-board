@@ -30,6 +30,8 @@ struct si_sensor_data {
 	bool is_system_enabled; 
 	bool is_motor_enabled[2];
 	bool is_motor_ready[2];
+	bool has_index_been_detected[2];
+	bool index_toggle_bit[2];
 	uint8_t error_code;  
 	float position[2];
 	float velocity[2];

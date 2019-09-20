@@ -26,6 +26,10 @@
 #define SPI_COMMAND_MODE_EM2 (1<<13)
 //! \brief Raise an error if position rollover
 #define SPI_COMMAND_MODE_EPRE (1<<12)
+//! \brief Enable Index Offset Compensation for Motor 1
+#define SPI_COMMAND_MODE_EI1OC (1<<11)
+//! \brief Enable Index Offset Compensation for Motor 2
+#define SPI_COMMAND_MODE_EI2OC (1<<10)
 //! \brief Disable system if no valid SPI packet is received during this time [in ms]. (0 = disabled)
 #define SPI_COMMAND_MODE_TIMEOUT (0xFF<<0)  //Timeout
 
@@ -68,6 +72,15 @@
 #define SPI_SENSOR_STATUS_M2E (1<<12)
 //! \brief Motor 2 is ready
 #define SPI_SENSOR_STATUS_M2R (1<<11)
+//! \brief Encoder 1 index has been detected
+#define SPI_SENSOR_STATUS_IDX1D (1<<10)
+//! \brief Encoder 2 index has been detected
+#define SPI_SENSOR_STATUS_IDX2D (1<<9)
+//! \brief Flips each time encoder 1 index is detected
+#define SPI_SENSOR_STATUS_IDX1T (1<<8)
+//! \brief Flips each time encoder 1 index is detected
+#define SPI_SENSOR_STATUS_IDX2T (1<<7)
+
 //! \brief Error code
 #define SPI_SENSOR_STATUS_ERROR (0xF<<0)
 
