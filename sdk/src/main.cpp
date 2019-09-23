@@ -6,7 +6,7 @@ Etienne Arlaud
 
 #include "ESPNOW_manager.h"
 #include "ETHERNET_manager.h"
-#include "spi_quad_packet.h"
+#include "protocol.h"
 
 #include <chrono>
 #include <math.h>
@@ -22,11 +22,11 @@ static uint8_t dest_mac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}; //Broatcast t
 LINK_manager *handler;
 uint8_t payload[127];
 
-wifi_eth_packet_command my_command = {0};
-wifi_eth_packet_sensor raw_sensor_packet = {0};
-si_sensor_data uDrivers_si_sensor_data[N_SLAVES] = {0};
+command_packet_t command_packet = {0};
+sensor_packet_t sensor_packet = {0};
+dual_motor_driver_sensor_data_t dual_motor_driver_sensor_data[N_SLAVES] = {0};
 
-si_imu_data my_imu_si_data = {0};
+imu_data_t imu_data = {0};
 
 #define MAX_HIST 20
 int histogram_lost_sensor_packets[MAX_HIST]; //histogram_lost_packets[0] is the number of single packet loss, histogram_lost_packets[1] is the number of two consecutive packet loss, etc...
@@ -34,13 +34,14 @@ int histogram_lost_cmd_packets[MAX_HIST];		 //histogram_lost_packets[0] is the n
 
 FILE *log_file;
 int fd_log_file;
+
 void print_hex_table(uint8_t *data, int len)
 {
 	for (int i = 0; i < len; i++)
 		printf("%x ", data[i]);
 }
 
-void print_imu_data(si_imu_data data)
+void print_imu_data(imu_data_t data)
 {
 	printf("\nIMU:%8f %8f %8f %8f %8f %8f %8f %8f %8f",
 				 data.accelerometer[0],
@@ -53,27 +54,27 @@ void print_imu_data(si_imu_data data)
 				 data.attitude[1],
 				 data.attitude[2]);
 }
-void convert_raw_to_si_sensor_data(raw_sensor_data raw, si_sensor_data &si)
+void convert_raw_to_si_sensor_data(dual_motor_driver_sensor_packet_t raw, dual_motor_driver_sensor_data_t &si)
 {
-	si.is_system_enabled = raw.status & SPI_SENSOR_STATUS_SE;
-	si.is_motor_enabled[0] = raw.status & SPI_SENSOR_STATUS_M1E;
-	si.is_motor_enabled[1] = raw.status & SPI_SENSOR_STATUS_M2E;
-	si.is_motor_ready[0] = raw.status & SPI_SENSOR_STATUS_M1R;
-	si.is_motor_ready[1] = raw.status & SPI_SENSOR_STATUS_M2R;
-	si.has_index_been_detected[0] = raw.status & SPI_SENSOR_STATUS_IDX1D;
-	si.has_index_been_detected[1] = raw.status & SPI_SENSOR_STATUS_IDX2D;
-	si.index_toggle_bit[0]=raw.status & SPI_SENSOR_STATUS_IDX1T;
-	si.index_toggle_bit[1]=raw.status & SPI_SENSOR_STATUS_IDX2T;
-	si.error_code = raw.status & SPI_SENSOR_STATUS_ERROR;
-	si.position[0] = D32QN_TO_FLOAT(raw.position[0], SPI_QN_POS);
-	si.position[1] = D32QN_TO_FLOAT(raw.position[1], SPI_QN_POS);
-	si.velocity[0] = D32QN_TO_FLOAT(raw.velocity[0], SPI_QN_VEL);
-	si.velocity[1] = D32QN_TO_FLOAT(raw.velocity[1], SPI_QN_VEL);
-	si.current[0] = D32QN_TO_FLOAT(raw.current[0], SPI_QN_IQ);
-	si.current[1] = D32QN_TO_FLOAT(raw.current[1], SPI_QN_IQ);
+	si.is_system_enabled = raw.status & UD_SENSOR_STATUS_SE;
+	si.is_motor_enabled[0] = raw.status & UD_SENSOR_STATUS_M1E;
+	si.is_motor_enabled[1] = raw.status & UD_SENSOR_STATUS_M2E;
+	si.is_motor_ready[0] = raw.status & UD_SENSOR_STATUS_M1R;
+	si.is_motor_ready[1] = raw.status & UD_SENSOR_STATUS_M2R;
+	si.has_index_been_detected[0] = raw.status & UD_SENSOR_STATUS_IDX1D;
+	si.has_index_been_detected[1] = raw.status & UD_SENSOR_STATUS_IDX2D;
+	si.index_toggle_bit[0] = raw.status & UD_SENSOR_STATUS_IDX1T;
+	si.index_toggle_bit[1] = raw.status & UD_SENSOR_STATUS_IDX2T;
+	si.error_code = raw.status & UD_SENSOR_STATUS_ERROR;
+	si.position[0] = D32QN_TO_FLOAT(raw.position[0], UD_QN_POS);
+	si.position[1] = D32QN_TO_FLOAT(raw.position[1], UD_QN_POS);
+	si.velocity[0] = D32QN_TO_FLOAT(raw.velocity[0], UD_QN_VEL);
+	si.velocity[1] = D32QN_TO_FLOAT(raw.velocity[1], UD_QN_VEL);
+	si.current[0] = D32QN_TO_FLOAT(raw.current[0], UD_QN_IQ);
+	si.current[1] = D32QN_TO_FLOAT(raw.current[1], UD_QN_IQ);
 }
 
-void convert_raw_to_si_imu_data(raw_imu_data raw, si_imu_data &si)
+void convert_raw_to_si_imu_data(imu_packet_t raw, imu_data_t &si)
 { /* Qvalues for each fields */
 	for (int i = 0; i < 3; i++)
 	{
@@ -98,31 +99,31 @@ void callback(uint8_t src_mac[6], uint8_t *data, int len)
 		printf("received a %d long packet\n", len);
 		return;
 	}
-	memcpy(&raw_sensor_packet, data, sizeof(wifi_eth_packet_sensor));
+	memcpy(&sensor_packet, data, sizeof(sensor_packet_t));
 	nb_recv++;
 	for (int i = 0; i < N_SLAVES; i++)
 	{
-		convert_raw_to_si_sensor_data(raw_sensor_packet.raw_uDriver_sensor_data[i], uDrivers_si_sensor_data[i]);
+		convert_raw_to_si_sensor_data(sensor_packet.dual_motor_driver_sensor_packets[i], dual_motor_driver_sensor_data[i]);
 	}
-	convert_raw_to_si_imu_data(raw_sensor_packet.imu, my_imu_si_data);
+	convert_raw_to_si_imu_data(sensor_packet.imu, imu_data);
 	if (last_sensor_index == 0)
 	{
-		last_sensor_index = raw_sensor_packet.sensor_index - 1;
+		last_sensor_index = sensor_packet.sensor_index - 1;
 	}
 	if (last_cmd_lost == 0)
 	{
-		last_cmd_lost = raw_sensor_packet.last_index - 1;
+		last_cmd_lost = sensor_packet.last_index - 1;
 	}
-	if (nb_cmd_lost_offset > raw_sensor_packet.last_index)
+	if (nb_cmd_lost_offset > sensor_packet.last_index)
 	{
-		nb_cmd_lost_offset = raw_sensor_packet.last_index;
+		nb_cmd_lost_offset = sensor_packet.last_index;
 	}
 
 	//Check for sensor packet loss
-	uint16_t actual_sensor_packets_loss = raw_sensor_packet.sensor_index - last_sensor_index - 1;
+	uint16_t actual_sensor_packets_loss = sensor_packet.sensor_index - last_sensor_index - 1;
 	nb_sensors_lost += actual_sensor_packets_loss;
 	nb_sensors_sent += actual_sensor_packets_loss + 1;
-	last_sensor_index = raw_sensor_packet.sensor_index;
+	last_sensor_index = sensor_packet.sensor_index;
 	if (actual_sensor_packets_loss > 0)
 	{
 		if ((actual_sensor_packets_loss - 1) < MAX_HIST)
@@ -131,9 +132,9 @@ void callback(uint8_t src_mac[6], uint8_t *data, int len)
 			histogram_lost_sensor_packets[MAX_HIST - 1]++;
 	}
 
-	//chech for cmd packet loss (This does'nt realy work. for debug raw_sensor_packet.last_index field return the number of lost packet computed in the ESP32, and not the last command packet)
-	int16_t actual_cmd_packets_loss = raw_sensor_packet.last_index - last_cmd_lost - 1;
-	last_cmd_lost = raw_sensor_packet.last_index;
+	//chech for cmd packet loss (This does'nt realy work. for debug sensor_packet.last_index field return the number of lost packet computed in the ESP32, and not the last command packet)
+	int16_t actual_cmd_packets_loss = sensor_packet.last_index - last_cmd_lost - 1;
+	last_cmd_lost = sensor_packet.last_index;
 
 	if (actual_cmd_packets_loss > 0)
 	{
@@ -148,33 +149,33 @@ void callback(uint8_t src_mac[6], uint8_t *data, int len)
 		for (int i = 0; i < N_SLAVES; i++)
 		{
 			printf("\n%d ", i);
-			printf("err:%x ", uDrivers_si_sensor_data[i].error_code);
-			printf("SE:%d ", uDrivers_si_sensor_data[i].is_system_enabled);
-			printf("M1E:%d ", uDrivers_si_sensor_data[i].is_motor_enabled[0]);
-			printf("M2E:%d ", uDrivers_si_sensor_data[i].is_motor_enabled[1]);
-			printf("M1R:%d ", uDrivers_si_sensor_data[i].is_motor_ready[0]);
-			printf("M2R:%d ", uDrivers_si_sensor_data[i].is_motor_ready[1]);
-			printf("IDX1D:%d ", uDrivers_si_sensor_data[i].has_index_been_detected[0]);
-			printf("IDX2D:%d ", uDrivers_si_sensor_data[i].has_index_been_detected[1]);
-			printf("IDX1T:%d ", uDrivers_si_sensor_data[i].index_toggle_bit[0]);
-			printf("IDX2T:%d ", uDrivers_si_sensor_data[i].index_toggle_bit[1]);
-			printf("timestamp:%8x ", uDrivers_si_sensor_data[i].timestamp);
-			printf("pos1:%8f ", uDrivers_si_sensor_data[i].position[0]);
-			printf("pos2:%8f ", uDrivers_si_sensor_data[i].position[1]);
-			printf("vel1:%8f ", uDrivers_si_sensor_data[i].velocity[0]);
-			printf("vel2:%8f ", uDrivers_si_sensor_data[i].velocity[1]);
-			printf("cur1:%8f ", uDrivers_si_sensor_data[i].current[0]);
-			printf("cur2:%8f ", uDrivers_si_sensor_data[i].current[1]);
+			printf("err:%x ", dual_motor_driver_sensor_data[i].error_code);
+			printf("SE:%d ", dual_motor_driver_sensor_data[i].is_system_enabled);
+			printf("M1E:%d ", dual_motor_driver_sensor_data[i].is_motor_enabled[0]);
+			printf("M2E:%d ", dual_motor_driver_sensor_data[i].is_motor_enabled[1]);
+			printf("M1R:%d ", dual_motor_driver_sensor_data[i].is_motor_ready[0]);
+			printf("M2R:%d ", dual_motor_driver_sensor_data[i].is_motor_ready[1]);
+			printf("IDX1D:%d ", dual_motor_driver_sensor_data[i].has_index_been_detected[0]);
+			printf("IDX2D:%d ", dual_motor_driver_sensor_data[i].has_index_been_detected[1]);
+			printf("IDX1T:%d ", dual_motor_driver_sensor_data[i].index_toggle_bit[0]);
+			printf("IDX2T:%d ", dual_motor_driver_sensor_data[i].index_toggle_bit[1]);
+			printf("timestamp:%8x ", dual_motor_driver_sensor_data[i].timestamp);
+			printf("pos1:%8f ", dual_motor_driver_sensor_data[i].position[0]);
+			printf("pos2:%8f ", dual_motor_driver_sensor_data[i].position[1]);
+			printf("vel1:%8f ", dual_motor_driver_sensor_data[i].velocity[0]);
+			printf("vel2:%8f ", dual_motor_driver_sensor_data[i].velocity[1]);
+			printf("cur1:%8f ", dual_motor_driver_sensor_data[i].current[0]);
+			printf("cur2:%8f ", dual_motor_driver_sensor_data[i].current[1]);
 		}
-		print_imu_data(my_imu_si_data);
+		print_imu_data(imu_data);
 		printf("\n");
 		printf("nb_sensors_sent: %u \n", nb_sensors_sent);
 		printf("\n");
 		printf("nb_sensors_lost: %u \n", nb_sensors_lost);
 		printf("sensor ratio (lost): %2f\n ", 100.0 * nb_sensors_lost / nb_sensors_sent);
 		printf("\n");
-		printf("nb_cmd_lost: %u\n", raw_sensor_packet.last_index - nb_cmd_lost_offset);
-		printf("~cmd ratio (lost): %2f\n ", 100.0 * (raw_sensor_packet.last_index - nb_cmd_lost_offset) / nb_sensors_sent);
+		printf("nb_cmd_lost: %u\n", sensor_packet.last_index - nb_cmd_lost_offset);
+		printf("~cmd ratio (lost): %2f\n ", 100.0 * (sensor_packet.last_index - nb_cmd_lost_offset) / nb_sensors_sent);
 		printf("\n");
 		printf("\nPacket lost in groups of: \n");
 		printf("       \t sensors \t commands \n");
@@ -187,13 +188,15 @@ void callback(uint8_t src_mac[6], uint8_t *data, int len)
 	fflush(stdout);
 
 	/*log imu*/
-	fprintf(log_file, "%8f, %8f, %8f, %8f, %8f\n",
-					-my_imu_si_data.attitude[2],
-					uDrivers_si_sensor_data[0].position[1] * 2 * PI,
-					-my_imu_si_data.gyroscope[2],
-					uDrivers_si_sensor_data[0].velocity[1] * (2 * PI / 60.0) * 1000.0,
-					uDrivers_si_sensor_data[0].position[0] * 2 * PI);
-	//fprintf(log_file,"Yaw, PositionM2, GyrZ, VelocityM2, PositionM1\n");
+	if (log_file != NULL)
+	{
+		fprintf(log_file, "%8f, %8f, %8f, %8f, %8f\n",
+						-imu_data.attitude[2],
+						dual_motor_driver_sensor_data[0].position[1] * 2 * PI,
+						-imu_data.gyroscope[2],
+						dual_motor_driver_sensor_data[0].velocity[1] * (2 * PI / 60.0) * 1000.0,
+						dual_motor_driver_sensor_data[0].position[0] * 2 * PI);
+	}
 }
 
 int main(int argc, char **argv)
@@ -207,7 +210,7 @@ int main(int argc, char **argv)
 		fprintf(log_file, "Yaw, PositionM2, GyrZ, VelocityM2, PositionM1\n");
 		if (log_file == NULL)
 		{
-			printf("Could not write to '%s', do data will be saved! Continue? (Y/N)", argv[2]);
+			printf("Could not write to '%s', no data will be saved! Continue? (Y/N)", argv[2]);
 			char c = getchar();
 			if (c == 'n' || c == 'N')
 			{
@@ -225,8 +228,7 @@ int main(int argc, char **argv)
 		printf("No output file specified, data will not be saved");
 	}
 	nice(-20);
-	argv[1];
-	printf("Payload size : %ld\n", sizeof(wifi_eth_packet_command));
+	printf("Payload size : %ld\n", sizeof(command_packet_t));
 
 	if (argv[1][0] == 'e')
 	{
@@ -282,13 +284,13 @@ int main(int argc, char **argv)
 				//Initialisation, send the init commands
 				for (int i = 0; i < N_SLAVES_CONTROLED; i++)
 				{
-					SPI_REG_u16(my_command.command[i], SPI_COMMAND_MODE) = SPI_COMMAND_MODE_ES | SPI_COMMAND_MODE_EM1 | SPI_COMMAND_MODE_EM2 ; // | SPI_COMMAND_MODE_EI1OC | SPI_COMMAND_MODE_EI2OC
+					SUB_REG_u16(command_packet.command[i], UD_COMMAND_MODE) = UD_COMMAND_MODE_ES | UD_COMMAND_MODE_EM1 | UD_COMMAND_MODE_EM2; // | UD_COMMAND_MODE_EI1OC | UD_COMMAND_MODE_EI2OC
 				}
 				//check the end of calibration (are the all ontrolled motor ready?)
 				state = 1;
 				for (int i = 0; i < N_SLAVES_CONTROLED; i++)
 				{
-					if (!(uDrivers_si_sensor_data[i].is_motor_enabled[0] && uDrivers_si_sensor_data[i].is_motor_enabled[1]))
+					if (!(dual_motor_driver_sensor_data[i].is_motor_enabled[0] && dual_motor_driver_sensor_data[i].is_motor_enabled[1]))
 					{
 						state = 0; //calibration is not finished
 					}
@@ -298,11 +300,11 @@ int main(int argc, char **argv)
 				//closed loop, position
 				for (int i = 0; i < N_SLAVES_CONTROLED; i++)
 				{
-					if (uDrivers_si_sensor_data[i].is_system_enabled)
+					if (dual_motor_driver_sensor_data[i].is_system_enabled)
 					{
 						pos_refA[i] = sin(2 * PI * freq * t);
-						pos_errA[i] = pos_refA[i] - uDrivers_si_sensor_data[i].position[0];
-						vel_errA[i] = vel_refA[i] - uDrivers_si_sensor_data[i].velocity[0];
+						pos_errA[i] = pos_refA[i] - dual_motor_driver_sensor_data[i].position[0];
+						vel_errA[i] = vel_refA[i] - dual_motor_driver_sensor_data[i].velocity[0];
 						iqA[i] = Kp * pos_errA[i] + Kd * vel_errA[i];
 						if (iqA[i] > iq_sat)
 							iqA[i] = iq_sat;
@@ -310,19 +312,19 @@ int main(int argc, char **argv)
 							iqA[i] = -iq_sat;
 
 						pos_refB[i] = sin(2 * PI * freq * t);
-						pos_errB[i] = pos_refB[i] - uDrivers_si_sensor_data[i].position[1];
-						vel_errB[i] = vel_refB[i] - uDrivers_si_sensor_data[i].velocity[1];
+						pos_errB[i] = pos_refB[i] - dual_motor_driver_sensor_data[i].position[1];
+						vel_errB[i] = vel_refB[i] - dual_motor_driver_sensor_data[i].velocity[1];
 						iqB[i] = Kp * pos_errB[i] + Kd * vel_errB[i];
 						if (iqB[i] > iq_sat)
 							iqB[i] = iq_sat;
 						if (iqB[i] < -iq_sat)
 							iqB[i] = -iq_sat;
 
-						SPI_REG_u16(my_command.command[i], SPI_COMMAND_MODE) = SPI_COMMAND_MODE_ES | SPI_COMMAND_MODE_EM1 | SPI_COMMAND_MODE_EM2 ; //| SPI_COMMAND_MODE_EI1OC | SPI_COMMAND_MODE_EI2OC
-						SPI_REG_16(my_command.command[i], SPI_COMMAND_IQ_1) = FLOAT_TO_D16QN(iqA[i], SPI_QN_IQ);
-						SPI_REG_16(my_command.command[i], SPI_COMMAND_IQ_2) = FLOAT_TO_D16QN(iqB[i], SPI_QN_IQ);
-						my_command.command[i][SPI_COMMAND_MODE] &= 0xff00; //Set timeout to 0
-						my_command.command[i][SPI_COMMAND_MODE] |= 0x00ff; //Set timeout to 10
+						SUB_REG_u16(command_packet.command[i], UD_COMMAND_MODE) = UD_COMMAND_MODE_ES | UD_COMMAND_MODE_EM1 | UD_COMMAND_MODE_EM2; //| UD_COMMAND_MODE_EI1OC | UD_COMMAND_MODE_EI2OC
+						SUB_REG_16(command_packet.command[i], UD_COMMAND_IQ_1) = FLOAT_TO_D16QN(iqA[i], UD_QN_IQ);
+						SUB_REG_16(command_packet.command[i], UD_COMMAND_IQ_2) = FLOAT_TO_D16QN(iqB[i], UD_QN_IQ);
+						command_packet.command[i][UD_COMMAND_MODE] &= 0xff00; //Set timeout to 0
+						command_packet.command[i][UD_COMMAND_MODE] |= 0x00ff; //Set timeout to 10
 					}
 					else
 					{
@@ -331,8 +333,8 @@ int main(int argc, char **argv)
 				}
 				break;
 			}
-			my_command.sensor_index++;
-			handler->send((uint8_t *)&my_command, sizeof(wifi_eth_packet_command)),
+			command_packet.sensor_index++;
+			handler->send((uint8_t *)&command_packet, sizeof(command_packet_t)),
 					n_count++;
 		}
 		else
@@ -340,6 +342,9 @@ int main(int argc, char **argv)
 			std::this_thread::yield();
 		}
 	}
-	fclose(log_file);
+	if (log_file != NULL)
+	{
+		fclose(log_file);
+	}
 	handler->end();
 }

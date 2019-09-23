@@ -2,7 +2,7 @@
 #define N_SLAVES 6
 #define N_SLAVES_CONTROLED 1
 
-struct raw_sensor_data {
+struct dual_motor_driver_sensor_packet_t {
 uint16_t status;
 uint16_t timestamp;
 int32_t position[2];
@@ -12,19 +12,19 @@ uint16_t coil_resistance[2];
 uint16_t adc[2];
 }__attribute__ ((packed));
 
-struct raw_imu_data {
+struct imu_packet_t {
 	int16_t accelerometer[3];
 	int16_t gyroscope[3];
 	int16_t attitude[3];
 } __attribute__((packed));
 
-struct si_imu_data {
+struct imu_data_t {
 	float accelerometer[3];
 	float gyroscope[3];
 	float attitude[3];
 } __attribute__((packed));
 
-struct si_sensor_data {
+struct dual_motor_driver_sensor_data_t {
 	uint16_t status;
 	uint16_t timestamp;// to be removed
 	bool is_system_enabled; 
@@ -42,14 +42,14 @@ struct si_sensor_data {
 }__attribute__ ((packed));
 
 
-struct wifi_eth_packet_sensor {
-    struct raw_sensor_data raw_uDriver_sensor_data[N_SLAVES];
-    struct raw_imu_data imu;
+struct sensor_packet_t {
+    struct dual_motor_driver_sensor_packet_t dual_motor_driver_sensor_packets[N_SLAVES];
+    struct imu_packet_t imu;
     uint16_t sensor_index;
     uint16_t last_index;
 } __attribute__ ((packed));
 
-struct wifi_eth_packet_command {
-    uint16_t command[N_SLAVES][SPI_TOTAL_INDEX];
+struct command_packet_t {
+    uint16_t command[N_SLAVES][UD_LENGTH];
     uint16_t sensor_index;
 }__attribute__ ((packed));
