@@ -5,7 +5,7 @@
 #define UART_NUM UART_NUM_1
 #define BUF_SIZE 100
 #define PIN_TXD 32
-#define PIN_RXD 33
+#define PIN_RXD 35
 
 //possition of the data in the IMU message
 #define ACCX_POS 6
