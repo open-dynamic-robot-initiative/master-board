@@ -11,9 +11,9 @@ class ESPNOW_manager : public LINK_manager {
 	public:
 		ESPNOW_manager() : LINK_manager(&myWiFipacket) {}
 
-		ESPNOW_manager(char* interface) : LINK_manager(&myWiFipacket, interface) {}
+		ESPNOW_manager(const std::string& interface) : LINK_manager(&myWiFipacket, interface) {}
 
-		ESPNOW_manager(char* interface, uint8_t datarate, uint16_t channel_freq, uint8_t src_mac[6], uint8_t dst_mac[6], bool filterOn)
+		ESPNOW_manager(const std::string& interface, uint8_t datarate, uint16_t channel_freq, uint8_t src_mac[6], uint8_t dst_mac[6], bool filterOn)
 		: LINK_manager(&myWiFipacket, interface) {
 			set_channel(channel_freq);
 			set_datarate(datarate);
