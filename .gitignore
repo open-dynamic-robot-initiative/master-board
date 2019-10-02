@@ -1,8 +1,10 @@
 
-software/build/
+firmware/build/
 
-software/scripts/bin/
+sdk/bin/
 
-software/sdkconfig
+firmware/sdkconfig\.old
 
-software/sdkconfig\.old
+*.s#*
+*.b#*
+*.l#*
