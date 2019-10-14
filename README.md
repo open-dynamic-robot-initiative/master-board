@@ -14,10 +14,10 @@ Connectivity:
 The board is programed via the ESP-IDF tool chain https://github.com/espressif/esp-idf
 
 Wireless closed loop control at 1kHz demo (click to see video):
-[![Alt text](https://img.youtube.com/vi/P_yazdwLeZ8/0.jpg)](https://www.youtube.com/watch?v=P_yazdwLeZ8)
+[![Alt text](https://img.youtube.com/vi/kEtmWzfE4aw/0.jpg)](https://www.youtube.com/watch?v=kEtmWzfE4aw)
 
 IMU, ethernet closed loop cntrol at 1kHz demo (click to see video):
-[![Alt text](https://img.youtube.com/vi/-jNc_tuRp-E/0.jpg)](https://www.youtube.com/watch?v=-jNc_tuRp-E)
+[![Alt text](https://img.youtube.com/vi/TaonDmPJcGE/0.jpg)](https://www.youtube.com/watch?v=TaonDmPJcGE)
 
 Authors
 --------
