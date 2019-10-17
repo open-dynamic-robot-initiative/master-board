@@ -7,6 +7,19 @@ You first need to identify you interface name. To get a list of the interface on
 #### Ethernet 
 A direct connection should me made between the master board and you computer. It is not possible to use the same interface for local network and master board connection.
 
+###### Optional configuration:
+Some packet will be sent by the OS to the master board. Their are not usefull since the master board only use raw MAC frame.
+To disable ARP packet run:
+```
+sudo ifconfig MY_INTERFACE -arp
+``` 
+where MY_INTERFACE is your lan interface name.
+
+To disable IPV6 trafic, add this line into ``` /etc/sysctl.conf``` 
+``` 
+net.ipv6.conf.MY_INTERFACE.disable_ipv6 = 1
+``` 
+where MY_INTERFACE is your lan interface name.
 #### Wifi
 Your interface should support monitor mode and injection since the procol used by the master board is not a standard wifi.
 You need to configure your interface. A script is available in the sdk folder. to use it run 
