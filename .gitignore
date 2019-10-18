@@ -2,6 +2,7 @@
 firmware/build/
 
 sdk/bin/
+sdk/build/
 
 firmware/sdkconfig\.old
 
