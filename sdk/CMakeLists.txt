@@ -64,7 +64,7 @@ SET(MASTER_BOARD_SRC
     src/motor.cpp
     src/motor_driver.cpp
 )
-add_library(master-board SHARED
+add_library(master-board-sdk SHARED
   ${MASTER_BOARD_SRC}
 )
 
