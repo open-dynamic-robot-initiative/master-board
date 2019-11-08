@@ -11106,91 +11106,6 @@ Source: &lt;a href="https://datasheets.maximintegrated.com/en/ds/MAX17502.pdf"&g
 </deviceset>
 </devicesets>
 </library>
-<library name="MAX15062AATA">
-<description>&lt;b&gt;https://componentsearchengine.com&lt;/b&gt;&lt;p&gt;
-&lt;author&gt;Created by SamacSys&lt;/author&gt;</description>
-<packages>
-<package name="MAX14591ETAT">
-<description>&lt;b&gt;8 TDFN (T822CN+1)&lt;/b&gt;&lt;br&gt;
-</description>
-<smd name="1" x="-0.75" y="-0.762" dx="0.95" dy="0.3" layer="1" rot="R90"/>
-<smd name="2" x="-0.25" y="-0.812" dx="0.85" dy="0.3" layer="1" rot="R90"/>
-<smd name="3" x="0.25" y="-0.812" dx="0.85" dy="0.3" layer="1" rot="R90"/>
-<smd name="4" x="0.75" y="-0.812" dx="0.85" dy="0.3" layer="1" rot="R90"/>
-<smd name="5" x="0.75" y="1.088" dx="0.85" dy="0.3" layer="1" rot="R90"/>
-<smd name="6" x="0.25" y="1.088" dx="0.85" dy="0.3" layer="1" rot="R90"/>
-<smd name="7" x="-0.25" y="1.088" dx="0.85" dy="0.3" layer="1" rot="R90"/>
-<smd name="8" x="-0.75" y="1.088" dx="0.85" dy="0.3" layer="1" rot="R90"/>
-<text x="0" y="0" size="1.27" layer="25" align="center">&gt;NAME</text>
-<text x="0" y="0" size="1.27" layer="27" align="center">&gt;VALUE</text>
-<wire x1="-1" y1="1.138" x2="1" y2="1.138" width="0.2" layer="51"/>
-<wire x1="1" y1="1.138" x2="1" y2="-0.862" width="0.2" layer="51"/>
-<wire x1="1" y1="-0.862" x2="-1" y2="-0.862" width="0.2" layer="51"/>
-<wire x1="-1" y1="-0.862" x2="-1" y2="1.138" width="0.2" layer="51"/>
-<wire x1="-1.7" y1="2.213" x2="1.7" y2="2.213" width="0.1" layer="51"/>
-<wire x1="1.7" y1="2.213" x2="1.7" y2="-2.213" width="0.1" layer="51"/>
-<wire x1="1.7" y1="-2.213" x2="-1.7" y2="-2.213" width="0.1" layer="51"/>
-<wire x1="-1.7" y1="-2.213" x2="-1.7" y2="2.213" width="0.1" layer="51"/>
-<wire x1="-1" y1="0.538" x2="-1" y2="-0.162" width="0.1" layer="21"/>
-<wire x1="1" y1="0.538" x2="1" y2="-0.162" width="0.1" layer="21"/>
-<wire x1="-0.9" y1="-1.462" x2="-0.9" y2="-1.462" width="0.1" layer="21"/>
-<wire x1="-0.9" y1="-1.462" x2="-0.8" y2="-1.462" width="0.1" layer="21" curve="-180"/>
-<wire x1="-0.8" y1="-1.462" x2="-0.8" y2="-1.462" width="0.1" layer="21"/>
-<wire x1="-0.8" y1="-1.462" x2="-0.9" y2="-1.462" width="0.1" layer="21" curve="-180"/>
-</package>
-</packages>
-<symbols>
-<symbol name="MAX15062AATA+T">
-<wire x1="5.08" y1="2.54" x2="30.48" y2="2.54" width="0.254" layer="94"/>
-<wire x1="30.48" y1="-10.16" x2="30.48" y2="2.54" width="0.254" layer="94"/>
-<wire x1="30.48" y1="-10.16" x2="5.08" y2="-10.16" width="0.254" layer="94"/>
-<wire x1="5.08" y1="2.54" x2="5.08" y2="-10.16" width="0.254" layer="94"/>
-<text x="31.75" y="7.62" size="1.778" layer="95" align="center-left">&gt;NAME</text>
-<text x="31.75" y="5.08" size="1.778" layer="96" align="center-left">&gt;VALUE</text>
-<pin name="VIN" x="0" y="0" length="middle"/>
-<pin name="EN/UVLO" x="0" y="-2.54" length="middle"/>
-<pin name="VCC" x="0" y="-5.08" length="middle"/>
-<pin name="FB/VOUT" x="0" y="-7.62" length="middle"/>
-<pin name="MODE" x="35.56" y="0" length="middle" rot="R180"/>
-<pin name="!RESET" x="35.56" y="-2.54" length="middle" rot="R180"/>
-<pin name="GND" x="35.56" y="-5.08" length="middle" rot="R180"/>
-<pin name="LX" x="35.56" y="-7.62" length="middle" rot="R180"/>
-</symbol>
-</symbols>
-<devicesets>
-<deviceset name="MAX15062AATA+T" prefix="PS">
-<description>&lt;b&gt;MAXIM INTEGRATED PRODUCTS - MAX15062AATA+T - DC/DC CTRL, SYNC BUCK, 500KHZ, TDFN-8&lt;/b&gt;&lt;p&gt;
-Source: &lt;a href="https://componentsearchengine.com/Datasheets/1/MAX15062AATA T.pdf"&gt; Datasheet &lt;/a&gt;</description>
-<gates>
-<gate name="G$1" symbol="MAX15062AATA+T" x="0" y="0"/>
-</gates>
-<devices>
-<device name="" package="MAX14591ETAT">
-<connects>
-<connect gate="G$1" pin="!RESET" pad="6"/>
-<connect gate="G$1" pin="EN/UVLO" pad="2"/>
-<connect gate="G$1" pin="FB/VOUT" pad="4"/>
-<connect gate="G$1" pin="GND" pad="7"/>
-<connect gate="G$1" pin="LX" pad="8"/>
-<connect gate="G$1" pin="MODE" pad="5"/>
-<connect gate="G$1" pin="VCC" pad="3"/>
-<connect gate="G$1" pin="VIN" pad="1"/>
-</connects>
-<technologies>
-<technology name="">
-<attribute name="DESCRIPTION" value="MAXIM INTEGRATED PRODUCTS - MAX15062AATA+T - DC/DC CTRL, SYNC BUCK, 500KHZ, TDFN-8" constant="no"/>
-<attribute name="HEIGHT" value="0mm" constant="no"/>
-<attribute name="MANUFACTURER_NAME" value="Maxim Integrated" constant="no"/>
-<attribute name="MANUFACTURER_PART_NUMBER" value="MAX15062AATA+T" constant="no"/>
-<attribute name="MOUSER_PART_NUMBER" value="700-MAX15062AATA+T" constant="no"/>
-<attribute name="MOUSER_PRICE-STOCK" value="https://www.mouser.com/Search/Refine.aspx?Keyword=700-MAX15062AATA%2BT" constant="no"/>
-</technology>
-</technologies>
-</device>
-</devices>
-</deviceset>
-</devicesets>
-</library>
 <library name="LPS6235-682MRB">
 <description>&lt;COILCRAFT - LPS6235-682MRB - INDUCTOR, SHLD, 6.8UH, 20%, 1.3A, SMD&lt;/b&gt;&lt;p&gt;
 &lt;author&gt;Created by SamacSys&lt;/author&gt;</description>
@@ -11244,69 +11159,6 @@ Source: &lt;a href="http://www.farnell.com/datasheets/1805330.pdf"&gt; Datasheet
 <attribute name="MOUSER_PRICE-STOCK" value="https://www.mouser.com/Search/Refine.aspx?Keyword=994-LPS6235-682MRB" constant="no"/>
 <attribute name="RS_PART_NUMBER" value="" constant="no"/>
 <attribute name="RS_PRICE-STOCK" value="" constant="no"/>
-</technology>
-</technologies>
-</device>
-</devices>
-</deviceset>
-</devicesets>
-</library>
-<library name="LPS4018-333MRC">
-<description>&lt;Fixed Inductors LPS4018 Low Profile 33uH 0.8A 20% SMD&lt;/b&gt;&lt;p&gt;
-&lt;author&gt;Created by SamacSys&lt;/author&gt;</description>
-<packages>
-<package name="LPS4018223MRC">
-<description>&lt;b&gt;LPS4018_FFW&lt;/b&gt;&lt;br&gt;
-</description>
-<smd name="1" x="-1.475" y="0" dx="3.89" dy="1.45" layer="1" rot="R90"/>
-<smd name="2" x="1.475" y="0" dx="3.89" dy="1.45" layer="1" rot="R90"/>
-<text x="0" y="0" size="1.27" layer="25" align="center">&gt;NAME</text>
-<text x="0" y="0" size="1.27" layer="27" align="center">&gt;VALUE</text>
-<wire x1="-1.95" y1="1.95" x2="1.95" y2="1.95" width="0.2" layer="51"/>
-<wire x1="1.95" y1="1.95" x2="1.95" y2="-1.95" width="0.2" layer="51"/>
-<wire x1="1.95" y1="-1.95" x2="-1.95" y2="-1.95" width="0.2" layer="51"/>
-<wire x1="-1.95" y1="-1.95" x2="-1.95" y2="1.95" width="0.2" layer="51"/>
-<wire x1="-3.2" y1="2.95" x2="3.2" y2="2.95" width="0.1" layer="51"/>
-<wire x1="3.2" y1="2.95" x2="3.2" y2="-2.95" width="0.1" layer="51"/>
-<wire x1="3.2" y1="-2.95" x2="-3.2" y2="-2.95" width="0.1" layer="51"/>
-<wire x1="-3.2" y1="-2.95" x2="-3.2" y2="2.95" width="0.1" layer="51"/>
-<wire x1="-0.45" y1="1.95" x2="0.45" y2="1.95" width="0.1" layer="21"/>
-<wire x1="-0.45" y1="-1.95" x2="0.45" y2="-1.95" width="0.1" layer="21"/>
-</package>
-</packages>
-<symbols>
-<symbol name="LPS4018-333MRC">
-<wire x1="5.08" y1="0" x2="7.62" y2="0" width="0.254" layer="94" curve="-175.4"/>
-<wire x1="7.62" y1="0" x2="10.16" y2="0" width="0.254" layer="94" curve="-175.4"/>
-<wire x1="10.16" y1="0" x2="12.7" y2="0" width="0.254" layer="94" curve="-175.4"/>
-<wire x1="12.7" y1="0" x2="15.24" y2="0" width="0.254" layer="94" curve="-175.4"/>
-<text x="16.51" y="6.35" size="1.778" layer="95" align="center-left">&gt;NAME</text>
-<text x="16.51" y="3.81" size="1.778" layer="96" align="center-left">&gt;VALUE</text>
-<pin name="1" x="0" y="0" visible="pad" length="middle"/>
-<pin name="2" x="20.32" y="0" visible="pad" length="middle" rot="R180"/>
-</symbol>
-</symbols>
-<devicesets>
-<deviceset name="LPS4018-333MRC" prefix="L">
-<description>&lt;b&gt;Fixed Inductors LPS4018 Low Profile 33uH 0.8A 20% SMD&lt;/b&gt;&lt;p&gt;
-Source: &lt;a href="https://componentsearchengine.com/Datasheets/1/LPS4018-333MRC.pdf"&gt; Datasheet &lt;/a&gt;</description>
-<gates>
-<gate name="G$1" symbol="LPS4018-333MRC" x="0" y="0"/>
-</gates>
-<devices>
-<device name="" package="LPS4018223MRC">
-<connects>
-<connect gate="G$1" pin="1" pad="1"/>
-<connect gate="G$1" pin="2" pad="2"/>
-</connects>
-<technologies>
-<technology name="">
-<attribute name="DESCRIPTION" value="Fixed Inductors LPS4018 Low Profile 33uH 0.8A 20% SMD" constant="no"/>
-<attribute name="HEIGHT" value="1.8mm" constant="no"/>
-<attribute name="MANUFACTURER_NAME" value="COILCRAFT" constant="no"/>
-<attribute name="MANUFACTURER_PART_NUMBER" value="LPS4018-333MRC" constant="no"/>
-<attribute name="MOUSER_PART_NUMBER" value="994-LPS4018-333MRC" constant="no"/>
-<attribute name="MOUSER_PRICE-STOCK" value="https://www.mouser.com/Search/Refine.aspx?Keyword=994-LPS4018-333MRC" constant="no"/>
 </technology>
 </technologies>
 </device>
@@ -11508,15 +11360,6 @@ Source: &lt;a href="https://www.adafruit.com/datasheets/WS2812B.pdf"&gt; Datashe
 <part name="GND13" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="GND14" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="GND27" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="PS1" library="MAX15062AATA" deviceset="MAX15062AATA+T" device=""/>
-<part name="GND33" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="L2" library="LPS4018-333MRC" deviceset="LPS4018-333MRC" device="" value="LPS4018-473ML"/>
-<part name="C16" library="resistor" library_urn="urn:adsk.eagle:library:348" deviceset="C-EU" device="C0402" package3d_urn="urn:adsk.eagle:package:23626/2" value="1u"/>
-<part name="GND34" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="GND35" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="C18" library="resistor" library_urn="urn:adsk.eagle:library:348" deviceset="C-EU" device="C0402" package3d_urn="urn:adsk.eagle:package:23626/2" value="1u"/>
-<part name="GND36" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="C17" library="resistor" library_urn="urn:adsk.eagle:library:348" deviceset="C-EU" device="C1210" package3d_urn="urn:adsk.eagle:package:23619/2" value="22u"/>
 <part name="IC3" library="WS2812B" deviceset="WS2812B" device=""/>
 <part name="IC4" library="WS2812B" deviceset="WS2812B" device=""/>
 <part name="GND37" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
@@ -11526,6 +11369,12 @@ Source: &lt;a href="https://www.adafruit.com/datasheets/WS2812B.pdf"&gt; Datashe
 <part name="U$6" library="con-hirose-df13" deviceset="DF13-4P-1.25" device="DSA"/>
 <part name="GND40" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="U$4" library="con-hirose-df13" deviceset="DF13-6P-1.25" device="DSA"/>
+<part name="P+15" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="VCC" device=""/>
+<part name="P+16" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="VCC" device=""/>
+<part name="R22" library="resistor" library_urn="urn:adsk.eagle:library:348" deviceset="R-EU_" device="R0402" package3d_urn="urn:adsk.eagle:package:26058/2" value="4.7k"/>
+<part name="P+17" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="VCC" device=""/>
+<part name="P+18" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="VCC" device=""/>
+<part name="P+19" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="VCC" device=""/>
 </parts>
 <sheets>
 <sheet>
@@ -11890,38 +11739,6 @@ Source: &lt;a href="https://www.adafruit.com/datasheets/WS2812B.pdf"&gt; Datashe
 <instance part="GND27" gate="1" x="101.6" y="294.64" smashed="yes">
 <attribute name="VALUE" x="99.06" y="292.1" size="1.778" layer="96"/>
 </instance>
-<instance part="PS1" gate="G$1" x="53.34" y="347.98" smashed="yes">
-<attribute name="NAME" x="85.09" y="355.6" size="1.778" layer="95" align="center-left"/>
-<attribute name="VALUE" x="85.09" y="353.06" size="1.778" layer="96" align="center-left"/>
-</instance>
-<instance part="GND33" gate="1" x="91.44" y="342.9" smashed="yes" rot="R90">
-<attribute name="VALUE" x="93.98" y="340.36" size="1.778" layer="96" rot="R90"/>
-</instance>
-<instance part="L2" gate="G$1" x="91.44" y="340.36" smashed="yes">
-<attribute name="NAME" x="107.95" y="346.71" size="1.778" layer="95" align="center-left"/>
-<attribute name="VALUE" x="107.95" y="344.17" size="1.778" layer="96" align="center-left"/>
-</instance>
-<instance part="C16" gate="G$1" x="45.72" y="337.82" smashed="yes" rot="R180">
-<attribute name="NAME" x="40.259" y="336.804" size="1.778" layer="95" rot="R90"/>
-<attribute name="VALUE" x="42.799" y="336.804" size="1.778" layer="96" rot="R90"/>
-</instance>
-<instance part="GND34" gate="1" x="45.72" y="332.74" smashed="yes">
-<attribute name="VALUE" x="43.18" y="330.2" size="1.778" layer="96"/>
-</instance>
-<instance part="GND35" gate="1" x="121.92" y="330.2" smashed="yes">
-<attribute name="VALUE" x="119.38" y="327.66" size="1.778" layer="96"/>
-</instance>
-<instance part="C18" gate="G$1" x="38.1" y="342.9" smashed="yes" rot="R180">
-<attribute name="NAME" x="32.639" y="341.884" size="1.778" layer="95" rot="R90"/>
-<attribute name="VALUE" x="35.179" y="341.884" size="1.778" layer="96" rot="R90"/>
-</instance>
-<instance part="GND36" gate="1" x="38.1" y="337.82" smashed="yes">
-<attribute name="VALUE" x="35.56" y="335.28" size="1.778" layer="96"/>
-</instance>
-<instance part="C17" gate="G$1" x="121.92" y="335.28" smashed="yes" rot="R180">
-<attribute name="NAME" x="116.459" y="334.264" size="1.778" layer="95" rot="R90"/>
-<attribute name="VALUE" x="118.999" y="334.264" size="1.778" layer="96" rot="R90"/>
-</instance>
 <instance part="IC3" gate="G$1" x="106.68" y="248.92" smashed="yes" rot="R180">
 <attribute name="NAME" x="97.79" y="241.3" size="1.778" layer="95" rot="R180" align="center-left"/>
 <attribute name="VALUE" x="100.33" y="243.84" size="1.778" layer="96" rot="R180" align="center-left"/>
@@ -11952,6 +11769,25 @@ Source: &lt;a href="https://www.adafruit.com/datasheets/WS2812B.pdf"&gt; Datashe
 <instance part="U$4" gate="G$1" x="-124.46" y="241.3" smashed="yes" rot="R180">
 <attribute name="NAME" x="-122.555" y="233.68" size="1.778" layer="95" rot="R180"/>
 <attribute name="VALUE" x="-122.555" y="253.0475" size="1.778" layer="96" rot="R180"/>
+</instance>
+<instance part="P+15" gate="VCC" x="109.22" y="259.08" smashed="yes">
+<attribute name="VALUE" x="106.68" y="256.54" size="1.778" layer="96" rot="R90"/>
+</instance>
+<instance part="P+16" gate="VCC" x="142.24" y="259.08" smashed="yes">
+<attribute name="VALUE" x="139.7" y="256.54" size="1.778" layer="96" rot="R90"/>
+</instance>
+<instance part="R22" gate="G$1" x="-83.82" y="271.78" smashed="yes" rot="R270">
+<attribute name="NAME" x="-77.47" y="270.2814" size="1.778" layer="95" rot="R180"/>
+<attribute name="VALUE" x="-77.47" y="272.542" size="1.778" layer="96" rot="R180"/>
+</instance>
+<instance part="P+17" gate="VCC" x="-106.68" y="279.4" smashed="yes">
+<attribute name="VALUE" x="-109.22" y="276.86" size="1.778" layer="96" rot="R90"/>
+</instance>
+<instance part="P+18" gate="VCC" x="-83.82" y="279.4" smashed="yes">
+<attribute name="VALUE" x="-86.36" y="276.86" size="1.778" layer="96" rot="R90"/>
+</instance>
+<instance part="P+19" gate="VCC" x="165.1" y="261.62" smashed="yes">
+<attribute name="VALUE" x="162.56" y="259.08" size="1.778" layer="96" rot="R90"/>
 </instance>
 </instances>
 <busses>
@@ -12341,22 +12177,6 @@ Source: &lt;a href="https://www.adafruit.com/datasheets/WS2812B.pdf"&gt; Datashe
 <pinref part="GND27" gate="1" pin="GND"/>
 </segment>
 <segment>
-<pinref part="PS1" gate="G$1" pin="GND"/>
-<pinref part="GND33" gate="1" pin="GND"/>
-</segment>
-<segment>
-<pinref part="C16" gate="G$1" pin="1"/>
-<pinref part="GND34" gate="1" pin="GND"/>
-</segment>
-<segment>
-<pinref part="C18" gate="G$1" pin="1"/>
-<pinref part="GND36" gate="1" pin="GND"/>
-</segment>
-<segment>
-<pinref part="GND35" gate="1" pin="GND"/>
-<pinref part="C17" gate="G$1" pin="1"/>
-</segment>
-<segment>
 <pinref part="IC3" gate="G$1" pin="VSS"/>
 <pinref part="GND37" gate="1" pin="GND"/>
 </segment>
@@ -12517,6 +12337,34 @@ Source: &lt;a href="https://www.adafruit.com/datasheets/WS2812B.pdf"&gt; Datashe
 <pinref part="R19" gate="G$1" pin="2"/>
 <pinref part="P+13" gate="VCC" pin="VCC"/>
 <wire x1="-182.88" y1="167.64" x2="-182.88" y2="162.56" width="0.1524" layer="91"/>
+</segment>
+<segment>
+<pinref part="P+15" gate="VCC" pin="VCC"/>
+<wire x1="109.22" y1="256.54" x2="109.22" y2="248.92" width="0.1524" layer="91"/>
+<pinref part="IC3" gate="G$1" pin="VDD"/>
+<wire x1="109.22" y1="248.92" x2="106.68" y2="248.92" width="0.1524" layer="91"/>
+</segment>
+<segment>
+<pinref part="P+16" gate="VCC" pin="VCC"/>
+<pinref part="IC4" gate="G$1" pin="VDD"/>
+<wire x1="142.24" y1="256.54" x2="142.24" y2="248.92" width="0.1524" layer="91"/>
+<wire x1="142.24" y1="248.92" x2="139.7" y2="248.92" width="0.1524" layer="91"/>
+</segment>
+<segment>
+<pinref part="U$6" gate="G$1" pin="4"/>
+<wire x1="-114.3" y1="271.78" x2="-106.68" y2="271.78" width="0.1524" layer="91"/>
+<wire x1="-106.68" y1="271.78" x2="-106.68" y2="276.86" width="0.1524" layer="91"/>
+<pinref part="P+17" gate="VCC" pin="VCC"/>
+</segment>
+<segment>
+<pinref part="R22" gate="G$1" pin="1"/>
+<pinref part="P+18" gate="VCC" pin="VCC"/>
+</segment>
+<segment>
+<pinref part="U$5" gate="G$1" pin="2"/>
+<wire x1="182.88" y1="254" x2="165.1" y2="254" width="0.1524" layer="91"/>
+<pinref part="P+19" gate="VCC" pin="VCC"/>
+<wire x1="165.1" y1="254" x2="165.1" y2="259.08" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="TX_EN" class="0">
@@ -12990,6 +12838,11 @@ Source: &lt;a href="https://www.adafruit.com/datasheets/WS2812B.pdf"&gt; Datashe
 <junction x="-182.88" y="152.4"/>
 <label x="-180.34" y="152.4" size="1.778" layer="95"/>
 </segment>
+<segment>
+<pinref part="U$4" gate="G$1" pin="5"/>
+<wire x1="-119.38" y1="246.38" x2="-96.52" y2="246.38" width="0.1524" layer="91"/>
+<label x="-104.14" y="246.38" size="1.778" layer="95"/>
+</segment>
 </net>
 <net name="I34" class="0">
 <segment>
@@ -13024,72 +12877,9 @@ Source: &lt;a href="https://www.adafruit.com/datasheets/WS2812B.pdf"&gt; Datashe
 <wire x1="91.44" y1="289.56" x2="93.98" y2="289.56" width="0.1524" layer="91"/>
 </segment>
 </net>
-<net name="N$22" class="0">
-<segment>
-<pinref part="PS1" gate="G$1" pin="LX"/>
-<pinref part="L2" gate="G$1" pin="1"/>
-<wire x1="88.9" y1="340.36" x2="91.44" y2="340.36" width="0.1524" layer="91"/>
-</segment>
-</net>
-<net name="5V" class="0">
-<segment>
-<pinref part="PS1" gate="G$1" pin="FB/VOUT"/>
-<wire x1="53.34" y1="340.36" x2="53.34" y2="330.2" width="0.1524" layer="91"/>
-<wire x1="53.34" y1="330.2" x2="114.3" y2="330.2" width="0.1524" layer="91"/>
-<wire x1="114.3" y1="330.2" x2="114.3" y2="340.36" width="0.1524" layer="91"/>
-<pinref part="L2" gate="G$1" pin="2"/>
-<wire x1="114.3" y1="340.36" x2="111.76" y2="340.36" width="0.1524" layer="91"/>
-<junction x="114.3" y="340.36"/>
-<label x="132.08" y="340.36" size="1.778" layer="95"/>
-<wire x1="114.3" y1="340.36" x2="121.92" y2="340.36" width="0.1524" layer="91"/>
-<pinref part="C17" gate="G$1" pin="2"/>
-<wire x1="121.92" y1="340.36" x2="134.62" y2="340.36" width="0.1524" layer="91"/>
-<junction x="121.92" y="340.36"/>
-</segment>
-<segment>
-<pinref part="IC3" gate="G$1" pin="VDD"/>
-<wire x1="106.68" y1="248.92" x2="106.68" y2="233.68" width="0.1524" layer="91"/>
-<pinref part="IC4" gate="G$1" pin="VDD"/>
-<wire x1="106.68" y1="233.68" x2="139.7" y2="233.68" width="0.1524" layer="91"/>
-<wire x1="139.7" y1="233.68" x2="139.7" y2="248.92" width="0.1524" layer="91"/>
-<wire x1="106.68" y1="233.68" x2="81.28" y2="233.68" width="0.1524" layer="91"/>
-<junction x="106.68" y="233.68"/>
-<label x="81.28" y="233.68" size="1.778" layer="95"/>
-</segment>
-<segment>
-<pinref part="U$5" gate="G$1" pin="2"/>
-<wire x1="182.88" y1="254" x2="172.72" y2="254" width="0.1524" layer="91"/>
-<label x="172.72" y="254" size="1.778" layer="95"/>
-</segment>
-<segment>
-<pinref part="U$6" gate="G$1" pin="4"/>
-<wire x1="-114.3" y1="271.78" x2="-93.98" y2="271.78" width="0.1524" layer="91"/>
-<label x="-106.68" y="271.78" size="1.778" layer="95"/>
-</segment>
-<segment>
-<pinref part="U$4" gate="G$1" pin="5"/>
-<wire x1="-119.38" y1="246.38" x2="-96.52" y2="246.38" width="0.1524" layer="91"/>
-<label x="-104.14" y="246.38" size="1.778" layer="95"/>
-</segment>
-</net>
-<net name="N$24" class="0">
-<segment>
-<pinref part="C16" gate="G$1" pin="2"/>
-<pinref part="PS1" gate="G$1" pin="VCC"/>
-<wire x1="45.72" y1="342.9" x2="53.34" y2="342.9" width="0.1524" layer="91"/>
-</segment>
-</net>
 <net name="N$25" class="0">
 <segment>
-<pinref part="PS1" gate="G$1" pin="EN/UVLO"/>
-<wire x1="53.34" y1="345.44" x2="48.26" y2="345.44" width="0.1524" layer="91"/>
-<wire x1="48.26" y1="345.44" x2="48.26" y2="347.98" width="0.1524" layer="91"/>
-<pinref part="PS1" gate="G$1" pin="VIN"/>
-<wire x1="48.26" y1="347.98" x2="53.34" y2="347.98" width="0.1524" layer="91"/>
-<wire x1="48.26" y1="347.98" x2="38.1" y2="347.98" width="0.1524" layer="91"/>
-<junction x="48.26" y="347.98"/>
 <pinref part="POWER" gate="G$1" pin="2"/>
-<wire x1="38.1" y1="347.98" x2="33.02" y2="347.98" width="0.1524" layer="91"/>
 <wire x1="25.4" y1="297.18" x2="33.02" y2="297.18" width="0.1524" layer="91"/>
 <pinref part="C13" gate="G$1" pin="1"/>
 <wire x1="33.02" y1="297.18" x2="33.02" y2="292.1" width="0.1524" layer="91"/>
@@ -13101,9 +12891,6 @@ Source: &lt;a href="https://www.adafruit.com/datasheets/WS2812B.pdf"&gt; Datashe
 <wire x1="50.8" y1="294.64" x2="45.72" y2="294.64" width="0.1524" layer="91"/>
 <wire x1="45.72" y1="294.64" x2="45.72" y2="297.18" width="0.1524" layer="91"/>
 <junction x="45.72" y="297.18"/>
-<wire x1="33.02" y1="347.98" x2="33.02" y2="297.18" width="0.1524" layer="91"/>
-<pinref part="C18" gate="G$1" pin="2"/>
-<junction x="38.1" y="347.98"/>
 </segment>
 </net>
 <net name="N$19" class="0">
@@ -13136,8 +12923,9 @@ Source: &lt;a href="https://www.adafruit.com/datasheets/WS2812B.pdf"&gt; Datashe
 <net name="I35_RX1" class="0">
 <segment>
 <pinref part="U$6" gate="G$1" pin="2"/>
-<wire x1="-114.3" y1="266.7" x2="-93.98" y2="266.7" width="0.1524" layer="91"/>
+<wire x1="-114.3" y1="266.7" x2="-83.82" y2="266.7" width="0.1524" layer="91"/>
 <label x="-106.68" y="266.7" size="1.778" layer="95"/>
+<pinref part="R22" gate="G$1" pin="2"/>
 </segment>
 <segment>
 <pinref part="U$1" gate="G$1" pin="GPIO35"/>
@@ -13154,6 +12942,10 @@ Source: &lt;a href="https://www.adafruit.com/datasheets/WS2812B.pdf"&gt; Datashe
 <approved hash="104,1,68.58,137.16,U$2,VDD2A,VDD,,,"/>
 <approved hash="104,1,68.58,134.62,U$2,VDD1A,VDD,,,"/>
 <approved hash="104,1,68.58,124.46,U$2,VSS,GND,,,"/>
+<approved hash="104,1,106.68,248.92,IC3,VDD,VCC,,,"/>
+<approved hash="104,1,78.74,248.92,IC3,VSS,GND,,,"/>
+<approved hash="104,1,139.7,248.92,IC4,VDD,VCC,,,"/>
+<approved hash="104,1,111.76,248.92,IC4,VSS,GND,,,"/>
 <approved hash="113,1,78.74,138.25,L,,,,,"/>
 </errors>
 </schematic>

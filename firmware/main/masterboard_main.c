@@ -21,6 +21,7 @@
 
 #define useWIFI false
 
+#define ENABLE_DEBUG_PRINTF false
 long int spi_count = 0;
 long int spi_ok[CONFIG_N_SLAVES] = {0};
 
@@ -69,10 +70,10 @@ static void periodic_timer_callback(void *arg)
         spi_stop = false;
         wifi_eth_first_recv = false;
     }
-    gpio_set_level(CONFIG_LED_GPIO, spi_stop ? 0 : 1);
-
+    //gpio_set_level(CONFIG_LED_GPIO, spi_stop ? 0 : 1);
+    gpio_set_level(CONFIG_LED_GPIO, spi_count & 0x01); //toogle LED
     /* Debug */
-    if (spi_count % 1000 == 0)
+    if (ENABLE_DEBUG_PRINTF && spi_count % 1000 == 0)
     {
         printf("\e[1;1H\e[2J");
         printf("--- SPI ---\n");
@@ -102,7 +103,7 @@ static void periodic_timer_callback(void *arg)
     /* Complete and send each packet */
 
     //for debug:
-    if (spi_count % 1000 == 0)
+    if (ENABLE_DEBUG_PRINTF && spi_count % 1000 == 0)
     {
         //print_imu();
         printf("\nlast CMD packet:\n");
@@ -148,7 +149,7 @@ static void periodic_timer_callback(void *arg)
                 {
                     spi_ok[i]++;
                     //for debug:
-                    if (spi_count % 1000 == 0 && i == 0)
+                    if (ENABLE_DEBUG_PRINTF && spi_count % 1000 == 0 && i == 0)
                     {
                         printf("\nlast SENSOR packet:\n");
                         print_packet(spi_rx_packet[i], SPI_TOTAL_LEN * 2);

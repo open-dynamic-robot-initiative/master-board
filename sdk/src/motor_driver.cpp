@@ -36,7 +36,7 @@ void MotorDriver::EnablePositionRolloverError()
 }
 void MotorDriver::DisablePositionRolloverError()
 {
-  enable_position_rollover_error = true;
+  enable_position_rollover_error = false;
 }
 void MotorDriver::SetTimeout(uint8_t time)
 {
