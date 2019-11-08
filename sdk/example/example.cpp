@@ -17,8 +17,8 @@ int main(int argc, char **argv)
 	double kp = 1.;
 	double kd = 2.;
 	double iq_sat = 4.0;
-	double freq = 0.2;
-	double amplitude = 10.0;
+	double freq = 0.5;
+	double amplitude = 1.0;
 	double init_pos[N_SLAVES * 2] = {0};
 	int state = 0;
 	nice(-20); //give the process a high priority
