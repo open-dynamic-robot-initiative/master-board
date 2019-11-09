@@ -10,7 +10,7 @@ docdir=${_PKG_CONFIG_DOCDIR}
 doxygendocdir=${_PKG_CONFIG_DOXYGENDOCDIR}
 
 Name: master-board-sdk-py
-Description: Python bindings of Pinocchio
+Description: Python bindings of master board SDK
 URL: ${_PKG_CONFIG_URL}
 Version: ${_PKG_CONFIG_VERSION}
 Requires: ${_PKG_CONFIG_PYWRAP_REQUIRES}
