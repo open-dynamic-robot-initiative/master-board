@@ -4,20 +4,27 @@
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
+# ----------------------------------------------------
+# --- CXX FLAGS --------------------------------------
+# ----------------------------------------------------
+
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pthread")
+SET(CXX_DISABLE_WERROR True)
+SET(CMAKE_VERBOSE_MAKEFILE True)
+
 # These variables have to be defined before running SETUP_PROJECT
 SET(PROJECT_NAME master-board-sdk)
 SET(PROJECT_DESCRIPTION "This project contains the sdk for the communication between a computer and the master-board")
 SET(PROJECT_URL https://github.com/open-dynamic-robot-initiative/master-board)
 
-PROJECT(${PROJECT_NAME} CXX)
-
 INCLUDE(cmake/base.cmake)
-INCLUDE(cmake/ide.cmake)
 INCLUDE(cmake/boost.cmake)
 INCLUDE(cmake/python.cmake)
 
+PROJECT(${PROJECT_NAME} CXX)
+
 # --- OPTIONS ----------------------------------------
-OPTION (BUILD_PYTHON_INTERFACE "Build the python binding" ON)
+OPTION (BUILD_PYTHON_INTERFACE "Build the python binding" OFF)
 
 MACRO(TAG_LIBRARY_VERSION target)
   SET_TARGET_PROPERTIES(${target} PROPERTIES SOVERSION ${PROJECT_VERSION})
@@ -47,13 +54,6 @@ INCLUDE_DIRECTORIES(SYSTEM ${Boost_INCLUDE_DIRS})
 # ----------------------------------------------------
 INCLUDE_DIRECTORIES(include)
 
-# ----------------------------------------------------
-# --- CXX FLAGS --------------------------------------
-# ----------------------------------------------------
-
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pthread")
-SET(CXX_DISABLE_WERROR True)
-SET(CMAKE_VERBOSE_MAKEFILE True)
 
 # --- MAIN LIBRARY -------------------------------------------------------------
 SET(MASTER_BOARD_SRC
@@ -146,5 +146,3 @@ PKG_CONFIG_APPEND_BOOST_LIBS(${BOOST_REQUIERED_COMPONENTS})
 FOREACH(cflags ${CFLAGS_DEPENDENCIES})
   PKG_CONFIG_APPEND_CFLAGS(${cflags})
 ENDFOREACH(cflags ${CFLAGS_DEPENDENCIES})
-
-SETUP_PROJECT_FINALIZE()
