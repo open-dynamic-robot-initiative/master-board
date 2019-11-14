@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package>
-  <name>master_board_sdk</name>
+  <name>master_board_sdk_catkin</name>
   <version>1.0.0</version>
   <description>Catkin nutshell around the master-board-sdk package.</description>
   <maintainer email="mnaveau@tue.mpg.de"> Maximilien Naveau</maintainer>

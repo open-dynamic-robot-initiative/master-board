@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(master_board_sdk)
+project(master_board_sdk_catkin)
 
 # required to use std::shared_ptr in code and to link the python bindings
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -15,7 +15,7 @@ OPTION (BUILD_PYTHON_INTERFACE "Build the python binding" OFF)
 ###################
 # Path to the sdk #
 ###################
-set(source_sdk ${CMAKE_CURRENT_SOURCE_DIR}/../sdk)
+set(source_sdk ${CMAKE_CURRENT_SOURCE_DIR}/../master_board_sdk)
 
 ################
 # Dependencies #
