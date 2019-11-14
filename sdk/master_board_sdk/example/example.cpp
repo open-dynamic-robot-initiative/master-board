@@ -1,4 +1,8 @@
 #include "master_board_interface.h"
+
+#undef N_SLAVES_CONTROLED
+#define N_SLAVES_CONTROLED 2
+
 #include "defines.h"
 #include <assert.h>
 #include <unistd.h>
