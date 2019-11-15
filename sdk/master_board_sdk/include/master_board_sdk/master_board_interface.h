@@ -1,13 +1,14 @@
 #ifndef MASTERBOARDINTERFACE_H
 #define MASTERBOARDINTERFACE_H
 
-#include "ESPNOW_manager.h"
-#include "ETHERNET_manager.h"
-#include "defines.h"
-#include "motor_driver.h"
-#include "motor.h"
-
 #include <mutex>
+
+#include "master_board_sdk/ESPNOW_manager.h"
+#include "master_board_sdk/ETHERNET_manager.h"
+#include "master_board_sdk/defines.h"
+#include "master_board_sdk/motor_driver.h"
+#include "master_board_sdk/motor.h"
+
 #define MAX_HIST 20
 
 class MasterBoardInterface : public LINK_manager_callback

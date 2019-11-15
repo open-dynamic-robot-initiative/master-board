@@ -1,7 +1,7 @@
 #ifndef DEFINES_H
 #define DEFINES_H
 
-#include "protocol.h"
+#include "master_board_sdk/protocol.h"
 #define N_SLAVES 6
 #define N_SLAVES_CONTROLED 4
 

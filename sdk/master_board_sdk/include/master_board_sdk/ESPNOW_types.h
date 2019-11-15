@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "Link_types.h"
+#include "master_board_sdk/Link_types.h"
 
 
 #define DATARATE_1Mbps 0x02

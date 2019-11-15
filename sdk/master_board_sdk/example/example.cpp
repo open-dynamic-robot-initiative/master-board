@@ -1,14 +1,17 @@
-#include "master_board_interface.h"
-#include "defines.h"
 #include <assert.h>
 #include <unistd.h>
-
 #include <chrono>
 #include <math.h>
-
 #include <stdio.h>
 #include <sys/stat.h>
+
+#include "master_board_sdk/master_board_interface.h"
+#include "master_board_sdk/defines.h"
+
+#undef N_SLAVES_CONTROLED
+#define N_SLAVES_CONTROLED 2
 #define PI 3.141592654
+
 int main(int argc, char **argv)
 {
 	int cpt = 0;

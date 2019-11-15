@@ -1,84 +1,89 @@
-#
-# Copyright (c) 2019 CNRS
-#
+cmake_minimum_required(VERSION 2.8.3)
+project(master_board_sdk_catkin)
 
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+# required to use std::shared_ptr in code and to link the python bindings
+if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wl,--no-as-needed")
+endif()
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wextra -pthread")
 
-# These variables have to be defined before running SETUP_PROJECT
-SET(PROJECT_NAME master-board-sdk)
-SET(PROJECT_DESCRIPTION "This project contains the sdk for the communication between a computer and the master-board")
-SET(PROJECT_URL https://github.com/open-dynamic-robot-initiative/master-board)
+###########
+# OPTIONS #
+###########
+OPTION (BUILD_PYTHON_INTERFACE "Build the python binding" OFF)
 
-PROJECT(${PROJECT_NAME} CXX)
+###################
+# Path to the sdk #
+###################
+set(source_sdk ${CMAKE_CURRENT_SOURCE_DIR}/../master_board_sdk)
 
-INCLUDE(cmake/base.cmake)
-INCLUDE(cmake/ide.cmake)
-INCLUDE(cmake/boost.cmake)
-INCLUDE(cmake/python.cmake)
-
-# --- OPTIONS ----------------------------------------
-OPTION (BUILD_PYTHON_INTERFACE "Build the python binding" ON)
-
-MACRO(TAG_LIBRARY_VERSION target)
-  SET_TARGET_PROPERTIES(${target} PROPERTIES SOVERSION ${PROJECT_VERSION})
-ENDMACRO(TAG_LIBRARY_VERSION)
-
-# ----------------------------------------------------
-# --- DEPENDENCIES -----------------------------------
-# ----------------------------------------------------
+################
+# Dependencies #
+################
+find_package(catkin REQUIRED COMPONENTS mpi_cmake_modules)
 
 # Set component to fetch from boost
 SET(BOOST_REQUIERED_COMPONENTS "")
 SET(BOOST_OPTIONAL_COMPONENTS "")
+
 # Get the python interface for the bindings
 IF(BUILD_PYTHON_INTERFACE)
   SET(BOOST_OPTIONAL_COMPONENTS ${BOOST_OPTIONAL_COMPONENTS} python)
   FINDPYTHON()
   INCLUDE_DIRECTORIES(SYSTEM ${PYTHON_INCLUDE_DIRS}) 
 ENDIF(BUILD_PYTHON_INTERFACE)
+
 # Search for the boost libraries
 SET(BOOST_COMPONENTS ${BOOST_REQUIERED_COMPONENTS} ${BOOST_OPTIONAL_COMPONENTS} ${BOOST_BUILD_COMPONENTS})
 SEARCH_FOR_BOOST()
 # Path to boost headers
 INCLUDE_DIRECTORIES(SYSTEM ${Boost_INCLUDE_DIRS})
 
-# ----------------------------------------------------
-# --- INCLUDE ----------------------------------------
-# ----------------------------------------------------
-INCLUDE_DIRECTORIES(include)
+# PATH to the sdk headers
+include_directories(${source_sdk}/include)
 
-# ----------------------------------------------------
-# --- CXX FLAGS --------------------------------------
-# ----------------------------------------------------
+###################################
+# Declare the libraries to export #
+###################################
+set(export_lib ${PROJECT_NAME})
+IF(BUILD_PYTHON_INTERFACE)
+  set(export_lib ${PROJECT_NAME}_pywrap ${export_lib})
+ENDIF(BUILD_PYTHON_INTERFACE)
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pthread")
-SET(CXX_DISABLE_WERROR True)
-SET(CMAKE_VERBOSE_MAKEFILE True)
+catkin_package(
+    INCLUDE_DIRS ${source_sdk}/include
+    CATKIN_DEPENDS
+    LIBRARIES ${export_lib}
+)
 
-# --- MAIN LIBRARY -------------------------------------------------------------
+###############
+# add library #
+###############
+
 SET(MASTER_BOARD_SRC
-    src/ESPNOW_manager.cpp
-    src/ESPNOW_types.cpp
-    src/ETHERNET_types.cpp
-    src/Link_manager.cpp
-    src/master_board_interface.cpp
-    src/motor.cpp
-    src/motor_driver.cpp
+    ${source_sdk}/src/ESPNOW_manager.cpp
+    ${source_sdk}/src/ESPNOW_types.cpp
+    ${source_sdk}/src/ETHERNET_types.cpp
+    ${source_sdk}/src/Link_manager.cpp
+    ${source_sdk}/src/master_board_interface.cpp
+    ${source_sdk}/src/motor.cpp
+    ${source_sdk}/src/motor_driver.cpp
 )
 ADD_LIBRARY(${PROJECT_NAME} SHARED
   ${MASTER_BOARD_SRC}
 )
-INSTALL(TARGETS ${PROJECT_NAME} DESTINATION lib)
 
-# --- BINDINGS -----------------------------------------------------------------
+###################
+# Python bindings #
+###################
 
 IF(BUILD_PYTHON_INTERFACE)
   SET(PYWRAP ${PROJECT_NAME}_pywrap)  
   SET(${PYWRAP}_HEADERS
-    #"srcpy/my_bindings_headr.h"
+    # ${source_sdk}/srcpy/my_bindings.hpp
   )
   SET(${PYWRAP}_SOURCES
-    #"srcpy/my_bindings_headr.cpp"
+    # ${source_sdk}/srcpy/my_bindings.cpp
   )
     
   ADD_CUSTOM_TARGET(python)
@@ -133,18 +138,22 @@ IF(BUILD_PYTHON_INTERFACE)
       PERMISSIONS OWNER_READ GROUP_READ WORLD_READ OWNER_WRITE)
 ENDIF(BUILD_PYTHON_INTERFACE)
 
+#########
+# demos #
+#########
 
-# --- CHECK EXAMPLES -----------------------------------------------------------
-ADD_EXECUTABLE(master-board-example example/example.cpp)
-TARGET_LINK_LIBRARIES(master-board-example ${PROJECT_NAME})
-INSTALL(TARGETS master-board-example DESTINATION bin)
+ADD_EXECUTABLE(demos_${PROJECT_NAME} ${source_sdk}/example/example.cpp)
+TARGET_LINK_LIBRARIES(demos_${PROJECT_NAME} ${PROJECT_NAME})
 
-# --- PACKAGING ----------------------------------------------------------------
-PKG_CONFIG_APPEND_LIBS (${PROJECT_NAME})
-PKG_CONFIG_APPEND_BOOST_LIBS(${BOOST_REQUIERED_COMPONENTS})
+##############
+# Unit tests #
+##############
 
-FOREACH(cflags ${CFLAGS_DEPENDENCIES})
-  PKG_CONFIG_APPEND_CFLAGS(${cflags})
-ENDFOREACH(cflags ${CFLAGS_DEPENDENCIES})
+# catkin_add_gtest(${PROJECT_NAME}_unit_tests
+#   tests/main.cpp
+# )
 
-SETUP_PROJECT_FINALIZE()
+##########################
+# building documentation #
+##########################
+build_doxygen_documentation()

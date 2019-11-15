@@ -1,6 +1,6 @@
 #include <assert.h>
 
-#include "ESPNOW_types.h"
+#include "master_board_sdk/ESPNOW_types.h"
 
 
 void ESPNOW_packet::set_channel(uint16_t channel_freq) {

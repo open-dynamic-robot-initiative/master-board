@@ -6,7 +6,7 @@
 #include <stdint.h>
 
 #include "Link_manager.h"
-#include "ETHERNET_types.h"
+#include "master_board_sdk/ETHERNET_types.h"
 
 
 #define LEN_RAWBYTES_MAX 512

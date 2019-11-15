@@ -10,7 +10,7 @@
 #include <arpa/inet.h>
 #include <assert.h>
 
-#include "Link_manager.h"
+#include "master_board_sdk/Link_manager.h"
 
 void LINK_manager::set_interface(const std::string &interface)
 {
