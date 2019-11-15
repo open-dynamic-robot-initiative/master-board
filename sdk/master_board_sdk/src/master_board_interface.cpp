@@ -1,4 +1,4 @@
-#include "master_board_interface.h"
+#include "master_board_sdk/master_board_interface.h"
 
 MasterBoardInterface::MasterBoardInterface(const std::string &if_name)
 {

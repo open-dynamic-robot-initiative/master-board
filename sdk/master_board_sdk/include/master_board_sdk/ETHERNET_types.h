@@ -4,7 +4,7 @@
 
 #include <stdint.h>
 
-#include "Link_types.h"
+#include "master_board_sdk/Link_types.h"
 
 
 #define ETH_RECV_SIZE_MIN 16

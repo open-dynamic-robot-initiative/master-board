@@ -1,7 +1,7 @@
 #ifndef MOTORDRIVER_H
 #define MOTORDRIVER_H
-#include "motor.h"
 #include <stdint.h>
+#include "master_board_sdk/motor.h"
 class Motor;
 class MotorDriver
 {

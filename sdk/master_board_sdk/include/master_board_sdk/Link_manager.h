@@ -3,7 +3,7 @@
 
 #include <thread>
 
-#include "Link_types.h"
+#include "master_board_sdk/Link_types.h"
 
 #define LEN_RAWBYTES_MAX 512
 

@@ -3,8 +3,8 @@
 
 #include <linux/filter.h>
 
-#include "Link_manager.h"
-#include "ESPNOW_types.h"
+#include "master_board_sdk/Link_manager.h"
+#include "master_board_sdk/ESPNOW_types.h"
 
 
 class ESPNOW_manager : public LINK_manager {
