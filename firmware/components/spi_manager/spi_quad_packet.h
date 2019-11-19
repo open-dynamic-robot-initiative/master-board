@@ -36,7 +36,7 @@
 #define SPI_QN_IQ   10
 #define SPI_QN_ISAT 3
 #define SPI_QN_CR   15
-#define SPI_QN_ADC  16
+#define SPI_QN_ADC  14
 #define SPI_QN_KP   16
 #define SPI_QN_KD   16
 
