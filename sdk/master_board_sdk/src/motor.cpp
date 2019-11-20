@@ -10,6 +10,8 @@ Motor::Motor()
   is_ready = false;
   index_toggle_bit = false;
   has_index_been_detected = false;
+  direction = 1;
+  position_offset = 0.;
 
   enable = false;
   enable_position_rollover_error = false;
@@ -27,9 +29,9 @@ void Motor::Print()
   printf("ready:%d ", is_ready);
   printf("IDXT:%d ", index_toggle_bit);
   printf("Index detected:%d ", has_index_been_detected);
-  printf("position:%8f ", position);
-  printf("velocity:%8f ", velocity);
-  printf("current:%8f ", current);
+  printf("position:%8f ", GetPosition());
+  printf("velocity:%8f ", GetVelocity());
+  printf("current:%8f ", GetCurrent());
   printf("\n");
 }
 
@@ -45,17 +47,17 @@ void Motor::Disable()
 
 void Motor::SetPositionReference(float ref)
 {
-  position_ref = ref;
+  position_ref = direction * ref + position_offset;
 }
 
 void Motor::SetVelocityReference(float ref)
 {
-  velocity_ref = ref;
+  velocity_ref = direction * ref;
 }
 
 void Motor::SetCurrentReference(float ref)
 {
-  current_ref = ref;
+  current_ref = direction * ref;
 }
 
 bool Motor::IsReady()
@@ -75,15 +77,25 @@ bool Motor::GetIndexToggleBit()
   return index_toggle_bit;
 }
 
-  float Motor::GetPosition()
-  {
-    return position;
-  }
-  float Motor::GetVelocity()
-  {
-    return velocity;
-  }
-  float Motor::GetCurrent()
-  {
-    return current;
-  }
+float Motor::GetPosition()
+{
+  return direction * (position - position_offset);
+}
+float Motor::GetVelocity()
+{
+  return direction * velocity;
+}
+float Motor::GetCurrent()
+{
+  return direction * current;
+}
+
+void Motor::SetDirection(bool reverse_motor_direction)
+{
+  direction = reverse_motor_direction ? -1 : 1;
+}
+
+void Motor::ZeroPosition()
+{
+  position_offset = position;
+}

@@ -24,6 +24,10 @@ public:
   float GetPosition();
   float GetVelocity();
   float GetCurrent();
+
+  void SetDirection(bool reverse_motor_direction);
+  void ZeroPosition();
+
   //protecteded:
 
   //state
@@ -35,14 +39,17 @@ public:
   bool is_ready;
   bool index_toggle_bit;
   bool has_index_been_detected;
-  
+
+  float direction;
+  float position_offset; // In absolute position coordinates.
+
   //commands
   float position_ref;
   float velocity_ref;
   float current_ref;
   float kp;
   float kd;
-  
+
 
   bool enable;
   bool enable_position_rollover_error;

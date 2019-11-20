@@ -40,6 +40,11 @@ int main(int argc, char **argv)
 		robot_if.motor_drivers[i].SetTimeout(5);
 		robot_if.motor_drivers[i].Enable();
 	}
+
+	// Reverse the direction of the first two motors.
+	robot_if.motors[0].SetDirection(true);
+	robot_if.motors[1].SetDirection(true);
+
 	std::chrono::time_point<std::chrono::system_clock> last = std::chrono::system_clock::now();
 	while (1)
 	{
@@ -59,26 +64,38 @@ int main(int argc, char **argv)
 					{
 						state = 0;
 					}
-					init_pos[i] = robot_if.motors[i].GetPosition(); //initial position
 					t = 0;																					//to start sin at 0
 				}
 				break;
 			case 1:
-				//closed loop, position
+				// Zero the motors once all motors are ready.
 				for (int i = 0; i < N_SLAVES_CONTROLED * 2; i++)
 				{
-					if (robot_if.motors[i].IsEnabled())
-					{
-						double ref = init_pos[i] + amplitude * sin(2 * PI * freq * t);
-						double v_ref = 0; //2 * PI * freq * cos(2 * PI * freq * t)/(1000*60);
-						double p_err = ref - robot_if.motors[i].GetPosition();
-						double v_err = v_ref - robot_if.motors[i].GetVelocity();
-						double cur = kp * p_err + kd * v_err;
-						if (cur > iq_sat)
-							cur = iq_sat;
-						if (cur < -iq_sat)
-							cur = -iq_sat;
-						robot_if.motors[i].SetCurrentReference(cur);
+					robot_if.motors[i].ZeroPosition(); //initial position
+				}
+				state = 2;
+				break;
+			case 2:
+				//closed loop, position
+				for (int k = 0; k < N_SLAVES_CONTROLED; k++)
+				{
+					for (int j = 0; j < 2; j++) {
+						int i = k * 2 + j;
+
+						if (robot_if.motors[i].IsEnabled())
+						{
+							// double ref = init_pos[i] + amplitude * sin(2 * PI * freq * t);
+							double ref = robot_if.motor_drivers[k].adc[j];
+							double v_ref = 0; //2 * PI * freq * cos(2 * PI * freq * t)/(1000*60);
+							double p_err = ref - robot_if.motors[i].GetPosition();
+							double v_err = v_ref - robot_if.motors[i].GetVelocity();
+							double cur = kp * p_err + kd * v_err;
+							if (cur > iq_sat)
+								cur = iq_sat;
+							if (cur < -iq_sat)
+								cur = -iq_sat;
+							robot_if.motors[i].SetCurrentReference(cur);
+						}
 					}
 				}
 				break;
