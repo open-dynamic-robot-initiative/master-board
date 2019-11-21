@@ -39,7 +39,7 @@
 #define UD_QN_IQ   10
 #define UD_QN_ISAT 3
 #define UD_QN_CR   15
-#define UD_QN_ADC  16
+#define UD_QN_ADC  14
 #define UD_QN_KP   16
 #define UD_QN_KD   16
 

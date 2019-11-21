@@ -18,9 +18,14 @@ public:
 
 	void Enable();
 	void Disable();
+
+	//adc
+	float adc[2];
+
 	//private:
 	Motor *motor1;
 	Motor *motor2;
+
 	//status
 	bool is_enabled;
 	int error_code;
