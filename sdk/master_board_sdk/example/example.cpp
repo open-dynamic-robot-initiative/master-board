@@ -83,7 +83,7 @@ int main(int argc, char **argv)
 
 						if (robot_if.motors[i].IsEnabled())
 						{
-							double ref = amplitude * (robot_if.motor_drivers[k].adc[j] + sin(2 * M_PI * freq * t));
+							double ref = amplitude * (2. * (robot_if.motor_drivers[k].adc[j] - 0.5) + sin(2 * M_PI * freq * t));
 							double v_ref = 2. * M_PI * freq * amplitude * cos(2 * M_PI * freq * t);
 							double p_err = ref - robot_if.motors[i].GetPosition();
 							double v_err = v_ref - robot_if.motors[i].GetVelocity();
@@ -94,7 +94,7 @@ int main(int argc, char **argv)
 								cur = -iq_sat;
 							robot_if.motors[i].SetCurrentReference(cur);
 						}
-
+					}
 				}
 				break;
 			}
