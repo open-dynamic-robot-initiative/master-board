@@ -31,9 +31,9 @@ public:
   //protecteded:
 
   //state
-  float position;
-  float velocity;
-  float current;
+  float position; // [rad]
+  float velocity; // [rad/s]
+  float current;  // [A]
 
   bool is_enabled;
   bool is_ready;
@@ -44,11 +44,11 @@ public:
   float position_offset; // In absolute position coordinates.
 
   //commands
-  float position_ref;
-  float velocity_ref;
-  float current_ref;
-  float kp;
-  float kd;
+  float position_ref;  // [rad]
+  float velocity_ref;  // [rad/s]
+  float current_ref;   // [A]
+  float kp;            // [A/rad]
+  float kd;            // [As/rad]
 
 
   bool enable;
