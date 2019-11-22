@@ -4,6 +4,10 @@
 #include <math.h>
 #include <stdio.h>
 #include <sys/stat.h>
+#include <deque>
+#include <vector>
+#include <numeric>
+#include <functional>
 
 #include "master_board_sdk/master_board_interface.h"
 #include "master_board_sdk/defines.h"
@@ -16,12 +20,24 @@ int main(int argc, char **argv)
 	int cpt = 0;
 	double dt = 0.001;
 	double t = 0;
-	double kp = 5.;
+	double kp = 1.;
 	double kd = 0.5;
 	double iq_sat = 4.0;
 	double freq = 0.5;
-	double amplitude = M_PI;
+	double amplitude = 9*M_PI;
 	double init_pos[N_SLAVES * 2] = {0};
+
+	double sliders_zero[4];
+	double sliders[4];
+	double sliders_filt[4];
+
+	std::vector<std::deque<double> > sliders_filt_buffer(4);
+    size_t max_filt_dim = 200;
+    for (unsigned i = 0; i < sliders_filt_buffer.size(); ++i)
+    {
+        sliders_filt_buffer[i].clear();
+    }
+
 	int state = 0;
 	nice(-20); //give the process a high priority
 	printf("-- Main --\n");
@@ -53,6 +69,39 @@ int main(int argc, char **argv)
 			cpt++;
 			t += dt;
 			robot_if.ParseSensorData(); // This will read the last incomming packet and update all sensor fields.
+
+			// Parse the slider values.
+			for (int k = 0; k < 2; k++)
+			{
+				for (int j = 0; j < 2; j++)
+				{
+					sliders[2*k + j] = robot_if.motor_drivers[k].adc[j];
+				}
+			}
+
+			// Filter the slider values once all motors are enabled.
+			if (state > 0) {
+				for (unsigned i = 0; i < 4; ++i)
+				{
+					if (sliders_filt_buffer[i].size() >= max_filt_dim)
+					{
+						sliders_filt_buffer[i].pop_front();
+					}
+					sliders_filt_buffer[i].push_back(sliders[i]);
+					sliders_filt[i] = std::accumulate(sliders_filt_buffer[i].begin(),
+													sliders_filt_buffer[i].end(),
+													0.0) /
+									(double)sliders_filt_buffer[i].size();
+				}
+			}
+
+			// Use the filtered slideres for multiple legs.
+			sliders_filt[2] = 2. * (1. - sliders_filt[1]);
+			sliders_filt[3] = sliders_filt[1];
+			// sliders_filt[4] = 2. * (1. - sliders_filt[1]);
+			// sliders_filt[5] = sliders_filt[1];
+			sliders_filt[1] = sliders_filt[0];
+
 			switch (state)
 			{
 			case 0: //check the end of calibration (are the all controlled motor enabled and ready?)
@@ -72,7 +121,14 @@ int main(int argc, char **argv)
 				{
 					robot_if.motors[i].ZeroPosition(); //initial position
 				}
-				state = 2;
+
+				// Zero the slider values.
+				for (int i = 0; i < 4; i++) {
+					sliders_zero[i] = sliders_filt[i];
+				}
+				if (sliders_filt_buffer[0].size() == max_filt_dim) {
+					state = 2;
+				}
 				break;
 			case 2:
 				//closed loop, position
@@ -83,8 +139,10 @@ int main(int argc, char **argv)
 
 						if (robot_if.motors[i].IsEnabled())
 						{
-							double ref = amplitude * (2. * (robot_if.motor_drivers[k].adc[j] - 0.5) + sin(2 * M_PI * freq * t));
-							double v_ref = 2. * M_PI * freq * amplitude * cos(2 * M_PI * freq * t);
+							// double ref = amplitude * (2. * (robot_if.motor_drivers[k].adc[j] - 0.5) + sin(2 * M_PI * freq * t));
+							// double v_ref = 2. * M_PI * freq * amplitude * cos(2 * M_PI * freq * t);
+							double ref = amplitude * (sliders_filt[i] - sliders_zero[i]);
+							double v_ref = 0.;
 							double p_err = ref - robot_if.motors[i].GetPosition();
 							double v_err = v_ref - robot_if.motors[i].GetVelocity();
 							double cur = kp * p_err + kd * v_err;
