@@ -90,6 +90,11 @@ float Motor::GetCurrent()
   return direction * current;
 }
 
+float Motor::GetCurrentReference()
+{
+  return direction * current_ref;
+}
+
 void Motor::SetDirection(bool reverse_motor_direction)
 {
   direction = reverse_motor_direction ? -1 : 1;

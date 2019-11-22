@@ -24,6 +24,7 @@ public:
   float GetPosition();
   float GetVelocity();
   float GetCurrent();
+  float GetCurrentReference();
 
   void SetDirection(bool reverse_motor_direction);
   void ZeroPosition();
