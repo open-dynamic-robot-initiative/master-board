@@ -39,6 +39,9 @@ int main(int argc, char **argv)
         sliders_filt_buffer[i].clear();
     }
 
+	// Use for debugging.
+	FILE * pFile;
+
 	int state = 0;
 	nice(-20); //give the process a high priority
 	printf("-- Main --\n");
@@ -61,6 +64,7 @@ int main(int argc, char **argv)
 	robot_if.motors[0].SetDirection(true);
 	robot_if.motors[1].SetDirection(true);
 
+	std::chrono::time_point<std::chrono::system_clock> started = std::chrono::system_clock::now();
 	std::chrono::time_point<std::chrono::system_clock> last = std::chrono::system_clock::now();
 	while (1)
 	{
@@ -132,10 +136,18 @@ int main(int argc, char **argv)
 					sliders_zero[i] = sliders_filt[i];
 				}
 				if (sliders_filt_buffer[0].size() == max_filt_dim) {
+					pFile = fopen ("sensor_values.txt", "w");
+					fprintf (pFile, "time_index;time_duration;sliders[0];sliders[1];silders_filt[0];sliders_filt[1];p_ref;motor_pos;p_err;v_err;cur;\n");
 					state = 2;
 				}
 				break;
 			case 2:
+				// Write debug logs.
+				fprintf (pFile, "%d;%0.5f;%0.4f;%0.4f;%0.4f;%0.4f;", cpt,
+						((std::chrono::duration<double>)(last - started)).count(),
+						sliders[0], sliders[1],
+						sliders_filt[0], sliders_filt[3]);
+
 				//closed loop, position
 				for (int k = 0; k < N_SLAVES_CONTROLED; k++)
 				{
@@ -156,9 +168,11 @@ int main(int argc, char **argv)
 							if (cur < -iq_sat)
 								cur = -iq_sat;
 							robot_if.motors[i].SetCurrentReference(cur);
+							fprintf (pFile, "%0.4f;%0.4f;%0.4f;%0.4f;%0.4f;", ref, robot_if.motors[i].GetPosition(), p_err, v_err, cur);
 						}
 					}
 				}
+				fprintf (pFile, "\n");
 				break;
 			}
 			if (cpt % 100 == 0)
@@ -177,5 +191,7 @@ int main(int argc, char **argv)
 			std::this_thread::yield();
 		}
 	}
+	fflush(pFile);
+	fclose(pFile);
 	return 0;
 }
