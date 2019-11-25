@@ -14,6 +14,7 @@
 
 #undef N_SLAVES_CONTROLED
 #define N_SLAVES_CONTROLED 2
+#define N_SLIDER 6
 
 int main(int argc, char **argv)
 {
@@ -21,17 +22,17 @@ int main(int argc, char **argv)
 	double dt = 0.001;
 	double t = 0;
 	double kp = 1.;
-	double kd = 0.5;
-	double iq_sat = 4.0;
+	double kd = 0.1;
+	double iq_sat = 1.0;
 	double freq = 0.5;
 	double amplitude = 9*M_PI;
 	double init_pos[N_SLAVES * 2] = {0};
 
-	double sliders_zero[4];
-	double sliders[4];
-	double sliders_filt[4];
+	double sliders_zero[N_SLIDER];
+	double sliders[N_SLIDER];
+	double sliders_filt[N_SLIDER];
 
-	std::vector<std::deque<double> > sliders_filt_buffer(4);
+	std::vector<std::deque<double> > sliders_filt_buffer(N_SLIDER);
     size_t max_filt_dim = 200;
     for (unsigned i = 0; i < sliders_filt_buffer.size(); ++i)
     {
@@ -81,8 +82,12 @@ int main(int argc, char **argv)
 
 			// Filter the slider values once all motors are enabled.
 			if (state > 0) {
-				for (unsigned i = 0; i < 4; ++i)
+				for (unsigned i = 0; i < N_SLIDER; ++i)
 				{
+					if (!robot_if.motors[i].IsEnabled())
+					{
+						continue;
+					}
 					if (sliders_filt_buffer[i].size() >= max_filt_dim)
 					{
 						sliders_filt_buffer[i].pop_front();
@@ -98,8 +103,8 @@ int main(int argc, char **argv)
 			// Use the filtered slideres for multiple legs.
 			sliders_filt[2] = 2. * (1. - sliders_filt[1]);
 			sliders_filt[3] = sliders_filt[1];
-			// sliders_filt[4] = 2. * (1. - sliders_filt[1]);
-			// sliders_filt[5] = sliders_filt[1];
+			sliders_filt[4] = -2. * (1. - sliders_filt[1]);
+			sliders_filt[5] = -sliders_filt[1];
 			sliders_filt[1] = sliders_filt[0];
 
 			switch (state)
@@ -123,7 +128,7 @@ int main(int argc, char **argv)
 				}
 
 				// Zero the slider values.
-				for (int i = 0; i < 4; i++) {
+				for (int i = 0; i < N_SLIDER; i++) {
 					sliders_zero[i] = sliders_filt[i];
 				}
 				if (sliders_filt_buffer[0].size() == max_filt_dim) {
