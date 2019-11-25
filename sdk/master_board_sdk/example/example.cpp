@@ -13,7 +13,7 @@
 #include "master_board_sdk/defines.h"
 
 #undef N_SLAVES_CONTROLED
-#define N_SLAVES_CONTROLED 2
+#define N_SLAVES_CONTROLED 3
 #define N_SLIDER 6
 
 int main(int argc, char **argv)
@@ -137,7 +137,8 @@ int main(int argc, char **argv)
 				}
 				if (sliders_filt_buffer[0].size() == max_filt_dim) {
 					pFile = fopen ("sensor_values.txt", "w");
-					fprintf (pFile, "time_index;time_duration;sliders[0];sliders[1];silders_filt[0];sliders_filt[1];p_ref;motor_pos;p_err;v_err;cur;\n");
+					// fprintf (pFile, "time_index;time_duration;sliders[0];sliders[1];silders_filt[0];sliders_filt[1];p_ref;motor_pos;p_err;v_err;cur;\n");
+					fprintf (pFile, "time_index;time_duration;sliders[0];sliders[1];silders_filt[0];sliders_filt[1];motor_enabled;\n");
 					state = 2;
 				}
 				break;
@@ -168,8 +169,9 @@ int main(int argc, char **argv)
 							if (cur < -iq_sat)
 								cur = -iq_sat;
 							robot_if.motors[i].SetCurrentReference(cur);
-							fprintf (pFile, ";%0.4f;%0.4f;%0.4f;%0.4f;%0.4f", ref, robot_if.motors[i].GetPosition(), p_err, v_err, cur);
+							// fprintf (pFile, ";%0.4f;%0.4f;%0.4f;%0.4f;%0.4f", ref, robot_if.motors[i].GetPosition(), p_err, v_err, cur);
 						}
+						fprintf (pFile, ";%d", robot_if.motors[i].IsEnabled());
 					}
 				}
 				fprintf (pFile, "\n");
