@@ -143,7 +143,7 @@ int main(int argc, char **argv)
 				break;
 			case 2:
 				// Write debug logs.
-				fprintf (pFile, "%d;%0.5f;%0.4f;%0.4f;%0.4f;%0.4f;", cpt,
+				fprintf (pFile, "%d;%0.5f;%0.4f;%0.4f;%0.4f;%0.4f", cpt,
 						((std::chrono::duration<double>)(last - started)).count(),
 						sliders[0], sliders[1],
 						sliders_filt[0], sliders_filt[3]);
@@ -168,7 +168,7 @@ int main(int argc, char **argv)
 							if (cur < -iq_sat)
 								cur = -iq_sat;
 							robot_if.motors[i].SetCurrentReference(cur);
-							fprintf (pFile, "%0.4f;%0.4f;%0.4f;%0.4f;%0.4f;", ref, robot_if.motors[i].GetPosition(), p_err, v_err, cur);
+							fprintf (pFile, ";%0.4f;%0.4f;%0.4f;%0.4f;%0.4f", ref, robot_if.motors[i].GetPosition(), p_err, v_err, cur);
 						}
 					}
 				}
