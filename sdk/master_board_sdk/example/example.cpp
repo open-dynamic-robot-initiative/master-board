@@ -10,18 +10,17 @@
 
 #undef N_SLAVES_CONTROLED
 #define N_SLAVES_CONTROLED 2
-#define PI 3.141592654
 
 int main(int argc, char **argv)
 {
 	int cpt = 0;
 	double dt = 0.001;
 	double t = 0;
-	double kp = 1.;
-	double kd = 2.;
+	double kp = 5.;
+	double kd = 0.5;
 	double iq_sat = 4.0;
 	double freq = 0.5;
-	double amplitude = 1.0;
+	double amplitude = M_PI;
 	double init_pos[N_SLAVES * 2] = {0};
 	int state = 0;
 	nice(-20); //give the process a high priority
@@ -69,8 +68,8 @@ int main(int argc, char **argv)
 				{
 					if (robot_if.motors[i].IsEnabled())
 					{
-						double ref = init_pos[i] + amplitude * sin(2 * PI * freq * t);
-						double v_ref = 0; //2 * PI * freq * cos(2 * PI * freq * t)/(1000*60);
+						double ref = init_pos[i] + amplitude * sin(2 * M_PI * freq * t);
+						double v_ref = 2. * M_PI * freq * amplitude * cos(2 * M_PI * freq * t);
 						double p_err = ref - robot_if.motors[i].GetPosition();
 						double v_err = v_ref - robot_if.motors[i].GetVelocity();
 						double cur = kp * p_err + kd * v_err;

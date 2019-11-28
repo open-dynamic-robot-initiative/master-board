@@ -26,22 +26,22 @@ public:
   float GetCurrent();
 
   //state
-  float position;
-  float velocity;
-  float current;
+  float position; // [rad]
+  float velocity; // [rad/s]
+  float current;  // [A]
 
   bool is_enabled;
   bool is_ready;
   bool index_toggle_bit;
   bool has_index_been_detected;
-  
+
   //commands
-  float position_ref;
-  float velocity_ref;
-  float current_ref;
-  float kp;
-  float kd;
-  
+  float position_ref;  // [rad]
+  float velocity_ref;  // [rad/s]
+  float current_ref;   // [A]
+  float kp;            // [A/rad]
+  float kd;            // [As/rad]
+
 
   bool enable;
   bool enable_position_rollover_error;
