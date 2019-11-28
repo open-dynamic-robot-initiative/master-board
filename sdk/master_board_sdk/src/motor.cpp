@@ -27,9 +27,9 @@ void Motor::Print()
   printf("ready:%d ", is_ready);
   printf("IDXT:%d ", index_toggle_bit);
   printf("Index detected:%d ", has_index_been_detected);
-  printf("position:%8f ", position);
-  printf("velocity:%8f ", velocity);
-  printf("current:%8f ", current);
+  printf("position:%+3.3f ", position);
+  printf("velocity:%+3.3f ", velocity);
+  printf("current:%+3.3f ", current);
   printf("\n");
 }
 

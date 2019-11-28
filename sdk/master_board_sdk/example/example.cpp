@@ -9,7 +9,7 @@
 #include "master_board_sdk/defines.h"
 
 #undef N_SLAVES_CONTROLED
-#define N_SLAVES_CONTROLED 2
+#define N_SLAVES_CONTROLED 6
 #define PI 3.141592654
 
 int main(int argc, char **argv)
@@ -19,10 +19,13 @@ int main(int argc, char **argv)
 	double t = 0;
 	double kp = 1.;
 	double kd = 2.;
-	double iq_sat = 4.0;
+	double iq_sat = 1.0;
 	double freq = 0.5;
-	double amplitude = 1.0;
+	double amplitude = 0.7;
 	double init_pos[N_SLAVES * 2] = {0};
+	int driver_disabled_counter[N_SLAVES] = {0};
+	int motor_disabled_counter[N_SLAVES * 2] = {0};
+	int motor_controlled_counter = 0;
 	int state = 0;
 	nice(-20); //give the process a high priority
 	printf("-- Main --\n");
@@ -64,6 +67,8 @@ int main(int argc, char **argv)
 				}
 				break;
 			case 1:
+				motor_controlled_counter += 1;
+
 				//closed loop, position
 				for (int i = 0; i < N_SLAVES_CONTROLED * 2; i++)
 				{
@@ -79,16 +84,41 @@ int main(int argc, char **argv)
 						if (cur < -iq_sat)
 							cur = -iq_sat;
 						robot_if.motors[i].SetCurrentReference(cur);
+					} else {
+						motor_disabled_counter[i] += 1;
+					}
+				}
+
+				for (int j = 0; j < N_SLAVES_CONTROLED; j++)
+				{
+					if (!robot_if.motor_drivers[j].is_enabled)
+					{
+						driver_disabled_counter[j] += 1;
 					}
 				}
 				break;
 			}
-			if (cpt % 100 == 0)
+			if (cpt % 250 == 0)
 			{
 				printf("\33[H\33[2J"); //clear screen
 				robot_if.PrintIMU();
 				robot_if.PrintMotors();
 				robot_if.PrintMotorDrivers();
+
+				// Print statistics about enabled motor behavior
+				for (int i = 0; i < N_SLAVES_CONTROLED; i++) {
+					printf("Motor Driver %02d, disabled % 6d/% 6d (%0.3f \%)", i,
+						driver_disabled_counter[i],
+						motor_controlled_counter,
+						(float)(driver_disabled_counter[i]) / motor_controlled_counter * 100.);
+					for (int j = 0; j < 2; j++) {
+						printf(", motor %d disabled % 6d (%0.3f \%)", j,
+							motor_disabled_counter[2 * i + j],
+							(float)(motor_disabled_counter[2 * i + j]) /
+								motor_controlled_counter * 100.);
+					}
+					printf("\n");
+				}
 				fflush(stdout);
 			}
 			robot_if.SendCommand(); //This will send the command packet
