@@ -8,7 +8,8 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 # --- CXX FLAGS --------------------------------------
 # ----------------------------------------------------
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pthread")
+ADD_DEFINITIONS(-pthread)
+SET(CMAKE_CXX_STANDARD 11)
 SET(CXX_DISABLE_WERROR True)
 SET(CMAKE_VERBOSE_MAKEFILE True)
 
@@ -20,6 +21,7 @@ SET(PROJECT_URL https://github.com/open-dynamic-robot-initiative/master-board)
 INCLUDE(cmake/base.cmake)
 INCLUDE(cmake/boost.cmake)
 INCLUDE(cmake/python.cmake)
+INCLUDE(cmake/ide.cmake)
 
 PROJECT(${PROJECT_NAME} CXX)
 
@@ -68,17 +70,19 @@ SET(MASTER_BOARD_SRC
 ADD_LIBRARY(${PROJECT_NAME} SHARED
   ${MASTER_BOARD_SRC}
 )
+TARGET_LINK_LIBRARIES(${PROJECT_NAME} pthread)
 INSTALL(TARGETS ${PROJECT_NAME} DESTINATION lib)
 
 # --- BINDINGS -----------------------------------------------------------------
 
 IF(BUILD_PYTHON_INTERFACE)
-  SET(PYWRAP ${PROJECT_NAME}_pywrap)  
+  # SET(PYWRAP ${PROJECT_NAME}_pywrap)  
+  SET(PYWRAP master_board_sdk_pywrap)  
   SET(${PYWRAP}_HEADERS
-    #"srcpy/my_bindings_headr.h"
+    srcpy/my_bindings_headr.h
   )
   SET(${PYWRAP}_SOURCES
-    #"srcpy/my_bindings_headr.cpp"
+    srcpy/my_bindings_headr.cpp
   )
     
   ADD_CUSTOM_TARGET(python)

@@ -44,7 +44,6 @@ void LINK_manager::start()
 
 	bzero(&s_dest_addr, sizeof(s_dest_addr));
 	bzero(&ifr, sizeof(ifr));
-
 	fd = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
 	assert(fd != -1);
 

@@ -1,3 +1,4 @@
+#include <math.h>
 #include "master_board_sdk/master_board_interface.h"
 
 MasterBoardInterface::MasterBoardInterface(const std::string &if_name)
@@ -14,7 +15,10 @@ MasterBoardInterface::MasterBoardInterface(const std::string &if_name)
     motor_drivers[i].SetMotors(&motors[2 * i], &motors[2 * i + 1]);
   }
 }
-
+MasterBoardInterface::MasterBoardInterface(const MasterBoardInterface& to_be_copied) : MasterBoardInterface::MasterBoardInterface(to_be_copied.if_name_)
+{
+  
+}
 int MasterBoardInterface::Init()
 {
   printf("if_name: %s\n", if_name_.c_str());
@@ -51,6 +55,14 @@ int MasterBoardInterface::Init()
   return 0;
 }
 
+int MasterBoardInterface::Stop()
+{
+  printf("Shutting down connexion (%s)\n", if_name_.c_str());
+  ((ESPNOW_manager *)link_handler_)->unset_filter();
+  link_handler_->stop();
+  return 0;
+}
+
 void MasterBoardInterface::SendCommand()
 {
   //construct the command packet
@@ -83,16 +95,16 @@ void MasterBoardInterface::SendCommand()
     }
     mode |= UD_COMMAND_MODE_TIMEOUT & motor_drivers[i].timeout;
     command_packet.dual_motor_driver_command_packets[i].mode = mode;
-    command_packet.dual_motor_driver_command_packets[i].position_ref[0] = FLOAT_TO_D16QN(motor_drivers[i].motor1->position_ref, UD_QN_POS);
-    command_packet.dual_motor_driver_command_packets[i].position_ref[1] = FLOAT_TO_D16QN(motor_drivers[i].motor2->position_ref, UD_QN_POS);
-    command_packet.dual_motor_driver_command_packets[i].velocity_ref[0] = FLOAT_TO_D16QN(motor_drivers[i].motor1->velocity_ref, UD_QN_VEL);
-    command_packet.dual_motor_driver_command_packets[i].velocity_ref[1] = FLOAT_TO_D16QN(motor_drivers[i].motor2->velocity_ref, UD_QN_VEL);
+    command_packet.dual_motor_driver_command_packets[i].position_ref[0] = FLOAT_TO_D16QN(motor_drivers[i].motor1->position_ref / (2. * M_PI), UD_QN_POS);
+    command_packet.dual_motor_driver_command_packets[i].position_ref[1] = FLOAT_TO_D16QN(motor_drivers[i].motor2->position_ref / (2. * M_PI), UD_QN_POS);
+    command_packet.dual_motor_driver_command_packets[i].velocity_ref[0] = FLOAT_TO_D16QN(motor_drivers[i].motor1->velocity_ref * 60. / 1000., UD_QN_VEL);
+    command_packet.dual_motor_driver_command_packets[i].velocity_ref[1] = FLOAT_TO_D16QN(motor_drivers[i].motor2->velocity_ref * 60. / 1000., UD_QN_VEL);
     command_packet.dual_motor_driver_command_packets[i].current_ref[0] = FLOAT_TO_D16QN(motor_drivers[i].motor1->current_ref, UD_QN_IQ);
     command_packet.dual_motor_driver_command_packets[i].current_ref[1] = FLOAT_TO_D16QN(motor_drivers[i].motor2->current_ref, UD_QN_IQ);
-    command_packet.dual_motor_driver_command_packets[i].kp[0] = FLOAT_TO_D16QN(motor_drivers[i].motor1->kp, UD_QN_ISAT);
-    command_packet.dual_motor_driver_command_packets[i].kp[1] = FLOAT_TO_D16QN(motor_drivers[i].motor2->kp, UD_QN_ISAT);
-    command_packet.dual_motor_driver_command_packets[i].kd[0] = FLOAT_TO_D16QN(motor_drivers[i].motor1->kd, UD_QN_ISAT);
-    command_packet.dual_motor_driver_command_packets[i].kd[1] = FLOAT_TO_D16QN(motor_drivers[i].motor2->kd, UD_QN_ISAT);
+    command_packet.dual_motor_driver_command_packets[i].kp[0] = FLOAT_TO_D16QN(2. * M_PI * motor_drivers[i].motor1->kp, UD_QN_ISAT);
+    command_packet.dual_motor_driver_command_packets[i].kp[1] = FLOAT_TO_D16QN(2. * M_PI *motor_drivers[i].motor2->kp, UD_QN_ISAT);
+    command_packet.dual_motor_driver_command_packets[i].kd[0] = FLOAT_TO_D16QN(1000. / 60. * motor_drivers[i].motor1->kd, UD_QN_ISAT);
+    command_packet.dual_motor_driver_command_packets[i].kd[1] = FLOAT_TO_D16QN(1000. / 60. * motor_drivers[i].motor2->kd, UD_QN_ISAT);
   }
   link_handler_->send((uint8_t *)&command_packet, sizeof(command_packet_t));
 }
@@ -136,8 +148,8 @@ void MasterBoardInterface::ParseSensorData()
     motor_drivers[i].adc[1] = D16QN_TO_FLOAT(sensor_packet.dual_motor_driver_sensor_packets[i].adc[1], UD_QN_ADC);
 
     //motor 1
-    motor_drivers[i].motor1->position = D32QN_TO_FLOAT(sensor_packet.dual_motor_driver_sensor_packets[i].position[0], UD_QN_POS);
-    motor_drivers[i].motor1->velocity = D32QN_TO_FLOAT(sensor_packet.dual_motor_driver_sensor_packets[i].velocity[0], UD_QN_VEL);
+    motor_drivers[i].motor1->position = 2. * M_PI * D32QN_TO_FLOAT(sensor_packet.dual_motor_driver_sensor_packets[i].position[0], UD_QN_POS);
+    motor_drivers[i].motor1->velocity = 1000. / 60. * D32QN_TO_FLOAT(sensor_packet.dual_motor_driver_sensor_packets[i].velocity[0], UD_QN_VEL);
     motor_drivers[i].motor1->current = D32QN_TO_FLOAT(sensor_packet.dual_motor_driver_sensor_packets[i].current[0], UD_QN_IQ);
     motor_drivers[i].motor1->is_enabled = sensor_packet.dual_motor_driver_sensor_packets[i].status & UD_SENSOR_STATUS_M1E;
     motor_drivers[i].motor1->is_ready = sensor_packet.dual_motor_driver_sensor_packets[i].status & UD_SENSOR_STATUS_M1R;
@@ -145,8 +157,8 @@ void MasterBoardInterface::ParseSensorData()
     motor_drivers[i].motor1->index_toggle_bit = sensor_packet.dual_motor_driver_sensor_packets[i].status & UD_SENSOR_STATUS_IDX1T;
 
     //motor 2
-    motor_drivers[i].motor2->position = D32QN_TO_FLOAT(sensor_packet.dual_motor_driver_sensor_packets[i].position[1], UD_QN_POS);
-    motor_drivers[i].motor2->velocity = D32QN_TO_FLOAT(sensor_packet.dual_motor_driver_sensor_packets[i].velocity[1], UD_QN_VEL);
+    motor_drivers[i].motor2->position = 2. * M_PI * D32QN_TO_FLOAT(sensor_packet.dual_motor_driver_sensor_packets[i].position[1], UD_QN_POS);
+    motor_drivers[i].motor2->velocity = 1000. / 60. * D32QN_TO_FLOAT(sensor_packet.dual_motor_driver_sensor_packets[i].velocity[1], UD_QN_VEL);
     motor_drivers[i].motor2->current = D32QN_TO_FLOAT(sensor_packet.dual_motor_driver_sensor_packets[i].current[1], UD_QN_IQ);
     motor_drivers[i].motor2->is_enabled = sensor_packet.dual_motor_driver_sensor_packets[i].status & UD_SENSOR_STATUS_M2E;
     motor_drivers[i].motor2->is_ready = sensor_packet.dual_motor_driver_sensor_packets[i].status & UD_SENSOR_STATUS_M2R;
@@ -196,5 +208,23 @@ void MasterBoardInterface::PrintMotorDrivers()
   {
     printf("Motor Driver % 2.2d -> ", i);
     motor_drivers[i].Print();
+  }
+}
+
+void MasterBoardInterface::set_motors(Motor input_motors [])
+{
+  for (int i = 0; i < (2 * N_SLAVES); i++)
+  {
+    printf("Motor % 2.2d -> ", i);
+    (this->motors)[i] = input_motors[i];
+  }
+}
+
+void MasterBoardInterface::set_motor_drivers(MotorDriver input_motor_drivers [])
+{
+  for (int i = 0; i < N_SLAVES; i++)
+  {
+    printf("Motor Driver % 2.2d -> ", i);
+    (this->motor_drivers)[i] = input_motor_drivers[i];
   }
 }
