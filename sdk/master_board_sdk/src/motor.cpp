@@ -16,6 +16,7 @@ Motor::Motor()
   enable_index_toggle_bit = false;
   enable_index_offset_compensation = false;
 }
+
 void Motor::SetDriver(MotorDriver *driver)
 {
   this->driver = driver;
@@ -62,28 +63,33 @@ bool Motor::IsReady()
 {
   return is_ready;
 }
+
 bool Motor::IsEnabled()
 {
   return is_enabled;
 }
+
 bool Motor::HasIndexBeenDetected()
 {
   return has_index_been_detected;
 }
+
 bool Motor::GetIndexToggleBit()
 {
   return index_toggle_bit;
 }
 
-  float Motor::GetPosition()
-  {
-    return position;
-  }
-  float Motor::GetVelocity()
-  {
-    return velocity;
-  }
-  float Motor::GetCurrent()
-  {
-    return current;
-  }
+float Motor::GetPosition()
+{
+  return position;
+}
+
+float Motor::GetVelocity()
+{
+  return velocity;
+}
+
+float Motor::GetCurrent()
+{
+  return current;
+}

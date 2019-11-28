@@ -14,7 +14,10 @@ MasterBoardInterface::MasterBoardInterface(const std::string &if_name)
     motor_drivers[i].SetMotors(&motors[2 * i], &motors[2 * i + 1]);
   }
 }
-
+MasterBoardInterface::MasterBoardInterface(const MasterBoardInterface& to_be_copied) : MasterBoardInterface::MasterBoardInterface(to_be_copied.if_name_)
+{
+  
+}
 int MasterBoardInterface::Init()
 {
   printf("if_name: %s\n", if_name_.c_str());
@@ -48,6 +51,14 @@ int MasterBoardInterface::Init()
   {
     return -1;
   }
+  return 0;
+}
+
+int MasterBoardInterface::Stop()
+{
+  printf("Shutting down connexion (%s)\n", if_name_.c_str());
+  ((ESPNOW_manager *)link_handler_)->unset_filter();
+  link_handler_->stop();
   return 0;
 }
 
@@ -164,6 +175,7 @@ void MasterBoardInterface::PrintIMU()
          imu_data.attitude[1],
          imu_data.attitude[2]);
 }
+
 void MasterBoardInterface::PrintMotors()
 {
   for (int i = 0; i < (2 * N_SLAVES); i++)
@@ -172,11 +184,30 @@ void MasterBoardInterface::PrintMotors()
     motors[i].Print();
   }
 }
+
 void MasterBoardInterface::PrintMotorDrivers()
 {
   for (int i = 0; i < N_SLAVES; i++)
   {
     printf("Motor Driver % 2.2d -> ", i);
     motor_drivers[i].Print();
+  }
+}
+
+void MasterBoardInterface::set_motors(Motor input_motors [])
+{
+  for (int i = 0; i < (2 * N_SLAVES); i++)
+  {
+    printf("Motor % 2.2d -> ", i);
+    (this->motors)[i] = input_motors[i];
+  }
+}
+
+void MasterBoardInterface::set_motor_drivers(MotorDriver input_motor_drivers [])
+{
+  for (int i = 0; i < N_SLAVES; i++)
+  {
+    printf("Motor Driver % 2.2d -> ", i);
+    (this->motor_drivers)[i] = input_motor_drivers[i];
   }
 }

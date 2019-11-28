@@ -60,7 +60,7 @@ int main(int argc, char **argv)
 						state = 0;
 					}
 					init_pos[i] = robot_if.motors[i].GetPosition(); //initial position
-					t = 0;																					//to start sin at 0
+					t = 0;	//to start sin at 0
 				}
 				break;
 			case 1:

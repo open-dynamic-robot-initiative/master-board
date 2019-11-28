@@ -13,6 +13,7 @@ class LINK_manager_callback
 	virtual void callback(uint8_t src_mac[6], uint8_t *data, int len) = 0;
 };
 
+
 struct thread_args
 {
 	int sock_fd = -1;
