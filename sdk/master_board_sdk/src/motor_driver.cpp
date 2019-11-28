@@ -35,11 +35,22 @@ void MotorDriver::EnablePositionRolloverError()
 {
   enable_position_rollover_error = true;
 }
+
 void MotorDriver::DisablePositionRolloverError()
 {
   enable_position_rollover_error = false;
 }
+
 void MotorDriver::SetTimeout(uint8_t time)
 {
   timeout = time;
 }
+
+void MotorDriver::set_adc(float adc_val [])
+{
+  // The adc property is defined as float adc[2]
+  (this->adc)[0] = adc_val[0];
+  (this->adc)[1] = adc_val[1];
+}
+
+

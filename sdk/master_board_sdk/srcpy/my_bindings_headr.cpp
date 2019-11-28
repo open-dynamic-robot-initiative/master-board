@@ -1,6 +1,18 @@
 #include "my_bindings_headr.h"
 
-    using namespace boost::python;
+using namespace boost::python;
+
+// Wrapper to access the adc property, an array of 2 floats (read-only access)) 
+boost::python::tuple wrap_adc(MotorDriver const * motDriver) 
+{
+  boost::python::list a;
+  for (int i = 0; i < 2; ++i) 
+  {
+    a.append(motDriver->adc[i]);
+  }
+  return boost::python::tuple(a);
+}
+
 
     BOOST_PYTHON_MODULE(libmaster_board_sdk_pywrap)
     {
@@ -19,6 +31,7 @@
             .def("SendCommand", &MasterBoardInterface::SendCommand)
             .def("ParseSensorData", &MasterBoardInterface::ParseSensorData)
             .def("PrintIMU", &MasterBoardInterface::PrintIMU)
+            .def("PrintADC", &MasterBoardInterface::PrintADC)
             .def("PrintMotors", &MasterBoardInterface::PrintMotors)
             .def("PrintMotorDrivers", &MasterBoardInterface::PrintMotorDrivers)
             .def("GetDriver", make_function(&MasterBoardInterface::GetDriver, return_value_policy<boost::python::reference_existing_object>()))
@@ -84,7 +97,7 @@
             .def("SetTimeout", &MotorDriver::SetTimeout)
             .def("Enable", &MotorDriver::Enable)
             .def("Disable", &MotorDriver::Disable)
-
+            
             // Public properties of MotorDriver class
             .add_property("motor1", make_function(&MotorDriver::get_motor1, return_value_policy<boost::python::reference_existing_object>()), &MotorDriver::set_motor1)
             .add_property("motor2", make_function(&MotorDriver::get_motor2, return_value_policy<boost::python::reference_existing_object>()), &MotorDriver::set_motor2)
@@ -93,6 +106,7 @@
             .add_property("enable", &MotorDriver::get_enable, &MotorDriver::set_enable)
             .add_property("enable_position_rollover_error", &MotorDriver::get_enable_position_rollover_error, &MotorDriver::set_enable_position_rollover_error)
             .add_property("timeout", &MotorDriver::get_timeout, &MotorDriver::set_timeout)
+            .add_property("adc", wrap_adc)
         ;
         // End of bindings for MotorDriver class
 
