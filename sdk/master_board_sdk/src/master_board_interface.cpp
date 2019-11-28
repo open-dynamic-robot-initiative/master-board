@@ -126,6 +126,7 @@ void MasterBoardInterface::callback(uint8_t src_mac[6], uint8_t *data, int len)
 void MasterBoardInterface::ParseSensorData()
 {
   sensor_packet_mutex.lock();
+
   /*Read IMU data*/
   for (int i = 0; i < 3; i++)
   {
@@ -134,12 +135,17 @@ void MasterBoardInterface::ParseSensorData()
     imu_data.attitude[i] = D16QN_TO_FLOAT(sensor_packet.imu.attitude[i], IMU_QN_EF);
   }
 
+
   //Read Motor Driver Data
   for (int i = 0; i < N_SLAVES; i++)
   {
     //dual motor driver
     motor_drivers[i].is_enabled = sensor_packet.dual_motor_driver_sensor_packets[i].status & UD_SENSOR_STATUS_SE;
     motor_drivers[i].error_code = sensor_packet.dual_motor_driver_sensor_packets[i].status & UD_SENSOR_STATUS_ERROR;
+
+    //acd
+    motor_drivers[i].adc[0] = D16QN_TO_FLOAT(sensor_packet.dual_motor_driver_sensor_packets[i].adc[0], UD_QN_ADC);
+    motor_drivers[i].adc[1] = D16QN_TO_FLOAT(sensor_packet.dual_motor_driver_sensor_packets[i].adc[1], UD_QN_ADC);
 
     //motor 1
     motor_drivers[i].motor1->position = 2. * M_PI * D32QN_TO_FLOAT(sensor_packet.dual_motor_driver_sensor_packets[i].position[0], UD_QN_POS);
@@ -176,6 +182,15 @@ void MasterBoardInterface::PrintIMU()
          imu_data.attitude[0],
          imu_data.attitude[1],
          imu_data.attitude[2]);
+}
+
+void MasterBoardInterface::PrintADC()
+{
+  for (int i = 0; i < N_SLAVES; i++)
+  {
+    printf("ADC %2.2d -> %6.3f % 6.3f\n",
+          i, motor_drivers[i].adc[0], motor_drivers[i].adc[1]);
+  }
 }
 
 void MasterBoardInterface::PrintMotors()

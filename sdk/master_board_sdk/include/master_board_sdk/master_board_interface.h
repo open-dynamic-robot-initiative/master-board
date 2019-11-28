@@ -22,6 +22,7 @@ public:
 	void SendCommand();										 //Send the command packet to the master board
 	void ParseSensorData();								 //Parse and convert the latest received sensor data. User need to call this before reading any field.
 	void PrintIMU();											 //Print IMU data on stdout. Usefull for debug.
+	void PrintADC();											 //Print ACD data on stdout. Usefull for debug.
 	void PrintMotors();										 //Print motors data on stdout. Usefull for debug.
 	void PrintMotorDrivers();							 //Print motor drivers data on stdout. Usefull for debug.  void PrintMotors(); //Print Motors data on stdout. Usefull for debug.
 
@@ -40,7 +41,7 @@ private:
 
 	int histogram_lost_sensor_packets[MAX_HIST]; //histogram_lost_packets[0] is the number of single packet loss, histogram_lost_packets[1] is the number of two consecutive packet loss, etc...
 	int histogram_lost_cmd_packets[MAX_HIST];		 //histogram_lost_packets[0] is the number of single packet loss, histogram_lost_packets[1] is the number of two consecutive packet loss, etc...
-	
+
 	uint16_t last_sensor_index = 0;
 	uint32_t nb_sensors_sent = 0; //this variable deduce the total number of received sensor packet from sensor index and previous sensor index
 	uint32_t nb_sensors_lost = 0;

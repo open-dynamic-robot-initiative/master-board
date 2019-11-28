@@ -86,6 +86,7 @@ int main(int argc, char **argv)
 			{
 				printf("\33[H\33[2J"); //clear screen
 				robot_if.PrintIMU();
+				robot_if.PrintADC();
 				robot_if.PrintMotors();
 				robot_if.PrintMotorDrivers();
 				fflush(stdout);
