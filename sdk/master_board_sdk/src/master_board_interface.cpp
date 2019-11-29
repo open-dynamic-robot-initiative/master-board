@@ -113,7 +113,8 @@ void MasterBoardInterface::callback(uint8_t src_mac[6], uint8_t *data, int len)
 {
   if (len != sizeof(sensor_packet_t))
   {
-    printf("received a %d long packet\n", len);
+    // Commented printf because it can be problematic for realtime thread
+    // printf("received a %d long packet\n", len);
     return;
   }
 
