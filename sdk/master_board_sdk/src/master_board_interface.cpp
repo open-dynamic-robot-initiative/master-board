@@ -34,7 +34,7 @@ int MasterBoardInterface::Init()
   if (if_name_[0] == 'e')
   {
     /*Ethernet*/
-    printf("Using Ethernet (%s)", if_name_.c_str());
+    printf("Using Ethernet (%s)\n", if_name_.c_str());
     link_handler_ = new ETHERNET_manager(if_name_, my_mac_, dest_mac_);
     link_handler_->set_recv_callback(this);
     link_handler_->start();
@@ -42,7 +42,7 @@ int MasterBoardInterface::Init()
   else if (if_name_[0] == 'w')
   {
     /*WiFi*/
-    printf("Using WiFi (%s)", if_name_.c_str());
+    printf("Using WiFi (%s)\n", if_name_.c_str());
     link_handler_ = new ESPNOW_manager(if_name_, DATARATE_24Mbps, CHANNEL_freq_9, my_mac_, dest_mac_, false); //TODO write setter for espnow specific parametters
     link_handler_->set_recv_callback(this);
     link_handler_->start();
@@ -63,8 +63,15 @@ int MasterBoardInterface::Stop()
   return 0;
 }
 
-void MasterBoardInterface::SendCommand()
+int MasterBoardInterface::SendCommand()
 {
+  // If the MasterBoardInterface has been shutdown due to a timeout we don't want to
+  // send another command before the user manually reset the timeout state
+  if (timeout) 
+  {
+    return -1; // Return -1 since the command has not been sent.
+  }
+
   //construct the command packet
   for (int i = 0; i < N_SLAVES; i++)
   {
@@ -106,7 +113,25 @@ void MasterBoardInterface::SendCommand()
     command_packet.dual_motor_driver_command_packets[i].kd[0] = FLOAT_TO_D16QN(1000. / 60. * motor_drivers[i].motor1->kd, UD_QN_ISAT);
     command_packet.dual_motor_driver_command_packets[i].kd[1] = FLOAT_TO_D16QN(1000. / 60. * motor_drivers[i].motor2->kd, UD_QN_ISAT);
   }
+
+  // Current time point
+	std::chrono::high_resolution_clock::time_point t_send_packet = std::chrono::high_resolution_clock::now();
+
+	// Assess time duration since the last packet has been received
+	std::chrono::duration<double, std::milli> time_span = t_send_packet - t_last_packet; 
+
+	// If this duration is greater than the timeout limit duration
+	// then the packet is not sent and the connexion with the master board is closed
+	if (time_span > t_before_shutdown) 
+	{
+    timeout = true;
+    Stop();
+		return -1; // Return -1 since the command has not been sent.
+	}
+
   link_handler_->send((uint8_t *)&command_packet, sizeof(command_packet_t));
+  
+  return 0; // Return 0 since the command has been sent.
 }
 
 void MasterBoardInterface::callback(uint8_t src_mac[6], uint8_t *data, int len)
@@ -117,6 +142,9 @@ void MasterBoardInterface::callback(uint8_t src_mac[6], uint8_t *data, int len)
     // printf("received a %d long packet\n", len);
     return;
   }
+
+  // Update time point of the latest received packet
+	t_last_packet = std::chrono::high_resolution_clock::now();
 
   nb_recv++;
   sensor_packet_mutex.lock();
@@ -210,6 +238,20 @@ void MasterBoardInterface::PrintMotorDrivers()
     printf("Motor Driver % 2.2d -> ", i);
     motor_drivers[i].Print();
   }
+}
+
+void MasterBoardInterface::ResetTimeout()
+{
+  printf("Resetting f_name: %s\n", if_name_.c_str());
+  timeout = false; // Resetting timeout variable to be able to send packets again
+  t_last_packet = std::chrono::high_resolution_clock::now(); // Resetting time of last packet
+  Init();
+}
+
+bool MasterBoardInterface::IsTimeout()
+{
+  // Return true if the MasterBoardInterface has been shut down due to timeout
+  return timeout;
 }
 
 void MasterBoardInterface::set_motors(Motor input_motors [])

@@ -40,7 +40,7 @@ int main(int argc, char **argv)
 		robot_if.motor_drivers[i].Enable();
 	}
 	std::chrono::time_point<std::chrono::system_clock> last = std::chrono::system_clock::now();
-	while (1)
+	while (!robot_if.IsTimeout())
 	{
 		if (((std::chrono::duration<double>)(std::chrono::system_clock::now() - last)).count() > dt)
 		{
@@ -98,5 +98,6 @@ int main(int argc, char **argv)
 			std::this_thread::yield();
 		}
 	}
+        printf("Masterboard timeout detected. Either the masterboard has been shut down or there has been a connection issue with the cable/wifi.\n");
 	return 0;
 }

@@ -2,6 +2,7 @@
 #define MASTERBOARDINTERFACE_H
 
 #include <mutex>
+#include <chrono>
 
 #include "master_board_sdk/ESPNOW_manager.h"
 #include "master_board_sdk/ETHERNET_manager.h"
@@ -19,13 +20,15 @@ public:
 	int Init();
 	int Stop();
 	void SetMasterboardTimeoutMS(uint8_t); //Set the Master board timeout in ms
-	void SendCommand();										 //Send the command packet to the master board
+	int SendCommand();										 //Send the command packet to the master board
 	void ParseSensorData();								 //Parse and convert the latest received sensor data. User need to call this before reading any field.
 	void PrintIMU();											 //Print IMU data on stdout. Usefull for debug.
 	void PrintADC();											 //Print ACD data on stdout. Usefull for debug.
 	void PrintMotors();										 //Print motors data on stdout. Usefull for debug.
 	void PrintMotorDrivers();							 //Print motor drivers data on stdout. Usefull for debug.  void PrintMotors(); //Print Motors data on stdout. Usefull for debug.
-
+	void ResetTimeout();  // Reset the interface after at timeout to send packets again
+	bool IsTimeout();     // Check if a timeout has been triggered because the master board did not respond
+	
   	uint16_t nb_recv = 0; //todo make private
 private:
 	void callback(uint8_t src_mac[6], uint8_t *data, int len);
@@ -50,6 +53,16 @@ private:
 	uint32_t last_cmd_lost = 0;
 
 	std::mutex sensor_packet_mutex;
+
+	// Time duration [s] after which the MasterBoardInterface shuts down if the
+	// master board is not responding (timeout)
+	std::chrono::milliseconds t_before_shutdown{50};
+
+	// Time point that is updated each time a packet is received
+	std::chrono::high_resolution_clock::time_point t_last_packet = std::chrono::high_resolution_clock::now();
+
+	// Is true if the MasterBoardInterface has been shut down due to timeout
+	bool timeout = false;
 public:
 	Motor motors[N_SLAVES * 2];
 	MotorDriver motor_drivers[N_SLAVES];
