@@ -1,32 +1,35 @@
 # coding: utf8
 
-from time import clock, sleep
-import math, sys, getopt, os
+from time import clock
+import math
+import sys
+import getopt
+import os
 import libmaster_board_sdk_pywrap as mbs
 
 
 def example_script(name_interface):
-    PI = 3.141592654
-    N_SLAVES = 6  # Maximum number of controled drivers
+
+    N_SLAVES = 6  #  Maximum number of controled drivers
     N_SLAVES_CONTROLED = 2  # Current number of controled drivers
 
     cpt = 0  # Iteration counter
-    dt = 0.001  # Time step
+    dt = 0.001  #  Time step
     t = 0  # Current time
-    kp = 1.0  # Proportional gain
-    kd = 2.0  # Derivative gain
+    kp = 5.0  #  Proportional gain
+    kd = 0.5  # Derivative gain
     iq_sat = 1.0  # Maximum amperage (A)
     freq = 0.5  # Frequency of the sine wave
-    amplitude = 1.0  # Amplitude of the sine wave
+    amplitude = math.pi  # Amplitude of the sine wave
     init_pos = [0.0 for i in range(N_SLAVES * 2)]  # List that will store the initial position of motors
     state = 0  # State of the system (ready (1) or not (0))
 
     print("-- Start of example script --")
 
-    os.nice(-20)  # Set the process to highest priority (from -20 highest to +20 lowest)
+    os.nice(-20)  #  Set the process to highest priority (from -20 highest to +20 lowest)
     robot_if = mbs.MasterBoardInterface(name_interface)
     robot_if.Init()  # Initialization of the interface between the computer and the master board
-    for i in range(N_SLAVES_CONTROLED):  # We enable each controler driver and its two associated motors
+    for i in range(N_SLAVES_CONTROLED):  #  We enable each controler driver and its two associated motors
         robot_if.GetDriver(i).motor1.SetCurrentReference(0)
         robot_if.GetDriver(i).motor2.SetCurrentReference(0)
         robot_if.GetDriver(i).motor1.Enable()
@@ -45,7 +48,7 @@ def example_script(name_interface):
             t += dt
             robot_if.ParseSensorData()  # Read sensor data sent by the masterboard
 
-            if (state == 0):  # If the system is not ready
+            if (state == 0):  #  If the system is not ready
                 state = 1
                 for i in range(N_SLAVES_CONTROLED * 2):  # Check if all motors are enabled and ready
                     if not (robot_if.GetMotor(i).IsEnabled() and robot_if.GetMotor(i).IsReady()):
@@ -55,12 +58,12 @@ def example_script(name_interface):
             else:  # If the system is ready
                 for i in range(N_SLAVES_CONTROLED * 2):
                     if robot_if.GetMotor(i).IsEnabled():
-                        ref = init_pos[i] + amplitude * math.sin(2 * PI * freq * t)  # Sine wave pattern
-                        v_ref = 0
+                        ref = init_pos[i] + amplitude * math.sin(2.0 * math.pi * freq * t)  # Sine wave pattern
+                        v_ref = 2.0 * math.pi * freq * amplitude * math.cos(2.0 * math.pi * freq * t)
                         p_err = ref - robot_if.GetMotor(i).GetPosition()  # Position error
                         v_err = v_ref - robot_if.GetMotor(i).GetVelocity()  # Velocity error
-                        cur = kp * p_err + kd * v_err  # Output of the PD controler (amperage)
-                        if (cur > iq_sat):  # Check saturation
+                        cur = kp * p_err + kd * v_err  #  Output of the PD controler (amperage)
+                        if (cur > iq_sat):  #  Check saturation
                             cur = iq_sat
                         if (cur < -iq_sat):
                             cur = -iq_sat
@@ -69,6 +72,7 @@ def example_script(name_interface):
             if ((cpt % 100) == 0):  # Display state of the system once every 100 iterations of the main loop
                 print(chr(27) + "[2J")
                 robot_if.PrintIMU()
+                robot_if.PrintADC()
                 robot_if.PrintMotors()
                 robot_if.PrintMotorDrivers()
                 sys.stdout.flush()  # for Python 2, use print( .... , flush=True) for Python 3

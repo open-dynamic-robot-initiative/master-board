@@ -61,8 +61,6 @@ public:
 
 	// Get functions for Python binding with Boost
 	uint16_t get_nb_recv() { return this->nb_recv; };
-	Motor* get_motors() { return this->motors; };
-	MotorDriver* get_motor_drivers() { return this->motor_drivers; };
 	MotorDriver* GetDriver(int i) { return &(this->motor_drivers[i]); };
 	Motor* GetMotor(int i) { return &(this->motors[i]); };
 

@@ -44,6 +44,7 @@ public:
 	void set_enable(bool val) { this->enable = val;};
 	void set_enable_position_rollover_error(bool val) { this->enable_position_rollover_error = val; };
 	void set_timeout(uint8_t val) { this->timeout = val; };
+	void set_adc(float adc_val []); // See definition in .cpp
 
 	// Get functions for Python binding with Boost
   	Motor* get_motor1() { return (this->motor1); };
