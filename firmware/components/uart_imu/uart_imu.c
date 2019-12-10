@@ -147,10 +147,6 @@ inline int parse_IMU_data()
     imu.gyr_y.ul = FLOAT_FROM_BYTE_ARRAY(rxbuf_imu[index], GYRY_POS);
     imu.gyr_z.ul = FLOAT_FROM_BYTE_ARRAY(rxbuf_imu[index], GYRZ_POS);
   }
-  else
-  {
-    printf("badIMUCRC\n");
-  }
   /***EF****/
   if (check_IMU_CRC(rxbuf_ef[index], 22))
   {
@@ -158,11 +154,6 @@ inline int parse_IMU_data()
     imu.pitch.ul = FLOAT_FROM_BYTE_ARRAY(rxbuf_ef[index], EFP_POS);
     imu.yaw.ul = FLOAT_FROM_BYTE_ARRAY(rxbuf_ef[index], EFY_POS);
   }
-  else
-  {
-    printf("badEFCRC\n");
-  }
-
   return 0;
 }
 
