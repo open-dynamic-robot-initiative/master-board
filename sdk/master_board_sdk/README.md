@@ -42,3 +42,15 @@ to run the example run:
 sudo ./bin/exec MY_INTERFACE
 ```
 where MY_INTERFACE is the name of the network interface used to connect to the master board.
+
+Potential Solution to the sudo Rights
+-------------------------------------
+
+For this problem, we should add the following lines to /etc/group:
+    sudo emacs /etc/group
+
+    inet:x:3003:root
+    net_raw:x:3004:root
+
+The solution comes from:
+https://askubuntu.com/questions/868590/ping-socket-permission-denied
