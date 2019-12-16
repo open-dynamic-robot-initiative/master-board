@@ -48,14 +48,15 @@ struct strcut_imu_data imu = {0};
 
 static intr_handle_t handle_console;
 // Receive buffer to collect incoming data
-// Here we use two buffer to protect the read/write memmory access.
-uint8_t rxbuf[2][256]; //default buffer
-uint8_t rxbuf_imu[2][256]; //buffer for  IMU packets
-uint8_t rxbuf_ef[2][256];  //buffer for estimation filter packets
+// Here we use a ring buffer to protect the read/write memmory access.
 
-uint16_t rxlen[2] = {0};
+uint8_t rxbuf[256]; //default buffer
+uint8_t rxbuf_imu[3][256]; //buffer for  IMU packets
+uint8_t rxbuf_ef[3][256];  //buffer for estimation filter packets
+
 int intr_cpt = 0;
-volatile int index_buffer_to_write_to = 0;
+uint8_t read_index_imu = 0; //where to read the latest updated imu data
+uint8_t read_index_ef = 0; //where to read the latest updated ef data
 
 /*
  * Define UART interrupt subroutine to ackowledge interrupt
@@ -69,11 +70,9 @@ static void IRAM_ATTR uart_intr_handle(void *arg)
 
   intr_cpt++;
 
-  int index = index_buffer_to_write_to;
   status = UART1.int_st.val;             // read UART interrupt Status
   rx_fifo_len = UART1.status.rxfifo_cnt; // read number of bytes in UART buffer
-  buffer_ptr = rxbuf[index];
-
+  
   while (rx_fifo_len > 4) //While there is at least 4 bytes to read (the header size)
   {
     //read header (4bytes) [0x75 - 0x65 - descriptor - payload_len]
@@ -86,13 +85,15 @@ static void IRAM_ATTR uart_intr_handle(void *arg)
     switch (header[2])
     {
     case (0x80):
-      buffer_ptr = rxbuf_imu[index];
+      read_index_imu=((read_index_imu+1)%3); //position of the new valid data after this ISR
+      buffer_ptr = rxbuf_imu[read_index_imu];
       break;
     case (0x82):
-      buffer_ptr = rxbuf_ef[index];
+      read_index_ef=((read_index_ef+1)%3); //position of the new valid data after this ISR
+      buffer_ptr = rxbuf_ef[read_index_ef];
       break;
     default:
-      buffer_ptr = rxbuf[index];
+      buffer_ptr = rxbuf;
     }
     //copy the header 
     for (int j = 0; j < 4; j++)
@@ -101,7 +102,9 @@ static void IRAM_ATTR uart_intr_handle(void *arg)
     }
     int len = header[3] + 2;
     if (len > rx_fifo_len)
+    {
       break; // The message is too short.
+    }
     //copy the rest of the packet
     for (i = 0; i < len; i++)
     {
@@ -135,24 +138,22 @@ inline bool check_IMU_CRC(unsigned char *data, int len)
 
 inline int parse_IMU_data()
 {
-  int index = index_buffer_to_write_to;                 //we will read the data from the last used buffer for writting in RX ISR
-  index_buffer_to_write_to = !index_buffer_to_write_to; //we tell the ISR to write somewere else from now
   /***IMU****/
-  if (check_IMU_CRC(rxbuf_imu[index], 34))
+  if (check_IMU_CRC(rxbuf_imu[read_index_imu], 34))
   {
-    imu.acc_x.ul = FLOAT_FROM_BYTE_ARRAY(rxbuf_imu[index], ACCX_POS);
-    imu.acc_y.ul = FLOAT_FROM_BYTE_ARRAY(rxbuf_imu[index], ACCY_POS);
-    imu.acc_z.ul = FLOAT_FROM_BYTE_ARRAY(rxbuf_imu[index], ACCZ_POS);
-    imu.gyr_x.ul = FLOAT_FROM_BYTE_ARRAY(rxbuf_imu[index], GYRX_POS);
-    imu.gyr_y.ul = FLOAT_FROM_BYTE_ARRAY(rxbuf_imu[index], GYRY_POS);
-    imu.gyr_z.ul = FLOAT_FROM_BYTE_ARRAY(rxbuf_imu[index], GYRZ_POS);
+    imu.acc_x.ul = FLOAT_FROM_BYTE_ARRAY(rxbuf_imu[read_index_imu], ACCX_POS);
+    imu.acc_y.ul = FLOAT_FROM_BYTE_ARRAY(rxbuf_imu[read_index_imu], ACCY_POS);
+    imu.acc_z.ul = FLOAT_FROM_BYTE_ARRAY(rxbuf_imu[read_index_imu], ACCZ_POS);
+    imu.gyr_x.ul = FLOAT_FROM_BYTE_ARRAY(rxbuf_imu[read_index_imu], GYRX_POS);
+    imu.gyr_y.ul = FLOAT_FROM_BYTE_ARRAY(rxbuf_imu[read_index_imu], GYRY_POS);
+    imu.gyr_z.ul = FLOAT_FROM_BYTE_ARRAY(rxbuf_imu[read_index_imu], GYRZ_POS);
   }
   /***EF****/
-  if (check_IMU_CRC(rxbuf_ef[index], 22))
+  if (check_IMU_CRC(rxbuf_ef[read_index_ef], 22))
   {
-    imu.roll.ul = FLOAT_FROM_BYTE_ARRAY(rxbuf_ef[index], EFR_POS);
-    imu.pitch.ul = FLOAT_FROM_BYTE_ARRAY(rxbuf_ef[index], EFP_POS);
-    imu.yaw.ul = FLOAT_FROM_BYTE_ARRAY(rxbuf_ef[index], EFY_POS);
+    imu.roll.ul = FLOAT_FROM_BYTE_ARRAY(rxbuf_ef[read_index_ef], EFR_POS);
+    imu.pitch.ul = FLOAT_FROM_BYTE_ARRAY(rxbuf_ef[read_index_ef], EFP_POS);
+    imu.yaw.ul = FLOAT_FROM_BYTE_ARRAY(rxbuf_ef[read_index_ef], EFY_POS);
   }
   return 0;
 }
@@ -236,7 +237,7 @@ int imu_init()
   vTaskDelay(1);
   uart_flush_input(UART_NUM);
   uart_set_baudrate(UART_NUM, 921600);
-  uart_set_rx_timeout(UART_NUM, 10); //timeout in symbol
+  uart_set_rx_timeout(UART_NUM, 5); //timeout in symbols
   // release the pre registered UART handler/subroutine
   uart_isr_free(UART_NUM);
   // register new UART subroutine
@@ -258,13 +259,7 @@ int imu_init()
 
   while (0) //for debug
   {
-    printf(" len0:%d len1:%d intr_cpt:%d\n", rxlen[0], rxlen[1], intr_cpt);
-    print_table(rxbuf[0], 50);
-    print_table(rxbuf_imu[0], 50);
-    print_table(rxbuf_ef[0], 50);
-    print_table(rxbuf[1], 50);
-    print_table(rxbuf_imu[1], 50);
-    print_table(rxbuf_ef[1], 50);
+    printf(" intr_cpt:%d\n", intr_cpt);
     parse_IMU_data();
     print_imu();
     vTaskDelay(100);
