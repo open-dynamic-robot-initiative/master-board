@@ -21,7 +21,7 @@ app: example.o ESPNOW_manager.o ESPNOW_types.o Link_manager.o ETHERNET_types.o m
 all: clear clean app
 
 clean: 
-	$(RM) build/*
+	#$(RM) build/*
 	$(RM) bin/*
 
 clear:
