@@ -16,12 +16,15 @@
 #include "spi_quad_packet.h"
 #include "quad_crc.h"
 #include "uart_imu.h"
+#include "ws2812_led_control.h"
 
 #include "defines.h"
 
 #define useWIFI false
 
 #define ENABLE_DEBUG_PRINTF false
+
+#define RGB(r, g, b) ((uint8_t)(g) << 16 | (uint8_t)(r) << 8 | (uint8_t)(b))
 long int spi_count = 0;
 long int spi_ok[CONFIG_N_SLAVES] = {0};
 
@@ -29,6 +32,10 @@ int spi_wdt = 0;
 int spi_stop = false;
 int wifi_eth_first_recv = false;
 int wifi_eth_start_spi = false;
+
+unsigned int ms_cpt = 0;
+
+struct led_state ws_led;
 
 static uint16_t spi_index_trans = 0;
 
@@ -59,9 +66,35 @@ void print_packet(uint8_t *data, int len)
 
 static void periodic_timer_callback(void *arg)
 {
+    ms_cpt++;
+
+    /* LEDs */
+    bool blink = (ms_cpt % 1000) > 500;
+    float fade_blink = (ms_cpt % 1000 < 500) ? (ms_cpt % 1000) / 500.0 : (1000 - (ms_cpt % 1000)) / 500.0;
+
+    //ws2812_write_leds(ws_led); //update LEDs
     /* Securities */
+    if (!wifi_eth_first_recv)
+    {
+        ws_led.leds[0] = RGB(0x0f * fade_blink, 0, 0); //Red fade, Waiting for a connection 
+        ws_led.leds[1] = RGB(0x0f * fade_blink, 0, 0);
+    }
+    else if (spi_stop)
+    {
+        ws_led.leds[0] = RGB(0x0f * blink, 0, 0); //Red blink, Stop due to connection loss (need to restart, or press button)
+        ws_led.leds[1] = RGB(0x0f * blink, 0, 0);
+    }
+    else
+    {
+        ws_led.leds[0] = RGB(0, 0x0f * fade_blink, 0); //Green fade, Active control
+        ws_led.leds[1] = RGB(0, 0x0f * fade_blink, 0);
+    }
+    
     if (!wifi_eth_start_spi)
+    {
         return;
+    }
+
     spi_wdt++;
     spi_count++;
 
@@ -71,7 +104,7 @@ static void periodic_timer_callback(void *arg)
         wifi_eth_first_recv = false;
     }
     //gpio_set_level(CONFIG_LED_GPIO, spi_stop ? 0 : 1);
-    gpio_set_level(CONFIG_LED_GPIO, spi_count & 0x01); //toogle LED
+    //gpio_set_level(CONFIG_LED_GPIO, spi_count & 0x01); //toogle LED
     /* Debug */
     if (ENABLE_DEBUG_PRINTF && spi_count % 1000 == 0)
     {
@@ -209,7 +242,7 @@ void setup_spi()
     ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));
     ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, 1000));
 
-    gpio_set_direction(CONFIG_LED_GPIO, GPIO_MODE_OUTPUT);
+    //gpio_set_direction(CONFIG_LED_GPIO, GPIO_MODE_OUTPUT);
     gpio_set_direction(CONFIG_BUTTON_GPIO, GPIO_MODE_INPUT);
 }
 
@@ -258,6 +291,14 @@ void app_main()
     uart_set_baudrate(UART_NUM_0, 2000000);
     nvs_flash_init();
 
+    ws2812_control_init(); //init the LEDs
+    ws_led.leds[0] = 0x0f0f0f;
+    ws_led.leds[1] = 0x0f0f0f;
+    ws_led.leds[2] = 0x0f0f0f;
+
+    ws2812_write_leds(ws_led);
+    //ws2812_write_leds(ws_led);
+
     //printf("The core is : %d\n",xPortGetCoreID());
 
     printf("ETH/WIFI command size %u\n", sizeof(struct wifi_eth_packet_command));
@@ -279,5 +320,11 @@ void app_main()
     {
         eth_attach_recv_cb(wifi_eth_receive_cb);
         eth_init();
+    }
+
+    while (1)
+    {
+        vTaskDelay(1);
+        ws2812_write_leds(ws_led);
     }
 }
