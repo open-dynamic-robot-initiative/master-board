@@ -29,7 +29,7 @@ sudo ./setup_wifi.sh MY_INTERFACE
 where MY_INTERFACE your wlan interface name.
 
 How to run the example
---------
+----------------------
 main.cpp is a simple example to test the SDK, tested on ubuntu.
 It will execute a sinusoid trajectory on the first N_CONTROLLED_SLAVE 
 to compile it go into the sdk folder and run:
@@ -42,3 +42,7 @@ to run the example run:
 sudo ./bin/exec MY_INTERFACE
 ```
 where MY_INTERFACE is the name of the network interface used to connect to the master board.
+
+Potential Solution to the sudo Rights
+-------------------------------------
+https://stackoverflow.com/questions/46466543/linux-raw-socket-permissions-issue
