@@ -38,6 +38,9 @@ boost::python::tuple wrap_adc(MotorDriver const * motDriver)
             .def("IsTimeout", &MasterBoardInterface::IsTimeout)
             .def("GetDriver", make_function(&MasterBoardInterface::GetDriver, return_value_policy<boost::python::reference_existing_object>()))
             .def("GetMotor", make_function(&MasterBoardInterface::GetMotor, return_value_policy<boost::python::reference_existing_object>()))
+            .def("imu_data_accelerometer", make_function(&MasterBoardInterface::imu_data_accelerometer))
+            .def("imu_data_gyroscope", make_function(&MasterBoardInterface::imu_data_gyroscope))
+            .def("imu_data_attitude", make_function(&MasterBoardInterface::imu_data_attitude))
 
             // Public properties of MasterBoardInterface class
             .add_property("nb_recv", &MasterBoardInterface::get_nb_recv, &MasterBoardInterface::set_nb_recv)

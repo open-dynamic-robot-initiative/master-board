@@ -71,6 +71,8 @@ def example_script(name_interface):
 
             if ((cpt % 100) == 0):  # Display state of the system once every 100 iterations of the main loop
                 print(chr(27) + "[2J")
+                # To read IMU data in Python use robot_if.imu_data_accelerometer(i), robot_if.imu_data_gyroscope(i)
+                # or robot_if.imu_data_attitude(i) with i = 0, 1 or 2
                 robot_if.PrintIMU()
                 robot_if.PrintADC()
                 robot_if.PrintMotors()

@@ -76,6 +76,9 @@ public:
 	uint16_t get_nb_recv() { return this->nb_recv; };
 	MotorDriver* GetDriver(int i) { return &(this->motor_drivers[i]); };
 	Motor* GetMotor(int i) { return &(this->motors[i]); };
+	float imu_data_accelerometer(int i) { return (this->imu_data.accelerometer[i]); };
+	float imu_data_gyroscope(int i) { return (this->imu_data.gyroscope[i]); };
+	float imu_data_attitude(int i) { return (this->imu_data.attitude[i]); };
 
 };
 
