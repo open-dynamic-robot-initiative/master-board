@@ -34,6 +34,8 @@ boost::python::tuple wrap_adc(MotorDriver const * motDriver)
             .def("PrintADC", &MasterBoardInterface::PrintADC)
             .def("PrintMotors", &MasterBoardInterface::PrintMotors)
             .def("PrintMotorDrivers", &MasterBoardInterface::PrintMotorDrivers)
+            .def("ResetTimeout", &MasterBoardInterface::ResetTimeout)
+            .def("IsTimeout", &MasterBoardInterface::IsTimeout)
             .def("GetDriver", make_function(&MasterBoardInterface::GetDriver, return_value_policy<boost::python::reference_existing_object>()))
             .def("GetMotor", make_function(&MasterBoardInterface::GetMotor, return_value_policy<boost::python::reference_existing_object>()))
 
