@@ -54,9 +54,9 @@ private:
 
 	std::mutex sensor_packet_mutex;
 
-	// Time duration [s] after which the MasterBoardInterface shuts down if the
-	// master board is not responding (timeout)
-	std::chrono::milliseconds t_before_shutdown{50};
+	// Time duration [ms] after which the MasterBoardInterface shuts down if the
+	// master board is not responding (timeout).
+	std::chrono::milliseconds t_before_shutdown{1000};
 
 	// Time point that is updated each time a packet is received
 	std::chrono::high_resolution_clock::time_point t_last_packet = std::chrono::high_resolution_clock::now();
