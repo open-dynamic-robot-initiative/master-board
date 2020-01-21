@@ -23,7 +23,8 @@ INCLUDE(cmake/boost.cmake)
 INCLUDE(cmake/python.cmake)
 INCLUDE(cmake/ide.cmake)
 
-PROJECT(${PROJECT_NAME} CXX)
+COMPUTE_PROJECT_ARGS(PROJECT_ARGS LANGUAGES CXX)
+PROJECT(${PROJECT_NAME} ${PROJECT_ARGS})
 
 # --- OPTIONS ----------------------------------------
 OPTION (BUILD_PYTHON_INTERFACE "Build the python binding" OFF)
