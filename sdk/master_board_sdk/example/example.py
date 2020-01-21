@@ -1,10 +1,11 @@
 # coding: utf8
 
-from time import clock
-import math
-import sys
 import getopt
+import math
 import os
+import sys
+from time import clock
+
 import libmaster_board_sdk_pywrap as mbs
 
 
@@ -40,7 +41,8 @@ def example_script(name_interface):
 
     last = clock()
 
-    while ((not robot_if.IsTimeout()) and (clock() < 20)):  # Stop after 15 seconds (around 5 seconds are used at the start for calibration)
+    while ((not robot_if.IsTimeout())
+           and (clock() < 20)):  # Stop after 15 seconds (around 5 seconds are used at the start for calibration)
 
         if ((clock() - last) > dt):
             last = clock()
@@ -84,7 +86,8 @@ def example_script(name_interface):
     robot_if.Stop()  # Shut down the interface between the computer and the master board
 
     if robot_if.IsTimeout():
-        print("Masterboard timeout detected. Either the masterboard has been shut down or there has been a connection issue with the cable/wifi.")
+        print("Masterboard timeout detected.")
+        print("Either the masterboard has been shut down or there has been a connection issue with the cable/wifi.")
 
     print("-- End of example script --")
 
