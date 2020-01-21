@@ -1,6 +1,6 @@
 # coding: utf8
 
-import getopt
+import argparse
 import math
 import os
 import sys
@@ -92,22 +92,15 @@ def example_script(name_interface):
     print("-- End of example script --")
 
 
-def main(argv):
-    name_interface = ""  # Name of the interface (use ifconfig in a terminal), for instance "enp1s0"
-    try:
-        opts, args = getopt.getopt(argv, "hi:")
-    except getopt.GetoptError:
-        print("example.py -i <interface>")
-        sys.exit(2)
-    for opt, arg in opts:
-        if opt == '-h':
-            print("example.py -i <interface>")
-            sys.exit()
-        elif opt in ("-i") and isinstance(arg, str):
-            name_interface = arg
-    print("name_interface: ", name_interface)
-    example_script(name_interface)
+def main():
+    parser = argparse.ArgumentParser(description='Example masterboard use in python.')
+    parser.add_argument('-i',
+                        '--interface',
+                        required=True,
+                        help='Name of the interface (use ifconfig in a terminal), for instance "enp1s0"')
+
+    example_script(parser.parse_args().interface)
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    main()
