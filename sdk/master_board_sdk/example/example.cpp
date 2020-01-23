@@ -17,7 +17,7 @@ int main(int argc, char **argv)
 	double dt = 0.001;
 	double t = 0;
 	double kp = 5.;
-	double kd = 0.5;
+	double kd = 0.1;
 	double iq_sat = 4.0;
 	double freq = 0.5;
 	double amplitude = M_PI;
