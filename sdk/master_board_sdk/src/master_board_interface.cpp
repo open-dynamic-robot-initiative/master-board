@@ -57,7 +57,7 @@ int MasterBoardInterface::Init()
 
 int MasterBoardInterface::Stop()
 {
-  printf("Shutting down connexion (%s)\n", if_name_.c_str());
+  printf("Shutting down connection (%s)\n", if_name_.c_str());
   ((ESPNOW_manager *)link_handler_)->unset_filter();
   link_handler_->stop();
   return 0;
@@ -121,7 +121,7 @@ int MasterBoardInterface::SendCommand()
 	std::chrono::duration<double, std::milli> time_span = t_send_packet - t_last_packet; 
 
 	// If this duration is greater than the timeout limit duration
-	// then the packet is not sent and the connexion with the master board is closed
+	// then the packet is not sent and the connection with the master board is closed
 	if (time_span > t_before_shutdown) 
 	{
     timeout = true;
