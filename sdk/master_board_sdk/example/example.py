@@ -17,7 +17,7 @@ def example_script(name_interface):
     dt = 0.001  #  Time step
     t = 0  # Current time
     kp = 5.0  #  Proportional gain
-    kd = 0.5  # Derivative gain
+    kd = 0.1  # Derivative gain
     iq_sat = 1.0  # Maximum amperage (A)
     freq = 0.5  # Frequency of the sine wave
     amplitude = math.pi  # Amplitude of the sine wave
