@@ -1,10 +1,11 @@
 # coding: utf8
 
-from time import clock
+import argparse
 import math
-import sys
-import getopt
 import os
+import sys
+from time import clock
+
 import libmaster_board_sdk_pywrap as mbs
 
 
@@ -40,7 +41,8 @@ def example_script(name_interface):
 
     last = clock()
 
-    while ((not robot_if.IsTimeout()) and (clock() < 20)):  # Stop after 15 seconds (around 5 seconds are used at the start for calibration)
+    while ((not robot_if.IsTimeout())
+           and (clock() < 20)):  # Stop after 15 seconds (around 5 seconds are used at the start for calibration)
 
         if ((clock() - last) > dt):
             last = clock()
@@ -84,27 +86,21 @@ def example_script(name_interface):
     robot_if.Stop()  # Shut down the interface between the computer and the master board
 
     if robot_if.IsTimeout():
-        print("Masterboard timeout detected. Either the masterboard has been shut down or there has been a connection issue with the cable/wifi.")
+        print("Masterboard timeout detected.")
+        print("Either the masterboard has been shut down or there has been a connection issue with the cable/wifi.")
 
     print("-- End of example script --")
 
 
-def main(argv):
-    name_interface = ""  # Name of the interface (use ifconfig in a terminal), for instance "enp1s0"
-    try:
-        opts, args = getopt.getopt(argv, "hi:")
-    except getopt.GetoptError:
-        print("example.py -i <interface>")
-        sys.exit(2)
-    for opt, arg in opts:
-        if opt == '-h':
-            print("example.py -i <interface>")
-            sys.exit()
-        elif opt in ("-i") and isinstance(arg, str):
-            name_interface = arg
-    print("name_interface: ", name_interface)
-    example_script(name_interface)
+def main():
+    parser = argparse.ArgumentParser(description='Example masterboard use in python.')
+    parser.add_argument('-i',
+                        '--interface',
+                        required=True,
+                        help='Name of the interface (use ifconfig in a terminal), for instance "enp1s0"')
+
+    example_script(parser.parse_args().interface)
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    main()
