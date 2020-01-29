@@ -76,18 +76,18 @@ static void periodic_timer_callback(void *arg)
     /* Securities */
     if (!wifi_eth_first_recv)
     {
-        ws_led.leds[0] = RGB(0x0f * fade_blink, 0, 0); //Red fade, Waiting for a connection 
-        ws_led.leds[1] = RGB(0x0f * fade_blink, 0, 0);
+        ws_led.leds[0] = RGB(0xff * fade_blink, 0, 0); //Red fade, Waiting for a connection 
+        ws_led.leds[1] = RGB(0xff * fade_blink, 0, 0);
     }
     else if (spi_stop)
     {
-        ws_led.leds[0] = RGB(0x0f * blink, 0, 0); //Red blink, Stop due to connection loss (need to restart, or press button)
-        ws_led.leds[1] = RGB(0x0f * blink, 0, 0);
+        ws_led.leds[0] = RGB(0xff * blink, 0, 0); //Red blink, Stop due to connection loss (need to restart, or press button)
+        ws_led.leds[1] = RGB(0xff * blink, 0, 0);
     }
     else
     {
-        ws_led.leds[0] = RGB(0, 0x0f * fade_blink, 0); //Green fade, Active control
-        ws_led.leds[1] = RGB(0, 0x0f * fade_blink, 0);
+        ws_led.leds[0] = RGB(0, 0xff * fade_blink, 0); //Green fade, Active control
+        ws_led.leds[1] = RGB(0, 0xff * fade_blink, 0);
     }
     
     if (!wifi_eth_start_spi)
@@ -162,6 +162,10 @@ static void periodic_timer_callback(void *arg)
     wifi_eth_tx_data.imu.attitude[1] = get_pitch_in_D16QN();
     wifi_eth_tx_data.imu.attitude[2] = get_yaw_in_D16QN();
 
+    wifi_eth_tx_data.imu.linear_acceleration[0] = get_linacc_x_in_D16QN();
+    wifi_eth_tx_data.imu.linear_acceleration[1] = get_linacc_y_in_D16QN();
+    wifi_eth_tx_data.imu.linear_acceleration[2] = get_linacc_z_in_D16QN();
+    
     /* Wait for SPI transactions to finish */
     for (int spi_try = 0; spi_try < CONFIG_SPI_N_ATTEMPT; spi_try++)
     {

@@ -19,7 +19,9 @@
 #define EFR_POS 6
 #define EFP_POS 10
 #define EFY_POS 14
-
+#define EFLINACCX_POS 20
+#define EFLINACCY_POS 24
+#define EFLINACCZ_POS 28
 #define FLOAT_FROM_BYTE_ARRAY(buff, n) ((buff[n] << 24) | (buff[n + 1] << 16) | (buff[n + 2] << 8) | (buff[n + 3]));
 
 /* Qvalues for each fields */
@@ -43,6 +45,9 @@ struct strcut_imu_data
   union float_int roll;
   union float_int pitch;
   union float_int yaw;
+  union float_int linacc_x;
+  union float_int linacc_y;
+  union float_int linacc_z;
 };
 struct strcut_imu_data imu = {0};
 
@@ -50,13 +55,13 @@ static intr_handle_t handle_console;
 // Receive buffer to collect incoming data
 // Here we use a ring buffer to protect the read/write memmory access.
 
-uint8_t rxbuf[256]; //default buffer
+uint8_t rxbuf[256];        //default buffer
 uint8_t rxbuf_imu[3][256]; //buffer for  IMU packets
 uint8_t rxbuf_ef[3][256];  //buffer for estimation filter packets
 
 int intr_cpt = 0;
 uint8_t read_index_imu = 0; //where to read the latest updated imu data
-uint8_t read_index_ef = 0; //where to read the latest updated ef data
+uint8_t read_index_ef = 0;  //where to read the latest updated ef data
 
 /*
  * Define UART interrupt subroutine to ackowledge interrupt
@@ -72,7 +77,7 @@ static void IRAM_ATTR uart_intr_handle(void *arg)
 
   status = UART1.int_st.val;             // read UART interrupt Status
   rx_fifo_len = UART1.status.rxfifo_cnt; // read number of bytes in UART buffer
-  
+
   while (rx_fifo_len > 4) //While there is at least 4 bytes to read (the header size)
   {
     //read header (4bytes) [0x75 - 0x65 - descriptor - payload_len]
@@ -85,17 +90,17 @@ static void IRAM_ATTR uart_intr_handle(void *arg)
     switch (header[2])
     {
     case (0x80):
-      read_index_imu=((read_index_imu+1)%3); //position of the new valid data after this ISR
+      read_index_imu = ((read_index_imu + 1) % 3); //position of the new valid data after this ISR
       buffer_ptr = rxbuf_imu[read_index_imu];
       break;
     case (0x82):
-      read_index_ef=((read_index_ef+1)%3); //position of the new valid data after this ISR
+      read_index_ef = ((read_index_ef + 1) % 3); //position of the new valid data after this ISR
       buffer_ptr = rxbuf_ef[read_index_ef];
       break;
     default:
       buffer_ptr = rxbuf;
     }
-    //copy the header 
+    //copy the header
     for (int j = 0; j < 4; j++)
     {
       buffer_ptr[j] = header[j];
@@ -149,11 +154,14 @@ inline int parse_IMU_data()
     imu.gyr_z.ul = FLOAT_FROM_BYTE_ARRAY(rxbuf_imu[read_index_imu], GYRZ_POS);
   }
   /***EF****/
-  if (check_IMU_CRC(rxbuf_ef[read_index_ef], 22))
+  if (check_IMU_CRC(rxbuf_ef[read_index_ef], 34))
   {
     imu.roll.ul = FLOAT_FROM_BYTE_ARRAY(rxbuf_ef[read_index_ef], EFR_POS);
     imu.pitch.ul = FLOAT_FROM_BYTE_ARRAY(rxbuf_ef[read_index_ef], EFP_POS);
     imu.yaw.ul = FLOAT_FROM_BYTE_ARRAY(rxbuf_ef[read_index_ef], EFY_POS);
+    imu.linacc_x.ul = FLOAT_FROM_BYTE_ARRAY(rxbuf_imu[read_index_imu], EFLINACCX_POS);
+    imu.linacc_y.ul = FLOAT_FROM_BYTE_ARRAY(rxbuf_imu[read_index_imu], EFLINACCY_POS);
+    imu.linacc_z.ul = FLOAT_FROM_BYTE_ARRAY(rxbuf_imu[read_index_imu], EFLINACCZ_POS);
   }
   return 0;
 }
@@ -170,9 +178,13 @@ uint16_t get_roll_in_D16QN() { return FLOAT_TO_D16QN(imu.roll.f, IMU_QN_EF); }
 uint16_t get_pitch_in_D16QN() { return FLOAT_TO_D16QN(imu.pitch.f, IMU_QN_EF); }
 uint16_t get_yaw_in_D16QN() { return FLOAT_TO_D16QN(imu.yaw.f, IMU_QN_EF); }
 
+uint16_t get_linacc_x_in_D16QN() { return FLOAT_TO_D16QN(imu.linacc_x.f, IMU_QN_ACC); }
+uint16_t get_linacc_y_in_D16QN() { return FLOAT_TO_D16QN(imu.linacc_y.f, IMU_QN_ACC); }
+uint16_t get_linacc_z_in_D16QN() { return FLOAT_TO_D16QN(imu.linacc_z.f, IMU_QN_ACC); }
+
 void print_imu()
 {
-  printf("\n%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t",
+  printf("\n%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t",
          imu.acc_x.f,
          imu.acc_y.f,
          imu.acc_z.f,
@@ -181,7 +193,10 @@ void print_imu()
          imu.gyr_z.f,
          imu.roll.f,
          imu.pitch.f,
-         imu.yaw.f);
+         imu.yaw.f,
+         imu.linacc_x.f,
+         imu.linacc_y.f,
+         imu.linacc_z.f);
 }
 
 void print_table(uint8_t *ptr, int len)
@@ -214,6 +229,7 @@ int imu_init()
   /*
     75 65 01 02 02 02 E1 C7                           // Put the Device in Idle Mode
     75 65 0C 0A 0A 08 01 02 04 00 01 05 00 01 10 73   // IMU data: acc+gyr at 1000Hz
+    75 65 0C 0A 0A 0A 01 02 05 00 01 0D 00 01 1B A3   // EF data: RPY + LinACC at 500Hz (max)
     75 65 0C 07 07 0A 01 01 05 00 01 06 23            // EF data: RPY at 500Hz (max)
     75 65 0C 0A 05 11 01 01 01 05 11 01 03 01 24 CC   // Enable the data stream for IMU and EF
     75 65 0D 06 06 03 00 00 00 00 F6 E4               // set heading at 0
@@ -222,8 +238,10 @@ int imu_init()
   const char cmd0[8] = {0x75, 0x65, 0x01, 0x02, 0x02, 0x02, 0xE1, 0xC7};
   const char cmd1[16] = {0x75, 0x65, 0x0C, 0x0A, 0x0A, 0x08, 0x01, 0x02, 0x04, 0x00, 0x01, 0x05, 0x00, 0x01, 0x10, 0x73}; //IMU 1000Hz
   //const char cmd1[16] = {0x75, 0x65, 0x0C, 0x0A, 0x0A, 0x08, 0x01, 0x02, 0x04, 0x00, 0x0A, 0x05, 0x00, 0x0A, 0x22, 0xa0}; //IMU 100Hz
-  const char cmd2[13] = {0x75, 0x65, 0x0C, 0x07, 0x07, 0x0A, 0x01, 0x01, 0x05, 0x00, 0x01, 0x06, 0x23}; //IMU 500Hz
-  //const char cmd2[13] = {0x75, 0x65, 0x0C, 0x07, 0x07, 0x0A, 0x01, 0x01, 0x05, 0x00, 0x0A, 0x0f, 0x2c};//IMU 50Hz
+  //const char cmd2[13] = {0x75, 0x65, 0x0C, 0x07, 0x07, 0x0A, 0x01, 0x01, 0x05, 0x00, 0x01, 0x06, 0x23}; //EF RPY 500Hz
+  //const char cmd2[13] = {0x75, 0x65, 0x0C, 0x07, 0x07, 0x0A, 0x01, 0x01, 0x05, 0x00, 0x0A, 0x0f, 0x2c};//EF RPY 50Hz
+  const char cmd2[16] = {0x75, 0x65, 0x0C, 0x0A, 0x0A, 0x0A, 0x01, 0x02, 0x05, 0x00, 0x01, 0x0D, 0x00, 0x01, 0x1b, 0xa3}; //EF RPY + LinACC 500Hz
+
   const char cmd3[16] = {0x75, 0x65, 0x0C, 0x0A, 0x05, 0x11, 0x01, 0x01, 0x01, 0x05, 0x11, 0x01, 0x03, 0x01, 0x24, 0xCC};
   const char cmd4[12] = {0x75, 0x65, 0x0D, 0x06, 0x06, 0x03, 0x00, 0x00, 0x00, 0x00, 0xF6, 0xE4};
   const char cmd5[8] = {0x75, 0x65, 0x01, 0x02, 0x02, 0x06, 0xE5, 0xCB};

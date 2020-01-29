@@ -26,6 +26,10 @@ uint16_t get_roll_in_D16QN();
 uint16_t get_pitch_in_D16QN();
 uint16_t get_yaw_in_D16QN();
 
+uint16_t get_linacc_x_in_D16QN();
+uint16_t get_linacc_y_in_D16QN();
+uint16_t get_linacc_z_in_D16QN();
+
 #endif
 
 
