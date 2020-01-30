@@ -25,7 +25,7 @@ To put the ESP32 in a flash mode, a special circuit is needed to lower the G0 pi
 
 
 
-On a freshly assembled board, we first need to burn a configuration fuse  because of a conflict with a boot pin. To do so, use the espefuse.py script: (the fuse burning process is irreversible, be sure to only execute the following command)
+On a freshly assembled board, we first need to burn a configuration fuse  because of a conflict with a boot pin. To do so, use the [espefuse.py script](https://github.com/espressif/esptool): (the fuse burning process is irreversible, be sure to only execute the following command)
 
 `python espefuse.py set_flash_voltage 3.3V`
 
