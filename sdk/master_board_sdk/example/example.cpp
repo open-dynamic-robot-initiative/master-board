@@ -8,8 +8,7 @@
 #include "master_board_sdk/master_board_interface.h"
 #include "master_board_sdk/defines.h"
 
-#undef N_SLAVES_CONTROLED
-#define N_SLAVES_CONTROLED 2
+#define N_SLAVES_CONTROLED 1
 
 int main(int argc, char **argv)
 {

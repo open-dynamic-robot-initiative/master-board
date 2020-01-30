@@ -159,9 +159,10 @@ void MasterBoardInterface::ParseSensorData()
   /*Read IMU data*/
   for (int i = 0; i < 3; i++)
   {
-    imu_data.accelerometer[i] = D16QN_TO_FLOAT(sensor_packet.imu.accelerometer[i], IMU_QN_ACC);
+    imu_data.accelerometer[i] = 9.80665 * D16QN_TO_FLOAT(sensor_packet.imu.accelerometer[i], IMU_QN_ACC);
     imu_data.gyroscope[i] = D16QN_TO_FLOAT(sensor_packet.imu.gyroscope[i], IMU_QN_GYR);
     imu_data.attitude[i] = D16QN_TO_FLOAT(sensor_packet.imu.attitude[i], IMU_QN_EF);
+    imu_data.linear_acceleration[i] = 9.80665 * D16QN_TO_FLOAT(sensor_packet.imu.linear_acceleration[i], IMU_QN_ACC);
   }
 
 
@@ -201,7 +202,7 @@ void MasterBoardInterface::ParseSensorData()
 
 void MasterBoardInterface::PrintIMU()
 {
-  printf("IMU:% 6.3f % 6.3f % 6.3f % 6.3f % 6.3f % 6.3f % 6.3f % 6.3f % 6.3f\n",
+  printf("IMU:% 6.3f % 6.3f % 6.3f - % 6.3f % 6.3f % 6.3f - % 6.3f % 6.3f % 6.3f - % 6.3f % 6.3f % 6.3f\n",
          imu_data.accelerometer[0],
          imu_data.accelerometer[1],
          imu_data.accelerometer[2],
@@ -210,7 +211,10 @@ void MasterBoardInterface::PrintIMU()
          imu_data.gyroscope[2],
          imu_data.attitude[0],
          imu_data.attitude[1],
-         imu_data.attitude[2]);
+         imu_data.attitude[2],
+         imu_data.linear_acceleration[0],
+         imu_data.linear_acceleration[1],
+         imu_data.linear_acceleration[2]);
 }
 
 void MasterBoardInterface::PrintADC()

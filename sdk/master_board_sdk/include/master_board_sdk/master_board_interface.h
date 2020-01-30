@@ -79,7 +79,7 @@ public:
 	float imu_data_accelerometer(int i) { return (this->imu_data.accelerometer[i]); };
 	float imu_data_gyroscope(int i) { return (this->imu_data.gyroscope[i]); };
 	float imu_data_attitude(int i) { return (this->imu_data.attitude[i]); };
-
+	float imu_data_linear_acceleration(int i) { return (this->imu_data.linear_acceleration[i]); };
 };
 
 #endif

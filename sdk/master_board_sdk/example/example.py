@@ -12,7 +12,7 @@ import libmaster_board_sdk_pywrap as mbs
 def example_script(name_interface):
 
     N_SLAVES = 6  #  Maximum number of controled drivers
-    N_SLAVES_CONTROLED = 2  # Current number of controled drivers
+    N_SLAVES_CONTROLED = 1  # Current number of controled drivers
 
     cpt = 0  # Iteration counter
     dt = 0.001  #  Time step
