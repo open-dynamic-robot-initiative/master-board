@@ -65,6 +65,11 @@ int MasterBoardInterface::Stop()
 
 int MasterBoardInterface::SendCommand()
 {
+  if(!first_command_sent_)
+  {
+    t_last_packet = std::chrono::high_resolution_clock::now();
+    first_command_sent_ = true;
+  }
   // If the MasterBoardInterface has been shutdown due to a timeout we don't want to
   // send another command before the user manually reset the timeout state
   if (timeout) 
