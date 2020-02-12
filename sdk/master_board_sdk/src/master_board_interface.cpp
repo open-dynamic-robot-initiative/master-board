@@ -65,8 +65,18 @@ int MasterBoardInterface::Stop()
 
 int MasterBoardInterface::SendCommand()
 {
-  // If the MasterBoardInterface has been shutdown due to a timeout we don't want to
-  // send another command before the user manually reset the timeout state
+  // If SendCommand is not called every N milli-second we shutdown the
+  // connexion. This check is performed only from the first time SendCommand
+  // is called. See the comment below for more information.
+  if(!first_command_sent_)
+  {
+    t_last_packet = std::chrono::high_resolution_clock::now();
+    first_command_sent_ = true;
+  }
+
+  // If the MasterBoardInterface has been shutdown due to a timeout we don't
+  // want to send another command before the user manually reset the timeout
+  // state
   if (timeout)
   {
     return -1; // Return -1 since the command has not been sent.

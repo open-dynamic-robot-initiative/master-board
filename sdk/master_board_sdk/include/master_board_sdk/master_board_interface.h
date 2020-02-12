@@ -59,7 +59,11 @@ private:
 	std::chrono::milliseconds t_before_shutdown{50};
 
 	// Time point that is updated each time a packet is received
-	std::chrono::high_resolution_clock::time_point t_last_packet = std::chrono::high_resolution_clock::now();
+	std::chrono::high_resolution_clock::time_point t_last_packet =
+            std::chrono::high_resolution_clock::now();
+       // We initialize this value only upon the first call of SendCommand
+       bool first_command_sent_ = false;
+
 
 	// Is true if the MasterBoardInterface has been shut down due to timeout
 	bool timeout = false;
