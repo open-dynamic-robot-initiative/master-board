@@ -4,6 +4,7 @@
 Motor::Motor()
 {
   position = 0;
+  position_offset = 0;
   velocity = 0;
   current = 0;
   is_enabled = false;
@@ -44,6 +45,11 @@ void Motor::Disable()
   enable=false;
 }
 
+void Motor::SetPositionOffset(float offset)
+{
+  position_offset = offset;
+}
+
 void Motor::SetPositionReference(float ref)
 {
   position_ref = ref;
@@ -82,6 +88,11 @@ bool Motor::GetIndexToggleBit()
 float Motor::GetPosition()
 {
   return position;
+}
+
+float Motor::GetPositionOffset()
+{
+  return position_offset;
 }
 
 float Motor::GetVelocity()

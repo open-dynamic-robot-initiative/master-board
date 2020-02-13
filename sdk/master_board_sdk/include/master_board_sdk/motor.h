@@ -9,6 +9,7 @@ public:
   void SetCurrentReference(float);
   void SetVelocityReference(float);
   void SetPositionReference(float);
+  void SetPositionOffset(float);
   void SetKp(float);
   void SetKd(float);
   void SetSaturationCurrent(float);
@@ -24,11 +25,13 @@ public:
   float GetPosition();
   float GetVelocity();
   float GetCurrent();
+  float GetPositionOffset();
 
   //state
-  float position; // [rad]
-  float velocity; // [rad/s]
-  float current;  // [A]
+  float position;       // [rad]
+  float velocity;       // [rad/s]
+  float current;        // [A]
+  float position_offset;// [rad]
 
   bool is_enabled;
   bool is_ready;
