@@ -19,9 +19,9 @@
 #define EFR_POS 6
 #define EFP_POS 10
 #define EFY_POS 14
-#define EFLINACCX_POS 20
-#define EFLINACCY_POS 24
-#define EFLINACCZ_POS 28
+#define EFLINACCX_POS 22
+#define EFLINACCY_POS 26
+#define EFLINACCZ_POS 30
 #define FLOAT_FROM_BYTE_ARRAY(buff, n) ((buff[n] << 24) | (buff[n + 1] << 16) | (buff[n + 2] << 8) | (buff[n + 3]));
 
 /* Qvalues for each fields */
@@ -154,14 +154,14 @@ inline int parse_IMU_data()
     imu.gyr_z.ul = FLOAT_FROM_BYTE_ARRAY(rxbuf_imu[read_index_imu], GYRZ_POS);
   }
   /***EF****/
-  if (check_IMU_CRC(rxbuf_ef[read_index_ef], 34))
+  if (check_IMU_CRC(rxbuf_ef[read_index_ef], 38))
   {
     imu.roll.ul = FLOAT_FROM_BYTE_ARRAY(rxbuf_ef[read_index_ef], EFR_POS);
     imu.pitch.ul = FLOAT_FROM_BYTE_ARRAY(rxbuf_ef[read_index_ef], EFP_POS);
     imu.yaw.ul = FLOAT_FROM_BYTE_ARRAY(rxbuf_ef[read_index_ef], EFY_POS);
-    imu.linacc_x.ul = FLOAT_FROM_BYTE_ARRAY(rxbuf_imu[read_index_imu], EFLINACCX_POS);
-    imu.linacc_y.ul = FLOAT_FROM_BYTE_ARRAY(rxbuf_imu[read_index_imu], EFLINACCY_POS);
-    imu.linacc_z.ul = FLOAT_FROM_BYTE_ARRAY(rxbuf_imu[read_index_imu], EFLINACCZ_POS);
+    imu.linacc_x.ul = FLOAT_FROM_BYTE_ARRAY(rxbuf_ef[read_index_ef], EFLINACCX_POS);
+    imu.linacc_y.ul = FLOAT_FROM_BYTE_ARRAY(rxbuf_ef[read_index_ef], EFLINACCY_POS);
+    imu.linacc_z.ul = FLOAT_FROM_BYTE_ARRAY(rxbuf_ef[read_index_ef], EFLINACCZ_POS);
   }
   return 0;
 }
