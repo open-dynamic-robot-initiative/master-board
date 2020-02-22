@@ -69,7 +69,7 @@ boost::python::tuple wrap_adc(MotorDriver const * motDriver)
             .def("GetPosition", &Motor::GetPosition)
             .def("GetPositionOffset", &Motor::GetPositionOffset)
             .def("GetVelocity", &Motor::GetVelocity)
-            .def("GetCurent", &Motor::GetCurrent)
+            .def("GetCurrent", &Motor::GetCurrent)
 
             // Public properties of Motor class
             .add_property("position", &Motor::get_position, &Motor::set_position)
