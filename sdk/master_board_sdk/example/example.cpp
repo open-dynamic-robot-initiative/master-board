@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <iostream>
 #include <unistd.h>
 #include <chrono>
 #include <math.h>
@@ -13,14 +14,16 @@
 int main(int argc, char **argv)
 {
 	int cpt = 0;
+	int cpt_enabled = 1;  // Start from 1 to avoid division by zero.
 	double dt = 0.001;
 	double t = 0;
-	double kp = 5.;
-	double kd = 0.1;
+	double kp = 1.;
+	double kd = 0.01;
 	double iq_sat = 4.0;
 	double freq = 0.5;
 	double amplitude = M_PI;
 	double init_pos[N_SLAVES * 2] = {0};
+	int disable_counter[N_SLAVES * 2] = {0};
 	int state = 0;
 	nice(-20); //give the process a high priority
 	printf("-- Main --\n");
@@ -63,6 +66,7 @@ int main(int argc, char **argv)
 				break;
 			case 1:
 				//closed loop, position
+				cpt_enabled += 1;
 				for (int i = 0; i < N_SLAVES_CONTROLED * 2; i++)
 				{
 					if (robot_if.motors[i].IsEnabled())
@@ -77,7 +81,10 @@ int main(int argc, char **argv)
 						if (cur < -iq_sat)
 							cur = -iq_sat;
 						robot_if.motors[i].SetCurrentReference(cur);
+					} else {
+						disable_counter[i] += 1;
 					}
+
 				}
 				break;
 			}
@@ -88,6 +95,12 @@ int main(int argc, char **argv)
 				robot_if.PrintADC();
 				robot_if.PrintMotors();
 				robot_if.PrintMotorDrivers();
+				printf("Motor Driver disabled ratio: ");
+				for (int i = 0; i < N_SLAVES_CONTROLED * 2; i += 2)
+				{
+					printf("%0.3f ", float(disable_counter[i]) / cpt_enabled);
+				}
+				printf("\n");
 				fflush(stdout);
 			}
 			robot_if.SendCommand(); //This will send the command packet
