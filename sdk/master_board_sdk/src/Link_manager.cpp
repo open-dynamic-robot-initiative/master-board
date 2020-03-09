@@ -87,6 +87,12 @@ void LINK_manager::end()
 	stop();
 }
 
+
+LINK_manager::~LINK_manager()
+{
+	end();
+}
+
 void *LINK_manager::sock_recv_thread(void *p_arg)
 {
 	int raw_bytes_len;

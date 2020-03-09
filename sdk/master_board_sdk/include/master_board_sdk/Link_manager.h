@@ -30,6 +30,7 @@ public:
 	{
 		set_interface(interface);
 	}
+	~LINK_manager();
 
 	void set_recv_callback(LINK_manager_callback *);
 	void set_interface(const std::string &interface);
