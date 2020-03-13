@@ -31,6 +31,14 @@ int MasterBoardInterface::Init()
   last_cmd_lost = 0;
   memset(&command_packet, 0, sizeof(command_packet_t)); //todo make it more C++
   memset(&sensor_packet, 0, sizeof(sensor_packet_t));
+
+  memset(&init_packet, 0, sizeof(init_packet_t));
+  memset(&ack_packet, 0, sizeof(ack_packet_t));
+
+
+  init_sent = false;
+  ack_received = false;
+
   if (if_name_[0] == 'e')
   {
     /*Ethernet*/
@@ -60,6 +68,17 @@ int MasterBoardInterface::Stop()
   printf("Shutting down connection (%s)\n", if_name_.c_str());
   ((ESPNOW_manager *)link_handler_)->unset_filter();
   link_handler_->stop();
+  return 0;
+}
+
+int MasterBoardInterface::SendInit()
+{
+  if (timeout) {
+    return -1;
+  }
+
+  link_handler_->send((uint8_t *)&init_packet, sizeof(init_packet_t));
+  init_sent = true;
   return 0;
 }
 
@@ -146,20 +165,23 @@ int MasterBoardInterface::SendCommand()
 
 void MasterBoardInterface::callback(uint8_t src_mac[6], uint8_t *data, int len)
 {
-  if (len != sizeof(sensor_packet_t))
+  if (init_sent && !ack_received && len == sizeof(ack_packet_t))
   {
-    // Commented printf because it can be problematic for realtime thread
-    // printf("received a %d long packet\n", len);
-    return;
+    ack_received = true;
   }
+  else if (init_sent && ack_received && len == sizeof(sensor_packet_t))
+  {
+    // Update time point of the latest received packet
+    t_last_packet = std::chrono::high_resolution_clock::now();
 
-  // Update time point of the latest received packet
-	t_last_packet = std::chrono::high_resolution_clock::now();
-
-  nb_recv++;
-  sensor_packet_mutex.lock();
-  memcpy(&sensor_packet, data, sizeof(sensor_packet_t));
-  sensor_packet_mutex.unlock();
+    nb_recv++;
+    sensor_packet_mutex.lock();
+    memcpy(&sensor_packet, data, sizeof(sensor_packet_t));
+    sensor_packet_mutex.unlock();
+  }
+  else {
+    // packet not the right size for the situation
+  }
 }
 
 void MasterBoardInterface::ParseSensorData()
@@ -266,6 +288,11 @@ bool MasterBoardInterface::IsTimeout()
 {
   // Return true if the MasterBoardInterface has been shut down due to timeout
   return timeout;
+}
+
+bool MasterBoardInterface::isAckMsgReceived()
+{
+  return ack_received;
 }
 
 void MasterBoardInterface::set_motors(Motor input_motors [])

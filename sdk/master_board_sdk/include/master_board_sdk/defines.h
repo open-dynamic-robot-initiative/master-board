@@ -74,4 +74,14 @@ struct command_packet_t
 	uint16_t sensor_index;
 } __attribute__((packed));
 
+struct init_packet_t
+{
+	uint16_t init_id;
+} __attribute__((packed));
+
+struct ack_packet_t
+{
+	uint16_t ack_id;
+} __attribute__((packed));
+
 #endif

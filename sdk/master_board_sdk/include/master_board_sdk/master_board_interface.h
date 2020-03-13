@@ -29,6 +29,9 @@ public:
 	void ResetTimeout();  // Reset the interface after at timeout to send packets again
 	bool IsTimeout();     // Check if a timeout has been triggered because the master board did not respond
 	
+	bool isAckMsgReceived();
+	int SendInit(); //Send the init msg
+
   	uint16_t nb_recv = 0; //todo make private
 private:
 	void callback(uint8_t src_mac[6], uint8_t *data, int len);
@@ -62,11 +65,17 @@ private:
 	std::chrono::high_resolution_clock::time_point t_last_packet =
             std::chrono::high_resolution_clock::now();
        // We initialize this value only upon the first call of SendCommand
-       bool first_command_sent_ = false;
+       bool first_command_sent_ = false; //useless ?
 
 
 	// Is true if the MasterBoardInterface has been shut down due to timeout
 	bool timeout = false;
+
+	struct init_packet_t init_packet;
+	struct ack_packet_t ack_packet;
+
+	bool init_sent = false;
+	bool ack_received = false;
 public:
 	Motor motors[N_SLAVES * 2];
 	MotorDriver motor_drivers[N_SLAVES];
@@ -84,6 +93,7 @@ public:
 	float imu_data_gyroscope(int i) { return (this->imu_data.gyroscope[i]); };
 	float imu_data_attitude(int i) { return (this->imu_data.attitude[i]); };
 	float imu_data_linear_acceleration(int i) { return (this->imu_data.linear_acceleration[i]); };
+
 };
 
 #endif
