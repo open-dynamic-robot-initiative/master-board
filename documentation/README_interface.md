@@ -29,9 +29,9 @@ This protocol has the particularity that all the µDriver state is defined in ea
 3. Master put the CS line high.
 4. Next transaction can happen **after a minimum of 0.7ms** for the preparation of the next sensor packet.
 
-![tek00000](https://github.com/open-dynamic-robot-initiative/master-board/tree/master/images/tek00000.png)
+![tek00000](../images/tek00000.png)
 
-![tek00001](https://github.com/open-dynamic-robot-initiative/master-board/tree/master/images/tek00001.png)
+![tek00001](../images/tek00001.png)
 
 Note that the clock parity is SPI **Mode 1** (clock idle low and data valid at rising edges).
 
@@ -42,6 +42,7 @@ All the data exchanged with the µDriver is stored in two packets that are excha
 
 ## Command message (MOSI line)
 A command message is the message transmitted from the Master to the µDriver.
+
 Mode | Ref Positions | Ref Velocities | Ref Iq | Kp | Kd | I_sat | Index | CRC
 --- | --- | --- | --- | --- | --- | --- | --- | ---
 16bits | 2\*32bits | 2\*16bits | 2\*16bits | 2\*16bits | 2\*16bits | 2\*8bits | 16bits | 32bits
