@@ -1,6 +1,6 @@
 # Quadruped master board
 
-![master-board](https://github.com/open-dynamic-robot-initiative/master-board/tree/master/images/master_board.jpg)
+![master-board](../images/master_board.jpg)
 
 This page collects the main specifications of a central control board for the quadruped robot.
 
@@ -24,7 +24,7 @@ The current Master board use an ESP32 SoC. (https://www.espressif.com/en/product
 
 Design files and software of the master board can be found here: https://github.com/open-dynamic-robot-initiative/master-board
 
-![topology](https://github.com/open-dynamic-robot-initiative/master-board/tree/master/images/Topology.png)
+![topology](../images/Topology.png)
 
 
 **Connectivity:**
