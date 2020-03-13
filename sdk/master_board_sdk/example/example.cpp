@@ -38,7 +38,16 @@ int main(int argc, char **argv)
 		robot_if.motor_drivers[i].SetTimeout(5);
 		robot_if.motor_drivers[i].Enable();
 	}
+
 	std::chrono::time_point<std::chrono::system_clock> last = std::chrono::system_clock::now();
+	while (!robot_if.isAckMsgReceived()) {
+		if (((std::chrono::duration<double>)(std::chrono::system_clock::now() - last)).count() > dt)
+		{
+			last = std::chrono::system_clock::now();
+			robot_if.SendInit();
+		}
+	}
+
 	while (!robot_if.IsTimeout())
 	{
 		if (((std::chrono::duration<double>)(std::chrono::system_clock::now() - last)).count() > dt)
