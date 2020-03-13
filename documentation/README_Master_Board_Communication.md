@@ -8,7 +8,7 @@ Ethernet connection with the robot is happening at the lowest level possible (MA
 
 Prefer Ethernet cable without grounding to avoid to inject grid noise in the robot. (Plastic RJ45 connector)
 
-![rj45](https://github.com/open-dynamic-robot-initiative/master-board/tree/master/images/rj45_no_gnd.png)
+![rj45](../images/rj45_no_gnd.png)
 
 ### Lighten the cable!
 
