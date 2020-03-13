@@ -7,12 +7,21 @@ menu "Main App"
         help
             Number of SPI slaves to handle.
 
-    config SPI_WDT
-        int "SPI watchdog value"
-        default 20
+    config WIFI_ETH_TIMEOUT_ACK
+        int "Timeout wifi/eth while waiting for first command"
+        default 1000
         help
-            Maximum number of SPI communication that can be done with one slave until a valid eth/wifi frame is received.
-            If no valid eth/wifi as been received in time, the masterboard disables itself and send zeros to every slaves.
+            Maximeum time in ms for which the masterboard will wait for the first command packet
+            via wifi/ethernet after initialization
+
+
+    config WIFI_ETH_TIMEOUT_CONTROL
+            int "Timeout wifi/eth while in control mode"
+            default 20
+            help
+                Maximum time in ms without the masterboard receiving any data from wifi/ethernet
+                while in active control mode
+
 
     config SPI_N_ATTEMPT
         int "SPI nb of attempts"

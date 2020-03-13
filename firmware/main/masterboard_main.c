@@ -28,10 +28,9 @@
 long int spi_count = 0;
 long int spi_ok[CONFIG_N_SLAVES] = {0};
 
-int spi_wdt = 0;
-int spi_stop = false;
-int wifi_eth_first_recv = false;
-int wifi_eth_start_spi = false;
+int wifi_eth_count = 0; // counter that counts the ms without a message being received from PC
+
+enum State current_state = WAITING_FOR_INIT;
 
 unsigned int ms_cpt = 0;
 
@@ -48,6 +47,8 @@ static uint16_t spi_tx_packet_stop[CONFIG_N_SLAVES][SPI_TOTAL_LEN];
 uint16_t command_index_prev = 0;
 
 struct wifi_eth_packet_sensor wifi_eth_tx_data;
+
+struct wifi_eth_packet_ack wifi_eth_tx_ack;
 
 bool spi_use_a = true;
 
@@ -68,43 +69,17 @@ static void periodic_timer_callback(void *arg)
 {
     ms_cpt++;
 
+    if (ms_cpt % 500 == 0) printf("current_state = %d\n", current_state);
+
     /* LEDs */
     bool blink = (ms_cpt % 1000) > 500;
     float fade_blink = (ms_cpt % 1000 < 500) ? (ms_cpt % 1000) / 500.0 : (1000 - (ms_cpt % 1000)) / 500.0;
 
-    //ws2812_write_leds(ws_led); //update LEDs
-    /* Securities */
-    if (!wifi_eth_first_recv)
-    {
-        ws_led.leds[0] = RGB(0xff * fade_blink, 0, 0); //Red fade, Waiting for a connection 
-        ws_led.leds[1] = RGB(0xff * fade_blink, 0, 0);
-    }
-    else if (spi_stop)
-    {
-        ws_led.leds[0] = RGB(0xff * blink, 0, 0); //Red blink, Stop due to connection loss (need to restart, or press button)
-        ws_led.leds[1] = RGB(0xff * blink, 0, 0);
-    }
-    else
-    {
-        ws_led.leds[0] = RGB(0, 0xff * fade_blink, 0); //Green fade, Active control
-        ws_led.leds[1] = RGB(0, 0xff * fade_blink, 0);
-    }
     
-    if (!wifi_eth_start_spi)
-    {
-        return;
-    }
-
-    spi_wdt++;
-    spi_count++;
 
     if (!gpio_get_level(CONFIG_BUTTON_GPIO))
-    {
-        spi_stop = false;
-        wifi_eth_first_recv = false;
-    }
-    //gpio_set_level(CONFIG_LED_GPIO, spi_stop ? 0 : 1);
-    //gpio_set_level(CONFIG_LED_GPIO, spi_count & 0x01); //toogle LED
+        current_state = WAITING_FOR_INIT;
+
     /* Debug */
     if (ENABLE_DEBUG_PRINTF && spi_count % 1000 == 0)
     {
@@ -123,14 +98,55 @@ static void periodic_timer_callback(void *arg)
     /* Choose spi packets to send*/
     uint16_t(*p_tx)[SPI_TOTAL_LEN];
 
-    if (spi_wdt < CONFIG_SPI_WDT && !spi_stop)
+    p_tx = spi_tx_packet_stop; // default command is stop
+
+
+    //printf("%d\n", wifi_eth_count);
+    switch (current_state)
     {
-        p_tx = spi_use_a ? spi_tx_packet_a : spi_tx_packet_b;
-    }
-    else
-    {
-        spi_stop = wifi_eth_first_recv; //Stop if we already received the first packet
-        p_tx = spi_tx_packet_stop;
+    case WAITING_FOR_INIT:
+        ws_led.leds[0] = RGB(0xff * fade_blink, 0, 0); //Red fade, Waiting for init
+        ws_led.leds[1] = RGB(0xff * fade_blink, 0, 0);
+
+        wifi_eth_count = 0; // we allow not receiving messages if waiting for init
+
+        break;
+
+    case SENDING_INIT_ACK:
+        ws_led.leds[0] = RGB(0, 0, 0xff * fade_blink); //Blue fade, waiting for first commmand
+        ws_led.leds[1] = RGB(0, 0, 0xff * fade_blink);
+
+        if (wifi_eth_count > CONFIG_WIFI_ETH_TIMEOUT_ACK)
+        {
+            current_state = WAITING_FOR_INIT;
+        }
+
+        wifi_eth_count++;
+        spi_count++;
+        break;
+
+    case ACTIVE_CONTROL:
+        ws_led.leds[0] = RGB(0, 0xff * fade_blink, 0); //Green fade, Active control
+        ws_led.leds[1] = RGB(0, 0xff * fade_blink, 0);
+
+        if (wifi_eth_count > CONFIG_WIFI_ETH_TIMEOUT_CONTROL)
+        {
+            current_state = WAITING_FOR_INIT;
+        }
+        else
+        {
+            p_tx = spi_use_a ? spi_tx_packet_a : spi_tx_packet_b;
+        }
+
+        wifi_eth_count++;
+        spi_count++;
+        break;
+
+    default:
+        ws_led.leds[0] = RGB(0xff * blink, 0, 0); //Red blink, state machine error
+        ws_led.leds[1] = RGB(0xff * blink, 0, 0);
+
+        return; // exiting, requires a reboot
     }
 
     /* Complete and send each packet */
@@ -142,30 +158,36 @@ static void periodic_timer_callback(void *arg)
         printf("\nlast CMD packet:\n");
         print_packet(p_tx[0], SPI_TOTAL_LEN * 2);
     }
+
+    // send and receive packets to/from every slave
     for (int i = 0; i < CONFIG_N_SLAVES; i++)
     {
         SPI_REG_u16(p_tx[i], SPI_TOTAL_INDEX) = SPI_SWAP_DATA_TX(spi_index_trans, 16);
         SPI_REG_u32(p_tx[i], SPI_TOTAL_CRC) = SPI_SWAP_DATA_TX(packet_compute_CRC(p_tx[i]), 32);
         p_trans[i] = spi_send(i, (uint8_t *)p_tx[i], (uint8_t *)spi_rx_packet[i], SPI_TOTAL_LEN * 2);
     }
-    /* Get IMU latest data*/
-    parse_IMU_data();
-    wifi_eth_tx_data.imu.accelerometer[0] = get_acc_x_in_D16QN();
-    wifi_eth_tx_data.imu.accelerometer[1] = get_acc_y_in_D16QN();
-    wifi_eth_tx_data.imu.accelerometer[2] = get_acc_z_in_D16QN();
 
-    wifi_eth_tx_data.imu.gyroscope[0] = get_gyr_x_in_D16QN();
-    wifi_eth_tx_data.imu.gyroscope[1] = get_gyr_y_in_D16QN();
-    wifi_eth_tx_data.imu.gyroscope[2] = get_gyr_z_in_D16QN();
+    if (current_state == ACTIVE_CONTROL) // getting imu data only if we are in control mode
+    {
+        /* Get IMU latest data*/
+        parse_IMU_data();
+        wifi_eth_tx_data.imu.accelerometer[0] = get_acc_x_in_D16QN();
+        wifi_eth_tx_data.imu.accelerometer[1] = get_acc_y_in_D16QN();
+        wifi_eth_tx_data.imu.accelerometer[2] = get_acc_z_in_D16QN();
 
-    wifi_eth_tx_data.imu.attitude[0] = get_roll_in_D16QN();
-    wifi_eth_tx_data.imu.attitude[1] = get_pitch_in_D16QN();
-    wifi_eth_tx_data.imu.attitude[2] = get_yaw_in_D16QN();
+        wifi_eth_tx_data.imu.gyroscope[0] = get_gyr_x_in_D16QN();
+        wifi_eth_tx_data.imu.gyroscope[1] = get_gyr_y_in_D16QN();
+        wifi_eth_tx_data.imu.gyroscope[2] = get_gyr_z_in_D16QN();
 
-    wifi_eth_tx_data.imu.linear_acceleration[0] = get_linacc_x_in_D16QN();
-    wifi_eth_tx_data.imu.linear_acceleration[1] = get_linacc_y_in_D16QN();
-    wifi_eth_tx_data.imu.linear_acceleration[2] = get_linacc_z_in_D16QN();
-    
+        wifi_eth_tx_data.imu.attitude[0] = get_roll_in_D16QN();
+        wifi_eth_tx_data.imu.attitude[1] = get_pitch_in_D16QN();
+        wifi_eth_tx_data.imu.attitude[2] = get_yaw_in_D16QN();
+
+        wifi_eth_tx_data.imu.linear_acceleration[0] = get_linacc_x_in_D16QN();
+        wifi_eth_tx_data.imu.linear_acceleration[1] = get_linacc_y_in_D16QN();
+        wifi_eth_tx_data.imu.linear_acceleration[2] = get_linacc_z_in_D16QN();
+    }
+
     /* Wait for SPI transactions to finish */
     for (int spi_try = 0; spi_try < CONFIG_SPI_N_ATTEMPT; spi_try++)
     {
@@ -173,7 +195,7 @@ static void periodic_timer_callback(void *arg)
         {
             if (p_trans[i] == NULL)
             {
-                //Either the transaction failed or there it was not re-sent
+                //Either the transaction failed or it was not re-sent
             }
             else
             {
@@ -182,15 +204,21 @@ static void periodic_timer_callback(void *arg)
                     //Wait for it to be finished
                 }
 
+                if (current_state != ACTIVE_CONTROL) continue; // skip checking and filling sensor data if we are not in active control mode 
+                
+                // is received data correct ?
                 if (packet_check_CRC(spi_rx_packet[i]))
                 {
                     spi_ok[i]++;
+
                     //for debug:
                     if (ENABLE_DEBUG_PRINTF && spi_count % 1000 == 0 && i == 0)
                     {
                         printf("\nlast SENSOR packet:\n");
                         print_packet(spi_rx_packet[i], SPI_TOTAL_LEN * 2);
                     }
+
+                    // filling the next sensor msg to PC with data just acquired
                     wifi_eth_tx_data.sensor[i].status = SPI_SWAP_DATA_RX(SPI_REG_u16(spi_rx_packet[i], SPI_SENSOR_STATUS), 16);
                     wifi_eth_tx_data.sensor[i].timestamp = SPI_SWAP_DATA_RX(SPI_REG_u16(spi_rx_packet[i], SPI_SENSOR_TIMESTAMP), 16);
                     wifi_eth_tx_data.sensor[i].position[0] = SPI_SWAP_DATA_RX(SPI_REG_32(spi_rx_packet[i], SPI_SENSOR_POS_1), 32);
@@ -204,6 +232,7 @@ static void periodic_timer_callback(void *arg)
                     wifi_eth_tx_data.sensor[i].adc[0] = SPI_SWAP_DATA_RX(SPI_REG_u16(spi_rx_packet[i], SPI_SENSOR_ADC_1), 16);
                     wifi_eth_tx_data.sensor[i].adc[1] = SPI_SWAP_DATA_RX(SPI_REG_u16(spi_rx_packet[i], SPI_SENSOR_ADC_2), 16);
                 }
+
                 else
                 {
                     //transaction failed, try to re-send
@@ -212,19 +241,47 @@ static void periodic_timer_callback(void *arg)
 
                     memset(&(wifi_eth_tx_data.sensor[i]), 0, sizeof(struct sensor_data));
                 }
+
+                
             }
         }
     }
 
-    /* Send all spi_sensor packets to PC */
-    wifi_eth_tx_data.sensor_index++;
-    if (useWIFI)
+    /* Sends message to PC */
+    switch (current_state)
     {
-        wifi_send_data(&wifi_eth_tx_data, sizeof(struct wifi_eth_packet_sensor));
-    }
-    else
-    {
-        eth_send_data(&wifi_eth_tx_data, sizeof(struct wifi_eth_packet_sensor));
+    case WAITING_FOR_INIT:
+        // nothing to send to PC
+        break;
+
+    case SENDING_INIT_ACK:
+        /* Send acknowledge packets to PC */
+        if (useWIFI)
+        {
+            wifi_send_data(&wifi_eth_tx_ack, sizeof(struct wifi_eth_packet_ack));
+        }
+        else
+        {
+            eth_send_data(&wifi_eth_tx_ack, sizeof(struct wifi_eth_packet_ack));
+        }
+        break;
+
+    case ACTIVE_CONTROL:
+        /* Send all spi_sensor packets to PC */
+        wifi_eth_tx_data.sensor_index++;
+        if (useWIFI)
+        {
+            wifi_send_data(&wifi_eth_tx_data, sizeof(struct wifi_eth_packet_sensor));
+        }
+        else
+        {
+            eth_send_data(&wifi_eth_tx_data, sizeof(struct wifi_eth_packet_sensor));
+        }
+        break;
+
+    default:
+
+        break;
     }
 }
 
@@ -246,48 +303,54 @@ void setup_spi()
     ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));
     ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, 1000));
 
-    //gpio_set_direction(CONFIG_LED_GPIO, GPIO_MODE_OUTPUT);
     gpio_set_direction(CONFIG_BUTTON_GPIO, GPIO_MODE_INPUT);
 }
 
 void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len)
 {
-    struct wifi_eth_packet_command *packet_recv = (struct wifi_eth_packet_command *)data;
-
-    /*   */
-    if (!wifi_eth_first_recv)
+    if (len == sizeof(struct wifi_eth_packet_init) && current_state == WAITING_FOR_INIT)
     {
-        wifi_eth_first_recv = true;
-        wifi_eth_start_spi = true;
-        command_index_prev = packet_recv->command_index - 1;
+        current_state = SENDING_INIT_ACK;
+        wifi_eth_count = 0;
     }
 
-    /* Prepare SPI packets */
-    uint16_t(*to_fill)[SPI_TOTAL_LEN] = spi_use_a ? spi_tx_packet_b : spi_tx_packet_a;
-
-    for (int i = 0; i < CONFIG_N_SLAVES; i++)
+    else if (len == sizeof(struct wifi_eth_packet_command) && (current_state == SENDING_INIT_ACK || current_state == ACTIVE_CONTROL))
     {
-        SPI_REG_u16(to_fill[i], SPI_COMMAND_MODE) = SPI_SWAP_DATA_TX(packet_recv->command[i].mode, 16);
-        SPI_REG_32(to_fill[i], SPI_COMMAND_POS_1) = SPI_SWAP_DATA_TX(packet_recv->command[i].position[0], 32);
-        SPI_REG_32(to_fill[i], SPI_COMMAND_POS_2) = SPI_SWAP_DATA_TX(packet_recv->command[i].position[1], 32);
-        SPI_REG_16(to_fill[i], SPI_COMMAND_VEL_1) = SPI_SWAP_DATA_TX(packet_recv->command[i].velocity[0], 16);
-        SPI_REG_16(to_fill[i], SPI_COMMAND_VEL_2) = SPI_SWAP_DATA_TX(packet_recv->command[i].velocity[1], 16);
-        SPI_REG_16(to_fill[i], SPI_COMMAND_IQ_1) = SPI_SWAP_DATA_TX(packet_recv->command[i].current[0], 16);
-        SPI_REG_16(to_fill[i], SPI_COMMAND_IQ_2) = SPI_SWAP_DATA_TX(packet_recv->command[i].current[1], 16);
-        SPI_REG_u16(to_fill[i], SPI_COMMAND_KP_1) = SPI_SWAP_DATA_TX(packet_recv->command[i].kp[0], 16);
-        SPI_REG_u16(to_fill[i], SPI_COMMAND_KP_2) = SPI_SWAP_DATA_TX(packet_recv->command[i].kp[1], 16);
-        SPI_REG_u16(to_fill[i], SPI_COMMAND_KD_1) = SPI_SWAP_DATA_TX(packet_recv->command[i].kd[0], 16);
-        SPI_REG_u16(to_fill[i], SPI_COMMAND_KD_2) = SPI_SWAP_DATA_TX(packet_recv->command[i].kd[1], 16);
-        SPI_REG_u16(to_fill[i], SPI_COMMAND_ISAT_12) = SPI_SWAP_DATA_TX(packet_recv->command[i].isat, 16);
+        struct wifi_eth_packet_command *packet_recv = (struct wifi_eth_packet_command *)data;
+
+        if (current_state == SENDING_INIT_ACK)
+        {
+            current_state = ACTIVE_CONTROL;
+            command_index_prev = packet_recv->command_index - 1;
+        }
+
+        /* Prepare SPI packets */
+        uint16_t(*to_fill)[SPI_TOTAL_LEN] = spi_use_a ? spi_tx_packet_b : spi_tx_packet_a;
+
+        for (int i = 0; i < CONFIG_N_SLAVES; i++)
+        {
+            SPI_REG_u16(to_fill[i], SPI_COMMAND_MODE) = SPI_SWAP_DATA_TX(packet_recv->command[i].mode, 16);
+            SPI_REG_32(to_fill[i], SPI_COMMAND_POS_1) = SPI_SWAP_DATA_TX(packet_recv->command[i].position[0], 32);
+            SPI_REG_32(to_fill[i], SPI_COMMAND_POS_2) = SPI_SWAP_DATA_TX(packet_recv->command[i].position[1], 32);
+            SPI_REG_16(to_fill[i], SPI_COMMAND_VEL_1) = SPI_SWAP_DATA_TX(packet_recv->command[i].velocity[0], 16);
+            SPI_REG_16(to_fill[i], SPI_COMMAND_VEL_2) = SPI_SWAP_DATA_TX(packet_recv->command[i].velocity[1], 16);
+            SPI_REG_16(to_fill[i], SPI_COMMAND_IQ_1) = SPI_SWAP_DATA_TX(packet_recv->command[i].current[0], 16);
+            SPI_REG_16(to_fill[i], SPI_COMMAND_IQ_2) = SPI_SWAP_DATA_TX(packet_recv->command[i].current[1], 16);
+            SPI_REG_u16(to_fill[i], SPI_COMMAND_KP_1) = SPI_SWAP_DATA_TX(packet_recv->command[i].kp[0], 16);
+            SPI_REG_u16(to_fill[i], SPI_COMMAND_KP_2) = SPI_SWAP_DATA_TX(packet_recv->command[i].kp[1], 16);
+            SPI_REG_u16(to_fill[i], SPI_COMMAND_KD_1) = SPI_SWAP_DATA_TX(packet_recv->command[i].kd[0], 16);
+            SPI_REG_u16(to_fill[i], SPI_COMMAND_KD_2) = SPI_SWAP_DATA_TX(packet_recv->command[i].kd[1], 16);
+            SPI_REG_u16(to_fill[i], SPI_COMMAND_ISAT_12) = SPI_SWAP_DATA_TX(packet_recv->command[i].isat, 16);
+        }
+        spi_use_a = !spi_use_a;
+
+        /* Compute data for next wifi_eth_sensor packet */
+        wifi_eth_tx_data.packet_loss += ((struct wifi_eth_packet_command *)data)->command_index - command_index_prev - 1;
+        command_index_prev = ((struct wifi_eth_packet_command *)data)->command_index;
+
+        /* Reset watchdog timer */
+        wifi_eth_count = 0;
     }
-    spi_use_a = !spi_use_a;
-
-    /* Compute data for next wifi_eth_sensor packet */
-    wifi_eth_tx_data.packet_loss += ((struct wifi_eth_packet_command *)data)->command_index - command_index_prev - 1;
-    command_index_prev = ((struct wifi_eth_packet_command *)data)->command_index;
-
-    /* Reset watchdog timer */
-    spi_wdt = 0;
 }
 
 void app_main()
@@ -301,10 +364,9 @@ void app_main()
     ws_led.leds[2] = 0x0f0f0f;
 
     ws2812_write_leds(ws_led);
-    //ws2812_write_leds(ws_led);
 
     //printf("The core is : %d\n",xPortGetCoreID());
-
+    printf("ETH/WIFI command size %u\n", sizeof(struct wifi_eth_packet_init));
     printf("ETH/WIFI command size %u\n", sizeof(struct wifi_eth_packet_command));
     printf("ETH/WIFI sensor size %u\n", sizeof(struct wifi_eth_packet_sensor));
 
@@ -322,8 +384,8 @@ void app_main()
     }
     else
     {
-        eth_attach_recv_cb(wifi_eth_receive_cb);
         eth_init();
+        eth_attach_recv_cb(wifi_eth_receive_cb);
     }
 
     while (1)
