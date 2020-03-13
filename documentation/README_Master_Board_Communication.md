@@ -51,11 +51,13 @@ Both packer encapsulate 6 BLMC µDriver SPI interface packets,  without the **In
 **µDriverX** corresponds to a BLMC µDriver SPI interface sensor packet without the CRC and index fields.
 
 **IMU** is composed of Accelerometer, Gyroscope, AHRS, and estimation of Linear Acceleration (without gravity) data:
+
 AccX | AccY | AccZ | GyrX | GyrY | GyrZ | AHRS Roll | AHRS Pitch | AHRS Yaw | LinAccX | LinAccY | LinAccZ
 --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | ---
 16bits | 16bits | 16bits | 16bits | 16bits | 16bits	| 16bits | 16bits | 16bits | 16bits	| 16bits | 16bits |
 
 IMU data representation:
+
 Data | | Unit | Min | Max | Resolution (LSB) 
 --- | --- | --- | --- | --- | --- 
 Acc | 16bits | g | -16 | 15,9995117188 | 2^(-11)	
@@ -69,7 +71,7 @@ AHRS R-P-Y | 16bits | rad | -4 | 3,9998779297 | 2^(-13)
 
 ### Command packet (170 Bytes)
 µDriver0 | µDriver1 | µDriver2 | µDriver3 | µDriver4 | µDriver5 | Command Index
---- | --- | --- | --- | --- | --- | --- | --- | ---
+--- | --- | --- | --- | --- | --- | --- 
 28 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 2 Bytes
 
 **µDriverX** corresponds to a BLMC µDriver SPI interface command packet without the CRC and index fields.

@@ -73,6 +73,7 @@ If a valid CRC is not transmitted, the command will be ignored.
 
 ## Sensor message (MISO line)
 A sensor message is a message transmitted from the µDriver to the Master.
+
 Status | Time Stamp | Positions | Velocities | Iq | Coils Resistances | ADC | last cmd Index | /CRC
 --- | --- | --- | --- | --- | --- | --- | --- | ---
 16bits | 16bits | 2\*32bits | 2\*16bits | 2\*16bits | 2\*16bits | 2\*16bits | 16bits | 32bits
