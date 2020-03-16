@@ -41,6 +41,12 @@ def example_script(name_interface):
 
     last = clock()
 
+    while (not robot_if.IsAckMsgReceived()):
+        if ((clock() - last) > dt):
+            last = clock()
+            robot_if.SendInit()
+
+
     while ((not robot_if.IsTimeout())
            and (clock() < 20)):  # Stop after 15 seconds (around 5 seconds are used at the start for calibration)
 
