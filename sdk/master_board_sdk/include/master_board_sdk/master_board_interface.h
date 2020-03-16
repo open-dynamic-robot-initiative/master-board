@@ -29,7 +29,7 @@ public:
 	void ResetTimeout();  // Reset the interface after at timeout to send packets again
 	bool IsTimeout();     // Check if a timeout has been triggered because the master board did not respond
 	
-	bool isAckMsgReceived();
+	bool IsAckMsgReceived();
 	int SendInit(); //Send the init msg
 
   	uint16_t nb_recv = 0; //todo make private

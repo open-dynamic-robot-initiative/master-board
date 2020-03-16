@@ -290,7 +290,7 @@ bool MasterBoardInterface::IsTimeout()
   return timeout;
 }
 
-bool MasterBoardInterface::isAckMsgReceived()
+bool MasterBoardInterface::IsAckMsgReceived()
 {
   return ack_received;
 }
