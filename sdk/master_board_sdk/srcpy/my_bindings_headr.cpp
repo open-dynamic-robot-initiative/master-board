@@ -43,6 +43,9 @@ boost::python::tuple wrap_adc(MotorDriver const * motDriver)
             .def("imu_data_attitude", make_function(&MasterBoardInterface::imu_data_attitude))
             .def("imu_data_linear_acceleration", make_function(&MasterBoardInterface::imu_data_linear_acceleration))
 
+            .def("IsAckMsgReceived", &MasterBoardInterface::IsAckMsgReceived)
+            .def("SendInit", &MasterBoardInterface::SendInit)
+
             // Public properties of MasterBoardInterface class
             .add_property("nb_recv", &MasterBoardInterface::get_nb_recv, &MasterBoardInterface::set_nb_recv)
         ;
