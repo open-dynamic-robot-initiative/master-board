@@ -30,7 +30,7 @@ long int spi_ok[CONFIG_N_SLAVES] = {0};
 
 int wifi_eth_count = 0; // counter that counts the ms without a message being received from PC
 
-enum State current_state = WAITING_FOR_INIT;
+enum State current_state = WAITING_FOR_FIRST_INIT;
 
 unsigned int ms_cpt = 0;
 
@@ -78,7 +78,7 @@ static void periodic_timer_callback(void *arg)
     
 
     if (!gpio_get_level(CONFIG_BUTTON_GPIO))
-        current_state = WAITING_FOR_INIT;
+        current_state = WAITING_FOR_FIRST_INIT; // TODO: think about button behaviour
 
     /* Debug */
     if (ENABLE_DEBUG_PRINTF && spi_count % 1000 == 0)
@@ -104,8 +104,8 @@ static void periodic_timer_callback(void *arg)
     //printf("%d\n", wifi_eth_count);
     switch (current_state)
     {
-    case WAITING_FOR_INIT:
-        ws_led.leds[0] = RGB(0xff * fade_blink, 0, 0); //Red fade, Waiting for init
+    case WAITING_FOR_FIRST_INIT:
+        ws_led.leds[0] = RGB(0xff * fade_blink, 0, 0); //Red fade, Waiting for first init
         ws_led.leds[1] = RGB(0xff * fade_blink, 0, 0);
 
         wifi_eth_count = 0; // we allow not receiving messages if waiting for init
@@ -118,7 +118,7 @@ static void periodic_timer_callback(void *arg)
 
         if (wifi_eth_count > CONFIG_WIFI_ETH_TIMEOUT_ACK)
         {
-            current_state = WAITING_FOR_INIT;
+            current_state = WIFI_ETH_ERROR;
         }
 
         wifi_eth_count++;
@@ -131,7 +131,7 @@ static void periodic_timer_callback(void *arg)
 
         if (wifi_eth_count > CONFIG_WIFI_ETH_TIMEOUT_CONTROL)
         {
-            current_state = WAITING_FOR_INIT;
+            current_state = WIFI_ETH_ERROR;
         }
         else
         {
@@ -142,11 +142,16 @@ static void periodic_timer_callback(void *arg)
         spi_count++;
         break;
 
-    default:
-        ws_led.leds[0] = RGB(0xff * blink, 0, 0); //Red blink, state machine error
+    case WIFI_ETH_ERROR:
+        ws_led.leds[0] = RGB(0xff * blink, 0, 0); //Red blink, error state (communication with PC), awaiting for new init msg
         ws_led.leds[1] = RGB(0xff * blink, 0, 0);
 
-        return; // exiting, requires a reboot
+        wifi_eth_count = 0; // we allow not receiving messages if waiting for init in error state
+        break;
+
+    default:
+        ws_led.leds[0] = RGB(0xff * blink, 0xff * blink, 0xff * blink); //White blink, state machine error (should never happen)
+        ws_led.leds[1] = RGB(0xff * blink, 0xff * blink, 0xff * blink);
     }
 
     /* Complete and send each packet */
@@ -167,26 +172,24 @@ static void periodic_timer_callback(void *arg)
         p_trans[i] = spi_send(i, (uint8_t *)p_tx[i], (uint8_t *)spi_rx_packet[i], SPI_TOTAL_LEN * 2);
     }
 
-    if (current_state == ACTIVE_CONTROL) // getting imu data only if we are in control mode
-    {
-        /* Get IMU latest data*/
-        parse_IMU_data();
-        wifi_eth_tx_data.imu.accelerometer[0] = get_acc_x_in_D16QN();
-        wifi_eth_tx_data.imu.accelerometer[1] = get_acc_y_in_D16QN();
-        wifi_eth_tx_data.imu.accelerometer[2] = get_acc_z_in_D16QN();
+    
+    /* Get IMU latest data*/
+    parse_IMU_data();
+    wifi_eth_tx_data.imu.accelerometer[0] = get_acc_x_in_D16QN();
+    wifi_eth_tx_data.imu.accelerometer[1] = get_acc_y_in_D16QN();
+    wifi_eth_tx_data.imu.accelerometer[2] = get_acc_z_in_D16QN();
 
-        wifi_eth_tx_data.imu.gyroscope[0] = get_gyr_x_in_D16QN();
-        wifi_eth_tx_data.imu.gyroscope[1] = get_gyr_y_in_D16QN();
-        wifi_eth_tx_data.imu.gyroscope[2] = get_gyr_z_in_D16QN();
+    wifi_eth_tx_data.imu.gyroscope[0] = get_gyr_x_in_D16QN();
+    wifi_eth_tx_data.imu.gyroscope[1] = get_gyr_y_in_D16QN();
+    wifi_eth_tx_data.imu.gyroscope[2] = get_gyr_z_in_D16QN();
 
-        wifi_eth_tx_data.imu.attitude[0] = get_roll_in_D16QN();
-        wifi_eth_tx_data.imu.attitude[1] = get_pitch_in_D16QN();
-        wifi_eth_tx_data.imu.attitude[2] = get_yaw_in_D16QN();
+    wifi_eth_tx_data.imu.attitude[0] = get_roll_in_D16QN();
+    wifi_eth_tx_data.imu.attitude[1] = get_pitch_in_D16QN();
+    wifi_eth_tx_data.imu.attitude[2] = get_yaw_in_D16QN();
 
-        wifi_eth_tx_data.imu.linear_acceleration[0] = get_linacc_x_in_D16QN();
-        wifi_eth_tx_data.imu.linear_acceleration[1] = get_linacc_y_in_D16QN();
-        wifi_eth_tx_data.imu.linear_acceleration[2] = get_linacc_z_in_D16QN();
-    }
+    wifi_eth_tx_data.imu.linear_acceleration[0] = get_linacc_x_in_D16QN();
+    wifi_eth_tx_data.imu.linear_acceleration[1] = get_linacc_y_in_D16QN();
+    wifi_eth_tx_data.imu.linear_acceleration[2] = get_linacc_z_in_D16QN();
 
     /* Wait for SPI transactions to finish */
     for (int spi_try = 0; spi_try < CONFIG_SPI_N_ATTEMPT; spi_try++)
@@ -204,8 +207,6 @@ static void periodic_timer_callback(void *arg)
                     //Wait for it to be finished
                 }
 
-                if (current_state != ACTIVE_CONTROL) continue; // skip checking and filling sensor data if we are not in active control mode 
-                
                 // is received data correct ?
                 if (packet_check_CRC(spi_rx_packet[i]))
                 {
@@ -250,8 +251,8 @@ static void periodic_timer_callback(void *arg)
     /* Sends message to PC */
     switch (current_state)
     {
-    case WAITING_FOR_INIT:
-        // nothing to send to PC
+    case WAITING_FOR_FIRST_INIT:
+        // nothing to send to PC, else it produces errors and might not connect
         break;
 
     case SENDING_INIT_ACK:
@@ -267,6 +268,7 @@ static void periodic_timer_callback(void *arg)
         break;
 
     case ACTIVE_CONTROL:
+    case WIFI_ETH_ERROR:
         /* Send all spi_sensor packets to PC */
         wifi_eth_tx_data.sensor_index++;
         if (useWIFI)
@@ -280,7 +282,7 @@ static void periodic_timer_callback(void *arg)
         break;
 
     default:
-
+        // we send nothing to PC in case of a state machine error (should never happen)
         break;
     }
 }
@@ -308,7 +310,7 @@ void setup_spi()
 
 void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len)
 {
-    if (len == sizeof(struct wifi_eth_packet_init) && current_state == WAITING_FOR_INIT)
+    if (len == sizeof(struct wifi_eth_packet_init) && (current_state == WAITING_FOR_FIRST_INIT || current_state == WIFI_ETH_ERROR))
     {
         current_state = SENDING_INIT_ACK;
         wifi_eth_count = 0;
