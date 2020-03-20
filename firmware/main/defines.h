@@ -31,19 +31,21 @@ struct imu_data {
 } __attribute__((packed));
 
 struct wifi_eth_packet_init {
-	uint16_t init_id;
+	uint16_t session_id;
 } __attribute__ ((packed));
 
 struct wifi_eth_packet_command {
+	uint16_t session_id;
     struct command_data command[CONFIG_N_SLAVES];
     uint16_t command_index;
 } __attribute__ ((packed));
 
 struct wifi_eth_packet_ack {
-	uint16_t ack_id;
+	uint16_t session_id;
 } __attribute__ ((packed));
 
 struct wifi_eth_packet_sensor {
+	uint16_t session_id;
     struct sensor_data sensor[CONFIG_N_SLAVES];
     struct imu_data imu;
     uint16_t sensor_index;

@@ -30,6 +30,7 @@ long int spi_ok[CONFIG_N_SLAVES] = {0};
 
 int wifi_eth_count = 0; // counter that counts the ms without a message being received from PC
 
+uint16_t session_id = 0; // session id
 enum State current_state = WAITING_FOR_FIRST_INIT;
 
 unsigned int ms_cpt = 0;
@@ -69,7 +70,7 @@ static void periodic_timer_callback(void *arg)
 {
     ms_cpt++;
 
-    if (ms_cpt % 500 == 0) printf("current_state = %d\n", current_state);
+    if (ms_cpt % 500 == 0) printf("current_state = %d, session_id = %d\n", current_state, session_id);
 
     /* LEDs */
     bool blink = (ms_cpt % 1000) > 500;
@@ -172,7 +173,6 @@ static void periodic_timer_callback(void *arg)
         p_trans[i] = spi_send(i, (uint8_t *)p_tx[i], (uint8_t *)spi_rx_packet[i], SPI_TOTAL_LEN * 2);
     }
 
-    
     /* Get IMU latest data*/
     parse_IMU_data();
     wifi_eth_tx_data.imu.accelerometer[0] = get_acc_x_in_D16QN();
@@ -248,6 +248,10 @@ static void periodic_timer_callback(void *arg)
         }
     }
 
+    // updating session ids
+    wifi_eth_tx_ack.session_id = session_id;
+    wifi_eth_tx_data.session_id = session_id;
+
     /* Sends message to PC */
     switch (current_state)
     {
@@ -285,6 +289,7 @@ static void periodic_timer_callback(void *arg)
         // we send nothing to PC in case of a state machine error (should never happen)
         break;
     }
+
 }
 
 void setup_spi()
@@ -312,6 +317,9 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len)
 {
     if (len == sizeof(struct wifi_eth_packet_init) && (current_state == WAITING_FOR_FIRST_INIT || current_state == WIFI_ETH_ERROR))
     {
+        struct wifi_eth_packet_init *packet_recv = (struct wifi_eth_packet_init *)data;
+
+        session_id = packet_recv->session_id;
         current_state = SENDING_INIT_ACK;
         wifi_eth_count = 0;
     }
@@ -319,6 +327,12 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len)
     else if (len == sizeof(struct wifi_eth_packet_command) && (current_state == SENDING_INIT_ACK || current_state == ACTIVE_CONTROL))
     {
         struct wifi_eth_packet_command *packet_recv = (struct wifi_eth_packet_command *)data;
+
+        if (packet_recv->session_id != session_id)
+        {
+            //printf("Wrong session id, got %d instead of %d, ignoring packet\n", packet_recv->session_id, session_id);
+            return; // ignoring packet
+        }
 
         if (current_state == SENDING_INIT_ACK)
         {
