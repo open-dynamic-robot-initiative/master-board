@@ -135,6 +135,7 @@ IF(BUILD_PYTHON_INTERFACE)
       PERMISSIONS OWNER_READ GROUP_READ WORLD_READ OWNER_WRITE)
 
   PYTHON_BUILD(example example.py)
+  PYTHON_BUILD(test_master_board_state_machine test_master_board_state_machine.py)
 ENDIF(BUILD_PYTHON_INTERFACE)
 
 

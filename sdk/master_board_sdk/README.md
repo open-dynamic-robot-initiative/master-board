@@ -66,3 +66,24 @@ How to run the Python example
 
 `sudo PYTHONPATH=. python example/example.pyc -i name_interface`
 
+How to run the Python master board state machine test
+--------
+* Clone the repository: `git clone --recursive https://github.com/open-dynamic-robot-initiative/master-board.git`
+
+* Get into the repository: `cd master-board`
+
+* Set the number of controlled drivers by opening `sdk/master_board_sdk/test_master_board_state_machine/test_master_board_state_machine.py` and tuning the `N_SLAVES_CONTROLED` constant: `N_SLAVES_CONTROLED 4` if you are using 4 driver boards (1 per leg)
+
+* Get in `sdk/master_board_sdk/`: `cd sdk/master_board_sdk/`
+
+* Create a build folder: `mkdir build`
+
+* Get into the folder: `cd build`
+
+* Two possibilities:
+    * Using `ccmake ..` turn on Python bindings by setting `BUILD_PYTHON_INTERFACE` to `ON` and `CMAKE_BUILD_TYPE` to `RELEASE`. Then compile and create the bindings: `cmake ..` then `make`
+    * Directly use `cmake -DBUILD_PYTHON_INTERFACE=ON -DCMAKE_BUILD_TYPE=RELEASE ..` then `make`. If you want to run the scripts with Python 3 then use `cmake -DBUILD_PYTHON_INTERFACE=ON -DCMAKE_BUILD_TYPE=Release -DPYTHON_EXECUTABLE=$(which python3) ..` instead.
+
+* Run the control script with the name of your Ethernet interface instead of `name_interface` (for instance `enp1s0`): 
+
+`sudo PYTHONPATH=. python test_master_board_state_machine/test_master_board_state_machine.pyc -i name_interface`
