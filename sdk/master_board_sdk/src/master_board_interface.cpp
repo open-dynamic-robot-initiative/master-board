@@ -19,6 +19,11 @@ MasterBoardInterface::MasterBoardInterface(const MasterBoardInterface& to_be_cop
 {
 
 }
+
+void MasterBoardInterface::GenerateSessionId() {
+  session_id = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(); // number of milliseconds since 01/01/1970 00:00:00, casted in 16 bits
+}
+
 int MasterBoardInterface::Init()
 {
   printf("if_name: %s\n", if_name_.c_str());
@@ -38,6 +43,8 @@ int MasterBoardInterface::Init()
 
   init_sent = false;
   ack_received = false;
+
+  GenerateSessionId();
 
   if (if_name_[0] == 'e')
   {
@@ -73,12 +80,18 @@ int MasterBoardInterface::Stop()
 
 int MasterBoardInterface::SendInit()
 {
+  if(!init_sent)
+  {
+    init_sent = true;
+  }
+
   if (timeout) {
     return -1;
   }
 
+  init_packet.session_id = session_id;
+
   link_handler_->send((uint8_t *)&init_packet, sizeof(init_packet_t));
-  init_sent = true;
   return 0;
 }
 
@@ -87,6 +100,7 @@ int MasterBoardInterface::SendCommand()
   // If SendCommand is not called every N milli-second we shutdown the
   // connexion. This check is performed only from the first time SendCommand
   // is called. See the comment below for more information.
+
   if(!first_command_sent_)
   {
     t_last_packet = std::chrono::high_resolution_clock::now();
@@ -100,6 +114,8 @@ int MasterBoardInterface::SendCommand()
   {
     return -1; // Return -1 since the command has not been sent.
   }
+
+  command_packet.session_id = session_id;
 
   //construct the command packet
   for (int i = 0; i < N_SLAVES; i++)
@@ -167,10 +183,20 @@ void MasterBoardInterface::callback(uint8_t src_mac[6], uint8_t *data, int len)
 {
   if (init_sent && !ack_received && len == sizeof(ack_packet_t))
   {
+    if (((ack_packet_t *)data)->session_id != session_id) {
+      //printf("Wrong session id in ack msg, got %d instead of %d ignoring packet\n", ((ack_packet_t *)data)->session_id, session_id);
+      return; // ignoring the packet
+    }
+
     ack_received = true;
   }
   else if (init_sent && ack_received && len == sizeof(sensor_packet_t))
   {
+    if (((sensor_packet_t *)data)->session_id != session_id) {
+      //printf("Wrong session id in sensor msg, got %d instead of %d, ignoring packet\n", ((sensor_packet_t *)data)->session_id, session_id);
+      return; // ignoring the packet
+    }
+
     // Update time point of the latest received packet
     t_last_packet = std::chrono::high_resolution_clock::now();
 

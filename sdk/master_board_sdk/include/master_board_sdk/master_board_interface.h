@@ -64,8 +64,8 @@ private:
 	// Time point that is updated each time a packet is received
 	std::chrono::high_resolution_clock::time_point t_last_packet =
             std::chrono::high_resolution_clock::now();
-       // We initialize this value only upon the first call of SendCommand
-       bool first_command_sent_ = false; //useless ?
+	// We initialize this value only upon the first call of SendCommand
+    bool first_command_sent_ = false;
 
 
 	// Is true if the MasterBoardInterface has been shut down due to timeout
@@ -73,6 +73,10 @@ private:
 
 	struct init_packet_t init_packet;
 	struct ack_packet_t ack_packet;
+
+	uint16_t session_id = 0;
+
+	void GenerateSessionId();
 
 	bool init_sent = false;
 	bool ack_received = false;
