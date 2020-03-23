@@ -70,31 +70,20 @@ static void periodic_timer_callback(void *arg)
 {
     ms_cpt++;
 
-    if (ms_cpt % 500 == 0) printf("current_state = %d, session_id = %d\n", current_state, session_id);
+    //if (ms_cpt % 500 == 0) printf("current_state = %d, session_id = %d\n", current_state, session_id);
 
     /* LEDs */
     bool blink = (ms_cpt % 1000) > 500;
     float fade_blink = (ms_cpt % 1000 < 500) ? (ms_cpt % 1000) / 500.0 : (1000 - (ms_cpt % 1000)) / 500.0;
 
-    
 
     if (!gpio_get_level(CONFIG_BUTTON_GPIO))
         current_state = WAITING_FOR_FIRST_INIT; // TODO: think about button behaviour
 
-    /* Debug */
-    if (ENABLE_DEBUG_PRINTF && spi_count % 1000 == 0)
-    {
-        printf("\e[1;1H\e[2J");
-        printf("--- SPI ---\n");
-        for (int i = 0; i < CONFIG_N_SLAVES; i++)
-        {
-            printf("[%d] sent : %ld, ok : %ld, ratio : %.02f\n", i, spi_count, spi_ok[i], 100. * spi_ok[i] / spi_count);
-        }
-    }
-
     /* Prepare spi transactions */
     spi_transaction_t *p_trans[CONFIG_N_SLAVES];
     spi_index_trans++;
+
 
     /* Choose spi packets to send*/
     uint16_t(*p_tx)[SPI_TOTAL_LEN];
@@ -110,7 +99,6 @@ static void periodic_timer_callback(void *arg)
         ws_led.leds[1] = RGB(0xff * fade_blink, 0, 0);
 
         wifi_eth_count = 0; // we allow not receiving messages if waiting for init
-
         break;
 
     case SENDING_INIT_ACK:
@@ -123,7 +111,6 @@ static void periodic_timer_callback(void *arg)
         }
 
         wifi_eth_count++;
-        spi_count++;
         break;
 
     case ACTIVE_CONTROL:
@@ -140,7 +127,6 @@ static void periodic_timer_callback(void *arg)
         }
 
         wifi_eth_count++;
-        spi_count++;
         break;
 
     case WIFI_ETH_ERROR:
@@ -153,17 +139,26 @@ static void periodic_timer_callback(void *arg)
     default:
         ws_led.leds[0] = RGB(0xff * blink, 0xff * blink, 0xff * blink); //White blink, state machine error (should never happen)
         ws_led.leds[1] = RGB(0xff * blink, 0xff * blink, 0xff * blink);
+        break;
     }
 
-    /* Complete and send each packet */
+    spi_count++;
 
-    //for debug:
+    /* Debug */
     if (ENABLE_DEBUG_PRINTF && spi_count % 1000 == 0)
     {
+        printf("\e[1;1H\e[2J");
+        printf("--- SPI ---\n");
+        for (int i = 0; i < CONFIG_N_SLAVES; i++)
+        {
+            printf("[%d] sent : %ld, ok : %ld, ratio : %.02f\n", i, spi_count, spi_ok[i], 100. * spi_ok[i] / spi_count);
+        }
         //print_imu();
         printf("\nlast CMD packet:\n");
         print_packet(p_tx[0], SPI_TOTAL_LEN * 2);
     }
+
+    /* Complete and send each packet */
 
     // send and receive packets to/from every slave
     for (int i = 0; i < CONFIG_N_SLAVES; i++)
