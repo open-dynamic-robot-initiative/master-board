@@ -41,14 +41,17 @@ def example_script(name_interface):
 
     last = clock()
 
-    while (not robot_if.IsAckMsgReceived()):
+    while (not robot_if.IsTimeout() and not robot_if.IsAckMsgReceived()):
         if ((clock() - last) > dt):
             last = clock()
             robot_if.SendInit()
 
+    if robot_if.IsTimeout():
+        print("Timeout while waiting for ack.")
+
     last = clock()
 
-    while (not clock() - last > 0.5): # wait before sending first command to show the SENDING_INIT_ACK state of the master board
+    while (not robot_if.IsTimeout() and not (clock() - last > 0.5)): # wait before sending first command to show the SENDING_INIT_ACK state of the master board
         pass
 
     last = clock()

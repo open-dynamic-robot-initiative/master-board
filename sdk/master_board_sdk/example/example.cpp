@@ -40,7 +40,7 @@ int main(int argc, char **argv)
 	}
 
 	std::chrono::time_point<std::chrono::system_clock> last = std::chrono::system_clock::now();
-	while (!robot_if.IsAckMsgReceived()) {
+	while (!robot_if.IsTimeout() && !robot_if.IsAckMsgReceived()) {
 		if (((std::chrono::duration<double>)(std::chrono::system_clock::now() - last)).count() > dt)
 		{
 			last = std::chrono::system_clock::now();
@@ -48,6 +48,11 @@ int main(int argc, char **argv)
 		}
 	}
 
+	if (robot_if.IsTimeout())
+	{
+		printf("Timeout while waiting for ack.\n");
+	}
+	
 	while (!robot_if.IsTimeout())
 	{
 		if (((std::chrono::duration<double>)(std::chrono::system_clock::now() - last)).count() > dt)
