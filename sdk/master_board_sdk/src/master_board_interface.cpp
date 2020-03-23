@@ -40,7 +40,8 @@ int MasterBoardInterface::Init()
   memset(&init_packet, 0, sizeof(init_packet_t));
   memset(&ack_packet, 0, sizeof(ack_packet_t));
 
-
+  timeout = false;
+  first_command_sent_ = false;
   init_sent = false;
   ack_received = false;
 
@@ -82,6 +83,7 @@ int MasterBoardInterface::SendInit()
 {
   if(!init_sent)
   {
+    t_last_packet = std::chrono::high_resolution_clock::now();
     init_sent = true;
   }
 
@@ -90,6 +92,21 @@ int MasterBoardInterface::SendInit()
   }
 
   init_packet.session_id = session_id;
+
+  // Current time point
+	std::chrono::high_resolution_clock::time_point t_send_packet = std::chrono::high_resolution_clock::now();
+
+	// Assess time duration since the last packet has been received
+	std::chrono::duration<double, std::milli> time_span = t_send_packet - t_last_packet;
+
+	// If this duration is greater than the timeout limit duration
+	// then the packet is not sent and the connection with the master board is closed
+	if (time_span > t_before_shutdown_ack)
+	{
+    timeout = true;
+    Stop();
+		return -1; // Return -1 since the command has not been sent.
+	}
 
   link_handler_->send((uint8_t *)&init_packet, sizeof(init_packet_t));
   return 0;
@@ -167,7 +184,7 @@ int MasterBoardInterface::SendCommand()
 
 	// If this duration is greater than the timeout limit duration
 	// then the packet is not sent and the connection with the master board is closed
-	if (time_span > t_before_shutdown)
+	if (time_span > t_before_shutdown_control)
 	{
     timeout = true;
     Stop();
