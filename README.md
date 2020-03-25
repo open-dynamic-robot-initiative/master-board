@@ -28,9 +28,10 @@ Here are some helpful links to the documentation :
 
 [SDK : How to prepare your interface and run the example](https://github.com/open-dynamic-robot-initiative/master-board/tree/master/sdk/master_board_sdk/README.md ) 
 
-[Description of the communication between the Master Board and the computer]( https://github.com/open-dynamic-robot-initiative/master-board/tree/masterdocumentation/masterboard_communication.md )
+[Description of the communication between the Master Board and the computer]( https://github.com/open-dynamic-robot-initiative/master-board/blob/master/documentation/masterboard_communication.md )
 
-[Description of the BLMC µDriver SPI interface]( https://github.com/open-dynamic-robot-initiative/master-board/tree/masterdocumentation/BLMC_µDriver_SPI_interface.md )
+[Description of the BLMC µDriver SPI interface]( https://github.com/open-dynamic-robot-initiative/master-board/blob/master/documentation/BLMC_%C2%B5Driver_SPI_interface.md )
+
 
 
 Authors
