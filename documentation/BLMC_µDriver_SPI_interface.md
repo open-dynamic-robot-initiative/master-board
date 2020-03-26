@@ -29,9 +29,9 @@ This protocol has the particularity that all the µDriver state is defined in ea
 3. Master put the CS line high.
 4. Next transaction can happen **after a minimum of 0.7ms** for the preparation of the next sensor packet.
 
-![tek00000](images/tek00000.png)
+![tek00000](https://github.com/AlexisPotier/master-board/blob/master/images/tek00000.png)
 
-![tek00001](images/tek00001.png)
+![tek00001](https://github.com/AlexisPotier/master-board/blob/master/images/tek00001.png)
 
 Note that the clock parity is SPI **Mode 1** (clock idle low and data valid at rising edges).
 
