@@ -28,8 +28,14 @@ public:
 	void PrintMotorDrivers();							 //Print motor drivers data on stdout. Usefull for debug.  void PrintMotors(); //Print Motors data on stdout. Usefull for debug.
 	void ResetTimeout();  // Reset the interface after at timeout to send packets again
 	bool IsTimeout();     // Check if a timeout has been triggered because the master board did not respond
+	void PrintHistogram(int*);
+
+	//TODO Make private
+	int histogram_lost_sensor_packets[MAX_HIST]; //histogram_lost_packets[0] is the number of single packet loss, histogram_lost_packets[1] is the number of two consecutive packet loss, etc...
+	int histogram_lost_cmd_packets[MAX_HIST];	//histogram_lost_packets[0] is the number of single packet loss, histogram_lost_packets[1] is the number of two consecutive packet loss, etc...
+
+
 	
-  	uint16_t nb_recv = 0; //todo make private
 private:
 	void callback(uint8_t src_mac[6], uint8_t *data, int len);
 	uint8_t my_mac_[6];		// = {0xa0, 0x1d, 0x48, 0x12, 0xa0, 0xc5};	 //{0xF8, 0x1A, 0x67, 0xb7, 0xEB, 0x0B};
@@ -42,15 +48,21 @@ private:
 	struct dual_motor_driver_sensor_data_t dual_motor_driver_sensor_data[N_SLAVES];
 	struct imu_data_t imu_data;
 
-	int histogram_lost_sensor_packets[MAX_HIST]; //histogram_lost_packets[0] is the number of single packet loss, histogram_lost_packets[1] is the number of two consecutive packet loss, etc...
-	int histogram_lost_cmd_packets[MAX_HIST];		 //histogram_lost_packets[0] is the number of single packet loss, histogram_lost_packets[1] is the number of two consecutive packet loss, etc...
+	int wifi_eth_first_recv = 0;
 
-	uint16_t last_sensor_index = 0;
+	// PACKET LOSS STATS
+	//SENSOR PACKETS
+  	uint16_t nb_sensors_recv = 0;
+	uint32_t last_sensor_index = -1; // error when type is uint16_t
 	uint32_t nb_sensors_sent = 0; //this variable deduce the total number of received sensor packet from sensor index and previous sensor index
 	uint32_t nb_sensors_lost = 0;
 
-	uint32_t nb_cmd_lost_offset = -1;
-	uint32_t last_cmd_lost = 0;
+
+	//COMMAND PACKETS
+	uint16_t index_cmd_packet = 0;
+	uint32_t nb_cmd_sent = 0;
+	uint32_t nb_cmd_lost = 0;
+	
 
 	std::mutex sensor_packet_mutex;
 
@@ -72,12 +84,18 @@ public:
 	MotorDriver motor_drivers[N_SLAVES];
 
 	// Set functions for Python binding with Boost
-	void set_nb_recv(uint16_t val) { this->nb_recv = val; };
+	void set_nb_sensors_sent(uint32_t val) { this->nb_sensors_sent = val; };
+	void set_nb_sensors_lost(uint32_t val) { this->nb_sensors_lost = val; };
+	void set_nb_cmd_sent(uint32_t val) { this->nb_cmd_sent = val; };
+	void set_nb_cmd_lost(uint32_t val) { this->nb_cmd_lost = val; };
 	void set_motors(Motor motors []); // See definition in .cpp
 	void set_motor_drivers(MotorDriver motor_drivers []); // See definition in .cpp
 
 	// Get functions for Python binding with Boost
-	uint16_t get_nb_recv() { return this->nb_recv; };
+	uint32_t get_nb_sensors_sent() { return this->nb_sensors_sent; };
+	uint32_t get_nb_sensors_lost() { return this->nb_sensors_lost; };
+	uint32_t get_nb_cmd_sent() { return this->nb_cmd_sent; };
+	uint32_t get_nb_cmd_lost() { return this->nb_cmd_lost; };
 	MotorDriver* GetDriver(int i) { return &(this->motor_drivers[i]); };
 	Motor* GetMotor(int i) { return &(this->motors[i]); };
 	float imu_data_accelerometer(int i) { return (this->imu_data.accelerometer[i]); };

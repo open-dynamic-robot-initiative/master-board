@@ -23,12 +23,18 @@ int MasterBoardInterface::Init()
 {
   printf("if_name: %s\n", if_name_.c_str());
   //reset the variables
-  nb_recv = 0;
-  last_sensor_index = 0;
+  nb_sensors_recv = 0;
+  nb_cmd_sent = 0;
+  index_cmd_packet = 0;
+  wifi_eth_first_recv = false;
+  last_sensor_index = -1;
   nb_sensors_sent = 0; //this variable deduce the total number of received sensor packet from sensor index and previous sensor index
   nb_sensors_lost = 0;
-  nb_cmd_lost_offset = -1;
-  last_cmd_lost = 0;
+  nb_cmd_lost = 0;
+  for(int i=0; i<MAX_HIST; i++ ){
+		histogram_lost_sensor_packets[i]=0;
+    histogram_lost_cmd_packets[i]=0;
+	}
   memset(&command_packet, 0, sizeof(command_packet_t)); //todo make it more C++
   memset(&sensor_packet, 0, sizeof(sensor_packet_t));
   if (if_name_[0] == 'e')
@@ -43,7 +49,7 @@ int MasterBoardInterface::Init()
   {
     /*WiFi*/
     printf("Using WiFi (%s)\n", if_name_.c_str());
-    link_handler_ = new ESPNOW_manager(if_name_, DATARATE_24Mbps, CHANNEL_freq_9, my_mac_, dest_mac_, false); //TODO write setter for espnow specific parametters
+    link_handler_ = new ESPNOW_manager(if_name_, DATARATE_24Mbps, CHANNEL_freq_5, my_mac_, dest_mac_, false); //TODO write setter for espnow specific parametters
     link_handler_->set_recv_callback(this);
     link_handler_->start();
     ((ESPNOW_manager *)link_handler_)->bind_filter();
@@ -138,9 +144,10 @@ int MasterBoardInterface::SendCommand()
     Stop();
 		return -1; // Return -1 since the command has not been sent.
 	}
-
+  command_packet.command_index = index_cmd_packet;
   link_handler_->send((uint8_t *)&command_packet, sizeof(command_packet_t));
-
+  index_cmd_packet ++;
+  nb_cmd_sent ++;
   return 0; // Return 0 since the command has been sent.
 }
 
@@ -156,10 +163,33 @@ void MasterBoardInterface::callback(uint8_t src_mac[6], uint8_t *data, int len)
   // Update time point of the latest received packet
 	t_last_packet = std::chrono::high_resolution_clock::now();
 
-  nb_recv++;
+  nb_sensors_recv++;
   sensor_packet_mutex.lock();
   memcpy(&sensor_packet, data, sizeof(sensor_packet_t));
   sensor_packet_mutex.unlock();
+
+  struct sensor_packet_t *packet_recv = (struct sensor_packet_t *)data;
+
+  //initialisation of last_sensor_index at first reception
+  if (!wifi_eth_first_recv){
+    wifi_eth_first_recv = true;
+    last_sensor_index = packet_recv->sensor_index - 1;
+  }
+
+
+  if(packet_recv->sensor_index - last_sensor_index - 1 != 0){
+    histogram_lost_sensor_packets[packet_recv->sensor_index - last_sensor_index - 2]++; // index 0 = 1 packet lost !
+    nb_sensors_lost+=packet_recv->sensor_index - last_sensor_index - 1;
+  }
+
+  if(packet_recv->packet_loss != nb_cmd_lost){
+    histogram_lost_cmd_packets[packet_recv->packet_loss - nb_cmd_lost - 1]++; // index 0 = 1 packet lost !
+    nb_cmd_lost = packet_recv->packet_loss; 
+  }
+
+  last_sensor_index = packet_recv->sensor_index;
+  nb_sensors_sent = last_sensor_index; //useless, just makes it easier to read
+
 }
 
 void MasterBoardInterface::ParseSensorData()
@@ -284,4 +314,11 @@ void MasterBoardInterface::set_motor_drivers(MotorDriver input_motor_drivers [])
     printf("Motor Driver % 2.2d -> ", i);
     (this->motor_drivers)[i] = input_motor_drivers[i];
   }
+}
+
+void MasterBoardInterface::PrintHistogram(int* histogram){
+  for(int i=0; i<MAX_HIST; i++ ){ 
+		printf("%d ", histogram[i]);
+	}
+	printf("\n");
 }

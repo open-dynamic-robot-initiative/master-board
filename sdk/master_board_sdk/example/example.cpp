@@ -89,6 +89,19 @@ int main(int argc, char **argv)
 				robot_if.PrintMotors();
 				robot_if.PrintMotorDrivers();
 				fflush(stdout);
+				 
+				printf("cmd_lost = %d\n",robot_if.get_nb_cmd_lost()); 
+				printf("cmd_ratio = %.02f\n",100.*robot_if.get_nb_cmd_lost()/robot_if.get_nb_cmd_sent());
+
+				printf("sensor_lost = %d\n",robot_if.get_nb_sensors_lost()); 
+				printf("sensor_ratio = %.02f\n",100.*robot_if.get_nb_sensors_lost()/robot_if.get_nb_sensors_sent());
+				
+				printf("Histogram command : ");
+				robot_if.PrintHistogram(robot_if.histogram_lost_sensor_packets);
+
+				printf("Histogram sensor : ");
+				robot_if.PrintHistogram(robot_if.histogram_lost_sensor_packets);
+
 			}
 			robot_if.SendCommand(); //This will send the command packet
 		}

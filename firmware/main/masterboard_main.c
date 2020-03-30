@@ -45,11 +45,14 @@ static uint16_t spi_tx_packet_a[CONFIG_N_SLAVES][SPI_TOTAL_LEN];
 static uint16_t spi_tx_packet_b[CONFIG_N_SLAVES][SPI_TOTAL_LEN];
 static uint16_t spi_tx_packet_stop[CONFIG_N_SLAVES][SPI_TOTAL_LEN];
 
-uint16_t command_index_prev = 0;
+uint16_t command_index_prev = -1;
 
 struct wifi_eth_packet_sensor wifi_eth_tx_data;
 
 bool spi_use_a = true;
+
+uint16_t index_sensor_packet = 0;
+uint16_t nb_sensor_packets_sent = 0;
 
 void print_packet(uint8_t *data, int len)
 {
@@ -217,7 +220,12 @@ static void periodic_timer_callback(void *arg)
     }
 
     /* Send all spi_sensor packets to PC */
-    wifi_eth_tx_data.sensor_index++;
+
+    wifi_eth_tx_data.sensor_index = index_sensor_packet; 
+    index_sensor_packet ++;
+    nb_sensor_packets_sent ++;
+    
+
     if (useWIFI)
     {
         wifi_send_data(&wifi_eth_tx_data, sizeof(struct wifi_eth_packet_sensor));
@@ -261,7 +269,7 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len)
         wifi_eth_start_spi = true;
         command_index_prev = packet_recv->command_index - 1;
     }
-
+    
     /* Prepare SPI packets */
     uint16_t(*to_fill)[SPI_TOTAL_LEN] = spi_use_a ? spi_tx_packet_b : spi_tx_packet_a;
 
@@ -315,6 +323,10 @@ void app_main()
     imu_init();
     printf("done?\n");
 
+    index_sensor_packet = 0;
+    nb_sensor_packets_sent = 0;
+
+
     if (useWIFI)
     {
         wifi_init();
@@ -322,8 +334,8 @@ void app_main()
     }
     else
     {
-        eth_attach_recv_cb(wifi_eth_receive_cb);
         eth_init();
+        eth_attach_recv_cb(wifi_eth_receive_cb);
     }
 
     while (1)

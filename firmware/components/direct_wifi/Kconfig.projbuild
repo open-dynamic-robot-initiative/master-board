@@ -2,8 +2,8 @@ menu "Direct_Wifi"
 	
 	config WIFI_CHANNEL
         int "Channel"
-        default 9
-        range 1 13
+        default 5
+        range 1 14
         help
             The channel on which sending and receiving ESPNOW data.
 
