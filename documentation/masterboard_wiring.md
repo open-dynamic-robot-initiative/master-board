@@ -23,12 +23,15 @@ The MB can connect to slaves SPI on one of the 8 x 5pins SPIx connectors.
 IMU
 ----
 3dm-cx5-2 IMU can be connected to the MB on the 4pins UART1 Connector.
+
 https://www.microstrain.com/inertial/3dm-cx5-25 
 
 ![wireIMU](../images/wireIMU.png)
 
 Cable reference: https://www.digikey.fr/product-detail/fr/samtec-inc/FFSD-05-S-06-00-01-N/SAM8221-ND/1106580
+
 It's also possible to buy the connector and ribbon cable separetly to have custom length
+
 NeoPixels
 ----
 Daisy chained RGB LED compatible with neopixel can be plug on the 3pins LED connector
