@@ -29,9 +29,9 @@ This protocol has the particularity that all the µDriver state is defined in ea
 3. Master put the CS line high.
 4. Next transaction can happen **after a minimum of 0.7ms** for the preparation of the next sensor packet.
 
-![tek00000](../images/tek00000.png)
+![tek00000](https://github.com/AlexisPotier/master-board/blob/master/images/tek00000.png)
 
-![tek00001](../images/tek00001.png)
+![tek00001](https://github.com/AlexisPotier/master-board/blob/master/images/tek00001.png)
 
 Note that the clock parity is SPI **Mode 1** (clock idle low and data valid at rising edges).
 
@@ -87,7 +87,7 @@ Status | Time Stamp | Positions | Velocities | Iq | Coils Resistances | ADC | la
 ### Status:
 A status register is used to get the state of the motor board, the status of calibration, the error codes etc...
 
- 15 | 14 | 13 | 12 | 11 | 10 | 9 | 8 | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 
+ 15 | 14 | 13 | 12 | 11 | 10 | 9 | 8 | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 
 --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- 
  SE | M1E | M1R | M2E | M2R | IDX1D | IDX2D | IDX1T |IDX2T | - | - | -  | Error code | Error code | Error code | Error code 
 
@@ -110,9 +110,6 @@ A status register is used to get the state of the motor board, the status of cal
 
 The integrity of the messages is checked with a CRC32 according to (https://github.com/gcc-mirror/gcc/blob/master/libiberty/crc32.c) witch output need to be complemented (XOR with 0xFFFF)
 CRC value must be checked before interpreting any of the sensor message data.
-
-**Why a complemeted CRC?**
-We chose to complement the CRC (XOR with 0xFFFF) in order to detect a loop-back connection (shorting MISO and MOSI lines), and to prevent interpreting a valid command message as a valid sensor message.
 
 ## Data representation
 To save bandwidth, Sensor and Commands are represented with a more compact representation compared to the CAN interface.

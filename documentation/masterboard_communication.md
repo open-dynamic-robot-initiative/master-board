@@ -4,7 +4,7 @@ The master board can be connected to a real time control computer via a direct E
 
 Ethernet
 --------
-Ethernet connection with the robot is happening at the lowest level possible (MAC level without TCP/IP). You cannot use any switch or hub, but only a direct cable between the robot and a dedicated network interface. LAAS has tested the model (TODO ref) with a RT Preempt patched OS.
+Ethernet connection with the robot is happening at the lowest level possible (MAC level without TCP/IP). You cannot use any switch or hub, but only a direct cable between the robot and a dedicated network interface. The model has been tested with a RT Preempt patched OS.
 
 Prefer Ethernet cable without grounding to avoid to inject grid noise in the robot. (Plastic RJ45 connector)
 
@@ -14,7 +14,7 @@ Prefer Ethernet cable without grounding to avoid to inject grid noise in the rob
 
 On the 4 pairs of wires, only 2 are used by the ethernet 100Mbps and cables are normally shielded.
 
-At LAAS we made light weight cables using only 2 twisted pairs of wire. We attached the wires to the power cables and did not have any issues of packet loss.
+It is possible to make the ethernet cables lighter by using only 2 twisted pairs of wire. The wires can be attached to the power cables without any issues of packet loss.
 
 For reference, here is the wiring:
 
@@ -31,7 +31,7 @@ The WiFi connection is also happening at the lowest level of the 802.11 specific
 
 Ideally a free channel should be used, with a minimum of 2.4Ghz devices surrounding. TODO setup a procedure to change the master board channel, currently hard-coded in the firmware.
 
-The interface on the PC need to support monitor mode and injection. LAAS has tested ASUS PCE-AC51 with a RT Preempt patched OS.
+The interface on the PC needs to support monitor mode and injection. ASUS PCE-AC51 has been tested with a RT Preempt patched OS.
 
 
 Data packet
@@ -40,7 +40,7 @@ Both WiFi and Ethernet use the same data packet format.
 
 There are two types of packets. Packets coming from the computer are called **Command** packets, and packets coming from the master board are called **Sensor** packets.
 
-Both packer encapsulate 6 BLMC µDriver SPI interface packets,  without the **Index** and **CRC** fields. Additional, sensor packets also include IMU measurement and AHRS estimation.
+Both packets encapsulate 6 BLMC µDriver SPI interface packets,  without the **Index** and **CRC** fields. Additional, sensor packets also include IMU measurement and AHRS estimation.
 
 
 ### Sensor packet (196 Bytes)

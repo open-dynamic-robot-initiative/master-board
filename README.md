@@ -19,6 +19,21 @@ Wireless closed loop control at 1kHz demo (click to see video):
 IMU, ethernet closed loop cntrol at 1kHz demo (click to see video):
 [![Alt text](https://img.youtube.com/vi/TaonDmPJcGE/0.jpg)](https://www.youtube.com/watch?v=TaonDmPJcGE)
 
+
+Documentation
+-------------
+Here are some helpful links to the documentation :
+
+[How to flash the Master Board (install esp-idf and flash the firmware)]( https://github.com/open-dynamic-robot-initiative/master-board/tree/master/firmware/README.md )
+
+[SDK : How to prepare your interface and run the example](https://github.com/open-dynamic-robot-initiative/master-board/tree/master/sdk/master_board_sdk/README.md ) 
+
+[Description of the communication between the Master Board and the computer]( https://github.com/open-dynamic-robot-initiative/master-board/blob/master/documentation/masterboard_communication.md )
+
+[Description of the BLMC µDriver SPI interface]( https://github.com/open-dynamic-robot-initiative/master-board/blob/master/documentation/BLMC_%C2%B5Driver_SPI_interface.md )
+
+
+
 Authors
 --------
 Thomas Flayols  
