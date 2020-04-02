@@ -4,29 +4,17 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <stdio.h>
+#include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "freertos/event_groups.h"
+#include "esp_eth.h"
 #include "esp_event.h"
 #include "esp_log.h"
-#include "esp_eth.h"
-#include "tcpip_adapter.h"
 
-#include "eth_phy/phy_lan8720.h"
+#include "sdkconfig.h"
 
-#define CONFIG_PHY_CLOCK_MODE 3
-#define ETHERNET_PHY_CONFIG phy_lan8720_default_ethernet_config
-#define PIN_SMI_MDC 23
-#define PIN_SMI_MDIO 18
-
-#define DEVICE_IP       "192.168.1.0"
-#define DEVICE_NETMASK  "255.255.255.0"
-#define DEVICE_GW       "192.168.1.1"
-
-#define WIFI_CONNECTED_BIT BIT0
 #define ETHERTYPE 0xb588
-
-EventGroupHandle_t udp_event_group;
 
 typedef struct {
   uint8_t dst_mac[6];
