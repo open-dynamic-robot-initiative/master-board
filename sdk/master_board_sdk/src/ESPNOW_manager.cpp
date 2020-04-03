@@ -23,7 +23,8 @@ void ESPNOW_manager::set_filter(uint8_t *src_mac, uint8_t *dst_mac) {
 	//sudo tcpdump -i wlp5s0 'type 0 subtype 0xd0 and wlan[24:4]=0x7f18fe34 and wlan[32]=221 and wlan[33:4]&0xffffff = 0x18fe34 and wlan[37]=0x4 and wlan dst 11:22:33:44:55:66 and wlan src 77:88:99:aa:bb:cc' -dd
 	unset_filter();
 
-	this->bpf.len = 53;
+	constexpr unsigned short bpf_length = 53;
+	this->bpf.len = bpf_length;
 
 	uint32_t MSB_dst = MAC_2_MSBytes(dst_mac);
 	uint32_t LSB_dst = MAC_4_LSBytes(dst_mac);
@@ -34,7 +35,7 @@ void ESPNOW_manager::set_filter(uint8_t *src_mac, uint8_t *dst_mac) {
 	uint8_t op_dst = dst_mac == NULL ? 0x30 : 0x15; //0x30 jump if >=. 0x15 jump if ==.
 	uint8_t op_src = src_mac == NULL ? 0x30 : 0x15; //0x30 jump if >=. 0x15 jump if ==.
 
-	struct sock_filter temp_code[this->bpf.len] = {
+	struct sock_filter temp_code[bpf_length] = {
 			{ 0x30, 0, 0, 0x00000003 },
 			{ 0x64, 0, 0, 0x00000008 },
 			{ 0x7, 0, 0, 0x00000000 },
