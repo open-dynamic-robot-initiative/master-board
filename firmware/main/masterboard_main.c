@@ -24,8 +24,13 @@
 
 #define ENABLE_DEBUG_PRINTF false
 
+#define SPI_CHECK_CONNECTED_MAX_COUNT 50 // number of spi transaction for which the master board will try to detect spi slaves
+
 #define RGB(r, g, b) ((uint8_t)(g) << 16 | (uint8_t)(r) << 8 | (uint8_t)(b))
+
 long int spi_count = 0;
+
+bool spi_connected[CONFIG_N_SLAVES] = {0};
 long int spi_ok[CONFIG_N_SLAVES] = {0};
 
 int wifi_eth_count = 0; // counter that counts the ms without a message being received from PC
@@ -52,6 +57,15 @@ struct wifi_eth_packet_sensor wifi_eth_tx_data;
 struct wifi_eth_packet_ack wifi_eth_tx_ack;
 
 bool spi_use_a = true;
+
+void print_spi_connected() {
+    printf("[ ");
+    for (int i = 0; i < CONFIG_N_SLAVES; i++)
+    {
+        printf("%d ", spi_connected[i]);
+    }
+    printf("]\n\n");
+}
 
 void print_packet(uint8_t *data, int len)
 {
@@ -154,13 +168,18 @@ static void periodic_timer_callback(void *arg)
     {
         printf("\e[1;1H\e[2J");
         printf("--- SPI ---\n");
+
+        print_spi_connected();
+
         for (int i = 0; i < CONFIG_N_SLAVES; i++)
         {
+            if (!spi_connected[i] && spi_count > SPI_DISCOVERY_MAX_COUNT) continue;
+            
             printf("[%d] sent : %ld, ok : %ld, ratio : %.02f\n", i, spi_count, spi_ok[i], 100. * spi_ok[i] / spi_count);
         }
         //print_imu();
         printf("\nlast CMD packet:\n");
-        print_packet(p_tx[0], SPI_TOTAL_LEN * 2);
+        print_packet(p_tx[2], SPI_TOTAL_LEN * 2);
     }
 
     /* Complete and send each packet */
@@ -168,48 +187,34 @@ static void periodic_timer_callback(void *arg)
     // send and receive packets to/from every slave
     for (int i = 0; i < CONFIG_N_SLAVES; i++)
     {
+        if (!spi_connected[i] && spi_count > SPI_DISCOVERY_MAX_COUNT) continue;
+
         SPI_REG_u16(p_tx[i], SPI_TOTAL_INDEX) = SPI_SWAP_DATA_TX(spi_index_trans, 16);
         SPI_REG_u32(p_tx[i], SPI_TOTAL_CRC) = SPI_SWAP_DATA_TX(packet_compute_CRC(p_tx[i]), 32);
         p_trans[i] = spi_send(i, (uint8_t *)p_tx[i], (uint8_t *)spi_rx_packet[i], SPI_TOTAL_LEN * 2);
     }
-
-    /* Get IMU latest data*/
-    parse_IMU_data();
-    wifi_eth_tx_data.imu.accelerometer[0] = get_acc_x_in_D16QN();
-    wifi_eth_tx_data.imu.accelerometer[1] = get_acc_y_in_D16QN();
-    wifi_eth_tx_data.imu.accelerometer[2] = get_acc_z_in_D16QN();
-
-    wifi_eth_tx_data.imu.gyroscope[0] = get_gyr_x_in_D16QN();
-    wifi_eth_tx_data.imu.gyroscope[1] = get_gyr_y_in_D16QN();
-    wifi_eth_tx_data.imu.gyroscope[2] = get_gyr_z_in_D16QN();
-
-    wifi_eth_tx_data.imu.attitude[0] = get_roll_in_D16QN();
-    wifi_eth_tx_data.imu.attitude[1] = get_pitch_in_D16QN();
-    wifi_eth_tx_data.imu.attitude[2] = get_yaw_in_D16QN();
-
-    wifi_eth_tx_data.imu.linear_acceleration[0] = get_linacc_x_in_D16QN();
-    wifi_eth_tx_data.imu.linear_acceleration[1] = get_linacc_y_in_D16QN();
-    wifi_eth_tx_data.imu.linear_acceleration[2] = get_linacc_z_in_D16QN();
 
     /* Wait for SPI transactions to finish */
     for (int spi_try = 0; spi_try < CONFIG_SPI_N_ATTEMPT; spi_try++)
     {
         for (int i = 0; i < CONFIG_N_SLAVES; i++)
         {
+            if (!spi_connected[i] && spi_count > SPI_DISCOVERY_MAX_COUNT) continue;
+
             if (p_trans[i] == NULL)
             {
-                //Either the transaction failed or it was not re-sent
+                //No associated ongoing transaction, either the alloc failed or it does not need to be sent again
+                //if (spi_count % 500 == 0) printf("p_trans[%d] NULL, try %d\n", i, spi_try);
             }
             else
             {
-                while (!spi_is_finished(&(p_trans[i])))
-                {
-                    //Wait for it to be finished
-                }
+                //if (spi_count % 500 == 0) printf("p_trans[%d] not NULL, try %d\n", i, spi_try);
 
-                // is received data correct ?
-                if (packet_check_CRC(spi_rx_packet[i]))
+                // waiting for transaction to finish and checking if data is correct
+                if (spi_is_successful(&(p_trans[i])) && packet_check_CRC(spi_rx_packet[i])) //blocking until transaction is finished
                 {
+                    spi_connected[i] = 1;
+
                     spi_ok[i]++;
 
                     //for debug:
@@ -247,6 +252,24 @@ static void periodic_timer_callback(void *arg)
             }
         }
     }
+
+    /* Get IMU latest data*/
+    parse_IMU_data();
+    wifi_eth_tx_data.imu.accelerometer[0] = get_acc_x_in_D16QN();
+    wifi_eth_tx_data.imu.accelerometer[1] = get_acc_y_in_D16QN();
+    wifi_eth_tx_data.imu.accelerometer[2] = get_acc_z_in_D16QN();
+
+    wifi_eth_tx_data.imu.gyroscope[0] = get_gyr_x_in_D16QN();
+    wifi_eth_tx_data.imu.gyroscope[1] = get_gyr_y_in_D16QN();
+    wifi_eth_tx_data.imu.gyroscope[2] = get_gyr_z_in_D16QN();
+
+    wifi_eth_tx_data.imu.attitude[0] = get_roll_in_D16QN();
+    wifi_eth_tx_data.imu.attitude[1] = get_pitch_in_D16QN();
+    wifi_eth_tx_data.imu.attitude[2] = get_yaw_in_D16QN();
+
+    wifi_eth_tx_data.imu.linear_acceleration[0] = get_linacc_x_in_D16QN();
+    wifi_eth_tx_data.imu.linear_acceleration[1] = get_linacc_y_in_D16QN();
+    wifi_eth_tx_data.imu.linear_acceleration[2] = get_linacc_z_in_D16QN();
 
     // updating session ids
     wifi_eth_tx_ack.session_id = session_id;
@@ -319,6 +342,11 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len)
     {
         struct wifi_eth_packet_init *packet_recv = (struct wifi_eth_packet_init *)data;
 
+        //reset spi stats and count for discovery
+        memset(spi_connected, 0, CONFIG_N_SLAVES * sizeof(bool));
+        memset(spi_ok, 0, CONFIG_N_SLAVES * sizeof(long int));
+        spi_count = 0;
+
         session_id = packet_recv->session_id;
         current_state = SENDING_INIT_ACK;
         wifi_eth_count = 0;
@@ -345,6 +373,8 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len)
 
         for (int i = 0; i < CONFIG_N_SLAVES; i++)
         {
+            if (!spi_connected[i] && spi_count > SPI_DISCOVERY_MAX_COUNT) continue;
+
             SPI_REG_u16(to_fill[i], SPI_COMMAND_MODE) = SPI_SWAP_DATA_TX(packet_recv->command[i].mode, 16);
             SPI_REG_32(to_fill[i], SPI_COMMAND_POS_1) = SPI_SWAP_DATA_TX(packet_recv->command[i].position[0], 32);
             SPI_REG_32(to_fill[i], SPI_COMMAND_POS_2) = SPI_SWAP_DATA_TX(packet_recv->command[i].position[1], 32);
