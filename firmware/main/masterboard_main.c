@@ -31,7 +31,7 @@ long int spi_ok[CONFIG_N_SLAVES] = {0};
 int wifi_eth_count = 0; // counter that counts the ms without a message being received from PC
 
 uint16_t session_id = 0; // session id
-enum State current_state = WAITING_FOR_FIRST_INIT;
+enum State current_state = SETUP;
 
 unsigned int ms_cpt = 0;
 
@@ -68,6 +68,11 @@ void print_packet(uint8_t *data, int len)
 
 static void periodic_timer_callback(void *arg)
 {
+    if (current_state == SETUP)
+    {
+        return;
+    }
+
     ms_cpt++;
 
     //if (ms_cpt % 500 == 0) printf("current_state = %d, session_id = %d\n", current_state, session_id);
@@ -398,6 +403,9 @@ void app_main()
         eth_init();
         eth_attach_recv_cb(wifi_eth_receive_cb);
     }
+
+    printf("Setup done\n");
+    current_state = WAITING_FOR_FIRST_INIT;
 
     while (1)
     {
