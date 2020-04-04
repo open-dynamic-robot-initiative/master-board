@@ -1,8 +1,8 @@
 
 firmware/build/
 
-sdk/bin/
-sdk/build/
+sdk/master_board_sdk/bin/
+sdk/master_board_sdk/build/
 
 firmware/sdkconfig\.old
 
