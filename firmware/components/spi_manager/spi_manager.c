@@ -96,3 +96,13 @@ bool spi_is_finished(spi_transaction_t **p_trans) {
     }
     return false;
 }
+
+bool spi_is_successful(spi_transaction_t **p_trans) {
+    esp_err_t err = spi_device_get_trans_result(spi, p_trans, portMAX_DELAY); // blocking
+
+    if((*p_trans)->user != NULL) free((*p_trans)->user);
+    free((*p_trans));
+    *p_trans = NULL;
+    
+    return (err == ESP_OK);
+}
