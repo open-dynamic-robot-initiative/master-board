@@ -173,7 +173,7 @@ static void periodic_timer_callback(void *arg)
 
         for (int i = 0; i < CONFIG_N_SLAVES; i++)
         {
-            if (!spi_connected[i] && spi_count > SPI_DISCOVERY_MAX_COUNT) continue;
+            if (!spi_connected[i] && spi_count > SPI_CHECK_CONNECTED_MAX_COUNT) continue;
             
             printf("[%d] sent : %ld, ok : %ld, ratio : %.02f\n", i, spi_count, spi_ok[i], 100. * spi_ok[i] / spi_count);
         }
@@ -187,7 +187,7 @@ static void periodic_timer_callback(void *arg)
     // send and receive packets to/from every slave
     for (int i = 0; i < CONFIG_N_SLAVES; i++)
     {
-        if (!spi_connected[i] && spi_count > SPI_DISCOVERY_MAX_COUNT) continue;
+        if (!spi_connected[i] && spi_count > SPI_CHECK_CONNECTED_MAX_COUNT) continue;
 
         SPI_REG_u16(p_tx[i], SPI_TOTAL_INDEX) = SPI_SWAP_DATA_TX(spi_index_trans, 16);
         SPI_REG_u32(p_tx[i], SPI_TOTAL_CRC) = SPI_SWAP_DATA_TX(packet_compute_CRC(p_tx[i]), 32);
@@ -199,7 +199,7 @@ static void periodic_timer_callback(void *arg)
     {
         for (int i = 0; i < CONFIG_N_SLAVES; i++)
         {
-            if (!spi_connected[i] && spi_count > SPI_DISCOVERY_MAX_COUNT) continue;
+            if (!spi_connected[i] && spi_count > SPI_CHECK_CONNECTED_MAX_COUNT) continue;
 
             if (p_trans[i] == NULL)
             {
@@ -342,7 +342,7 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len)
     {
         struct wifi_eth_packet_init *packet_recv = (struct wifi_eth_packet_init *)data;
 
-        //reset spi stats and count for discovery
+        //reset spi stats and count for checking connected slaves
         memset(spi_connected, 0, CONFIG_N_SLAVES * sizeof(bool));
         memset(spi_ok, 0, CONFIG_N_SLAVES * sizeof(long int));
         spi_count = 0;
@@ -373,7 +373,7 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len)
 
         for (int i = 0; i < CONFIG_N_SLAVES; i++)
         {
-            if (!spi_connected[i] && spi_count > SPI_DISCOVERY_MAX_COUNT) continue;
+            if (!spi_connected[i] && spi_count > SPI_CHECK_CONNECTED_MAX_COUNT) continue;
 
             SPI_REG_u16(to_fill[i], SPI_COMMAND_MODE) = SPI_SWAP_DATA_TX(packet_recv->command[i].mode, 16);
             SPI_REG_32(to_fill[i], SPI_COMMAND_POS_1) = SPI_SWAP_DATA_TX(packet_recv->command[i].position[0], 32);
