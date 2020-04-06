@@ -38,15 +38,30 @@ Data packet
 -----------
 Both WiFi and Ethernet use the same data packet format.
 
-There are two types of packets. Packets coming from the computer are called **Command** packets, and packets coming from the master board are called **Sensor** packets.
+There are four types of packets. Packets coming from the computer containing command data are called **Command** packets, and packets coming from the master board containing sensor data are called **Sensor** packets. On top of these two, an initialization packet called **Init** packet is used to put the master board in its control mode and bond it to an interface running on the computer. The master board will respond to an initialization packet with an acknowledgement packet called **Ack** packet. 
 
-Both packets encapsulate 6 BLMC µDriver SPI interface packets,  without the **Index** and **CRC** fields. Additional, sensor packets also include IMU measurement and AHRS estimation.
+All packets contain a number called **Session ID** identifyng the link between the master board and a specific instance of the interface. This is used to prevent multiple programs from controlling the robot at once.
 
 
-### Sensor packet (196 Bytes)
-µDriver0 | µDriver1 | µDriver2 | µDriver3 | µDriver4 | µDriver5 | IMU | Sensor Index | Last Command Index
---- | --- | --- | --- | --- | --- | --- | --- | ---
-28 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 18 Bytes | 2 Bytes | 2 Bytes
+Both **Init** and **Ack** packets contain only the **Session ID**. The **Init** packet is used to set it up.
+
+### Init packet (2 Bytes)
+Session ID |
+--- |
+2 bytes |
+
+### Ack packet (2 Bytes)
+Session ID |
+--- |
+2 bytes |
+
+
+Both **Command** and **Sensor** packets encapsulate 6 BLMC µDriver SPI interface packets,  without the **Index** and **CRC** fields. Additional, sensor packets also include IMU measurement and AHRS estimation.
+
+### Sensor packet (198 Bytes)
+Session ID | µDriver0 | µDriver1 | µDriver2 | µDriver3 | µDriver4 | µDriver5 | IMU | Sensor Index | Last Command Index
+--- | --- | --- | --- | --- | --- | --- | --- | --- | ---
+2 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 18 Bytes | 2 Bytes | 2 Bytes
  
 **µDriverX** corresponds to a BLMC µDriver SPI interface sensor packet without the CRC and index fields.
 
@@ -68,11 +83,10 @@ AHRS R-P-Y | 16bits | rad | -4 | 3,9998779297 | 2^(-13)
 
 **Last Command Index** is the index of the last received command index, and can be used to track packet loss.
 
-
-### Command packet (170 Bytes)
-µDriver0 | µDriver1 | µDriver2 | µDriver3 | µDriver4 | µDriver5 | Command Index
---- | --- | --- | --- | --- | --- | --- 
-28 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 2 Bytes
+### Command packet (172 Bytes)
+Session ID | µDriver0 | µDriver1 | µDriver2 | µDriver3 | µDriver4 | µDriver5 | Command Index
+--- | --- | --- | --- | --- | --- | --- | --- 
+2 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 2 Bytes
 
 **µDriverX** corresponds to a BLMC µDriver SPI interface command packet without the CRC and index fields.
 
