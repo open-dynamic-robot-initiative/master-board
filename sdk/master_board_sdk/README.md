@@ -87,3 +87,11 @@ How to run the Python master board state machine test
 * Run the control script with the name of your Ethernet interface instead of `name_interface` (for instance `enp1s0`): 
 
 `sudo PYTHONPATH=. python test_master_board_state_machine/test_master_board_state_machine.pyc -i name_interface`
+
+How to run an executable based on the SDK without root permissions
+-------
+
+To run an executable named EXECUTABLE_NAME without root permissions, run :
+```
+sudo setcap cap_net_admin,cap_net_raw+ep EXECUTABLE_NAME
+```
