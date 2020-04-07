@@ -15,12 +15,12 @@ MasterBoardInterface::MasterBoardInterface(const std::string &if_name)
     motor_drivers[i].SetMotors(&motors[2 * i], &motors[2 * i + 1]);
   }
 }
-MasterBoardInterface::MasterBoardInterface(const MasterBoardInterface& to_be_copied) : MasterBoardInterface::MasterBoardInterface(to_be_copied.if_name_)
+MasterBoardInterface::MasterBoardInterface(const MasterBoardInterface &to_be_copied) : MasterBoardInterface::MasterBoardInterface(to_be_copied.if_name_)
 {
-
 }
 
-void MasterBoardInterface::GenerateSessionId() {
+void MasterBoardInterface::GenerateSessionId()
+{
   session_id = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(); // number of milliseconds since 01/01/1970 00:00:00, casted in 16 bits
 }
 
@@ -28,12 +28,23 @@ int MasterBoardInterface::Init()
 {
   printf("if_name: %s\n", if_name_.c_str());
   //reset the variables
-  nb_recv = 0;
-  last_sensor_index = 0;
-  nb_sensors_sent = 0; //this variable deduce the total number of received sensor packet from sensor index and previous sensor index
+  first_sensor_received = false;
+
+  nb_sensors_recv = 0;
+  nb_sensors_sent = 0;
   nb_sensors_lost = 0;
-  nb_cmd_lost_offset = -1;
-  last_cmd_lost = 0;
+
+  index_cmd_packet = 0;
+  last_sensor_index = 0;
+  nb_cmd_sent = 0;
+  nb_cmd_lost = 0;
+
+  for (int i = 0; i < MAX_HIST; i++)
+  {
+    histogram_lost_sensor_packets[i] = 0;
+    histogram_lost_cmd_packets[i] = 0;
+  }
+
   memset(&command_packet, 0, sizeof(command_packet_t)); //todo make it more C++
   memset(&sensor_packet, 0, sizeof(sensor_packet_t));
 
@@ -81,32 +92,33 @@ int MasterBoardInterface::Stop()
 
 int MasterBoardInterface::SendInit()
 {
-  if(!init_sent)
+  if (!init_sent)
   {
     t_last_packet = std::chrono::high_resolution_clock::now();
     init_sent = true;
   }
 
-  if (timeout) {
+  if (timeout)
+  {
     return -1;
   }
 
   init_packet.session_id = session_id;
 
   // Current time point
-	std::chrono::high_resolution_clock::time_point t_send_packet = std::chrono::high_resolution_clock::now();
+  std::chrono::high_resolution_clock::time_point t_send_packet = std::chrono::high_resolution_clock::now();
 
-	// Assess time duration since the last packet has been received
-	std::chrono::duration<double, std::milli> time_span = t_send_packet - t_last_packet;
+  // Assess time duration since the last packet has been received
+  std::chrono::duration<double, std::milli> time_span = t_send_packet - t_last_packet;
 
-	// If this duration is greater than the timeout limit duration
-	// then the packet is not sent and the connection with the master board is closed
-	if (time_span > t_before_shutdown_ack)
-	{
+  // If this duration is greater than the timeout limit duration
+  // then the packet is not sent and the connection with the master board is closed
+  if (time_span > t_before_shutdown_ack)
+  {
     timeout = true;
     Stop();
-		return -1; // Return -1 since the command has not been sent.
-	}
+    return -1; // Return -1 since the command has not been sent.
+  }
 
   link_handler_->send((uint8_t *)&init_packet, sizeof(init_packet_t));
   return 0;
@@ -118,7 +130,7 @@ int MasterBoardInterface::SendCommand()
   // connexion. This check is performed only from the first time SendCommand
   // is called. See the comment below for more information.
 
-  if(!first_command_sent_)
+  if (!first_command_sent_)
   {
     t_last_packet = std::chrono::high_resolution_clock::now();
     first_command_sent_ = true;
@@ -177,22 +189,23 @@ int MasterBoardInterface::SendCommand()
   }
 
   // Current time point
-	std::chrono::high_resolution_clock::time_point t_send_packet = std::chrono::high_resolution_clock::now();
+  std::chrono::high_resolution_clock::time_point t_send_packet = std::chrono::high_resolution_clock::now();
 
-	// Assess time duration since the last packet has been received
-	std::chrono::duration<double, std::milli> time_span = t_send_packet - t_last_packet;
+  // Assess time duration since the last packet has been received
+  std::chrono::duration<double, std::milli> time_span = t_send_packet - t_last_packet;
 
-	// If this duration is greater than the timeout limit duration
-	// then the packet is not sent and the connection with the master board is closed
-	if (time_span > t_before_shutdown_control)
-	{
+  // If this duration is greater than the timeout limit duration
+  // then the packet is not sent and the connection with the master board is closed
+  if (time_span > t_before_shutdown_control)
+  {
     timeout = true;
     Stop();
-		return -1; // Return -1 since the command has not been sent.
-	}
-
+    return -1; // Return -1 since the command has not been sent.
+  }
+  command_packet.command_index = index_cmd_packet;
   link_handler_->send((uint8_t *)&command_packet, sizeof(command_packet_t));
-
+  index_cmd_packet++;
+  nb_cmd_sent++;
   return 0; // Return 0 since the command has been sent.
 }
 
@@ -200,7 +213,8 @@ void MasterBoardInterface::callback(uint8_t src_mac[6], uint8_t *data, int len)
 {
   if (init_sent && !ack_received && len == sizeof(ack_packet_t))
   {
-    if (((ack_packet_t *)data)->session_id != session_id) {
+    if (((ack_packet_t *)data)->session_id != session_id)
+    {
       //printf("Wrong session id in ack msg, got %d instead of %d ignoring packet\n", ((ack_packet_t *)data)->session_id, session_id);
       return; // ignoring the packet
     }
@@ -209,7 +223,8 @@ void MasterBoardInterface::callback(uint8_t src_mac[6], uint8_t *data, int len)
   }
   else if (init_sent && ack_received && len == sizeof(sensor_packet_t))
   {
-    if (((sensor_packet_t *)data)->session_id != session_id) {
+    if (((sensor_packet_t *)data)->session_id != session_id)
+    {
       //printf("Wrong session id in sensor msg, got %d instead of %d, ignoring packet\n", ((sensor_packet_t *)data)->session_id, session_id);
       return; // ignoring the packet
     }
@@ -217,12 +232,53 @@ void MasterBoardInterface::callback(uint8_t src_mac[6], uint8_t *data, int len)
     // Update time point of the latest received packet
     t_last_packet = std::chrono::high_resolution_clock::now();
 
-    nb_recv++;
+    nb_sensors_recv++;
     sensor_packet_mutex.lock();
     memcpy(&sensor_packet, data, sizeof(sensor_packet_t));
     sensor_packet_mutex.unlock();
+
+    struct sensor_packet_t *packet_recv = (struct sensor_packet_t *)data;
+
+    //initialisation of last_sensor_index at first reception
+    if (!first_sensor_received)
+    {
+      first_sensor_received = true;
+      last_sensor_index = packet_recv->sensor_index - 1;
+    }
+
+    //Sensor_loss
+    if (packet_recv->sensor_index - last_sensor_index - 1 != 0)
+    {
+      if ((packet_recv->sensor_index - last_sensor_index - 2) >= MAX_HIST)
+      {
+        histogram_lost_sensor_packets[MAX_HIST - 1]++; //add all sequence too big at the end of the histogram
+      }
+      else
+      {
+        histogram_lost_sensor_packets[packet_recv->sensor_index - last_sensor_index - 2]++; // index 0 -> 1 packet lost !
+      }
+    }
+    nb_sensors_lost += uint16_t(packet_recv->sensor_index - last_sensor_index - 1);
+
+    //Command_loss
+    if (packet_recv->packet_loss != nb_cmd_lost)
+    {
+      if ((packet_recv->packet_loss - nb_cmd_lost - 1) >= MAX_HIST)
+      {
+        histogram_lost_cmd_packets[MAX_HIST - 1]++; //add all sequence too big at the end of the histogram
+      }
+      else
+      {
+        histogram_lost_cmd_packets[packet_recv->packet_loss - nb_cmd_lost - 1]++; // index 0 -> 1 packet lost !
+      }
+    }
+    nb_cmd_lost = packet_recv->packet_loss;
+
+    nb_sensors_sent += uint16_t(packet_recv->sensor_index - last_sensor_index);
+    last_sensor_index = packet_recv->sensor_index;
   }
-  else {
+  else
+  {
     // packet not the right size for the situation
   }
 }
@@ -239,7 +295,6 @@ void MasterBoardInterface::ParseSensorData()
     imu_data.attitude[i] = D16QN_TO_FLOAT(sensor_packet.imu.attitude[i], IMU_QN_EF);
     imu_data.linear_acceleration[i] = D16QN_TO_FLOAT(sensor_packet.imu.linear_acceleration[i], IMU_QN_ACC);
   }
-
 
   //Read Motor Driver Data
   for (int i = 0; i < N_SLAVES; i++)
@@ -297,7 +352,7 @@ void MasterBoardInterface::PrintADC()
   for (int i = 0; i < N_SLAVES; i++)
   {
     printf("ADC %2.2d -> %6.3f % 6.3f\n",
-          i, motor_drivers[i].adc[0], motor_drivers[i].adc[1]);
+           i, motor_drivers[i].adc[0], motor_drivers[i].adc[1]);
   }
 }
 
@@ -322,7 +377,7 @@ void MasterBoardInterface::PrintMotorDrivers()
 void MasterBoardInterface::ResetTimeout()
 {
   printf("Resetting f_name: %s\n", if_name_.c_str());
-  timeout = false; // Resetting timeout variable to be able to send packets again
+  timeout = false;                                           // Resetting timeout variable to be able to send packets again
   t_last_packet = std::chrono::high_resolution_clock::now(); // Resetting time of last packet
   Init();
 }
@@ -338,7 +393,7 @@ bool MasterBoardInterface::IsAckMsgReceived()
   return ack_received;
 }
 
-void MasterBoardInterface::set_motors(Motor input_motors [])
+void MasterBoardInterface::set_motors(Motor input_motors[])
 {
   for (int i = 0; i < (2 * N_SLAVES); i++)
   {
@@ -347,11 +402,39 @@ void MasterBoardInterface::set_motors(Motor input_motors [])
   }
 }
 
-void MasterBoardInterface::set_motor_drivers(MotorDriver input_motor_drivers [])
+void MasterBoardInterface::set_motor_drivers(MotorDriver input_motor_drivers[])
 {
   for (int i = 0; i < N_SLAVES; i++)
   {
     printf("Motor Driver % 2.2d -> ", i);
     (this->motor_drivers)[i] = input_motor_drivers[i];
   }
+}
+
+void MasterBoardInterface::PrintSensorStats()
+{
+  printf("sensor_lost = %u\n", nb_sensors_lost);
+  printf("sensor_sent = %u\n", nb_sensors_sent);
+  printf("sensor_ratio = %.02f\n", 100. * nb_sensors_lost / nb_sensors_sent);
+
+  printf("Histogram sensor : ");
+  for (int i = 0; i < MAX_HIST; i++)
+  {
+    printf("%d ", histogram_lost_sensor_packets[i]);
+  }
+  printf("\n");
+}
+
+void MasterBoardInterface::PrintCmdStats()
+{
+  printf("cmd_lost = %u\n", nb_cmd_lost);
+  printf("cmd_sent = %u\n", nb_cmd_sent);
+  printf("cmd_ratio = %.02f\n", 100. * nb_cmd_lost / nb_cmd_sent);
+
+  printf("Histogram command : ");
+  for (int i = 0; i < MAX_HIST; i++)
+  {
+    printf("%d ", histogram_lost_cmd_packets[i]);
+  }
+  printf("\n");
 }
