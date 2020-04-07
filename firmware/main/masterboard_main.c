@@ -110,8 +110,8 @@ static void periodic_timer_callback(void *arg)
     //printf("%d\n", wifi_eth_count);
     switch (current_state)
     {
-    case WAITING_FOR_FIRST_INIT:
-        ws_led.leds[0] = RGB(0xff * fade_blink, 0, 0); //Red fade, Waiting for first init
+    case WAITING_FOR_INIT:
+        ws_led.leds[0] = RGB(0xff * fade_blink, 0, 0); //Red fade, Waiting for init
         ws_led.leds[1] = RGB(0xff * fade_blink, 0, 0);
 
         wifi_eth_count = 0; // we allow not receiving messages if waiting for init
@@ -143,6 +143,13 @@ static void periodic_timer_callback(void *arg)
         }
 
         wifi_eth_count++;
+        break;
+
+    case WIFI_ETH_LINK_DOWN:
+        ws_led.leds[0] = RGB(0x3f * blink, 0x3f * blink, 0); //Orange blink, ethernet link down state awaiting for link up
+        ws_led.leds[1] = RGB(0x3f * blink, 0x3f * blink, 0);
+
+        wifi_eth_count = 0; // we can't receive any messages if link is down
         break;
 
     case WIFI_ETH_ERROR:
@@ -275,9 +282,6 @@ static void periodic_timer_callback(void *arg)
     /* Sends message to PC */
     switch (current_state)
     {
-    case WAITING_FOR_FIRST_INIT:
-        // nothing to send to PC, else it produces errors and might not connect
-        break;
 
     case SENDING_INIT_ACK:
         /* Send acknowledge packets to PC */
@@ -291,6 +295,7 @@ static void periodic_timer_callback(void *arg)
         }
         break;
 
+    case WAITING_FOR_INIT:
     case ACTIVE_CONTROL:
     case WIFI_ETH_ERROR:
         /* Send all spi_sensor packets to PC */
@@ -303,6 +308,10 @@ static void periodic_timer_callback(void *arg)
         {
             eth_send_data(&wifi_eth_tx_data, sizeof(struct wifi_eth_packet_sensor));
         }
+        break;
+
+    case WIFI_ETH_LINK_DOWN:
+        // nothing can be sent, obviously
         break;
 
     default:
@@ -335,7 +344,7 @@ void setup_spi()
 
 void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len)
 {
-    if (len == sizeof(struct wifi_eth_packet_init) && (current_state == WAITING_FOR_FIRST_INIT || current_state == WIFI_ETH_ERROR))
+    if (len == sizeof(struct wifi_eth_packet_init) && (current_state == WAITING_FOR_INIT || current_state == WIFI_ETH_ERROR))
     {
         struct wifi_eth_packet_init *packet_recv = (struct wifi_eth_packet_init *)data;
 
@@ -396,6 +405,12 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len)
     }
 }
 
+//function that will be called on a link state change
+void wifi_eth_link_state_cb(bool new_state)
+{
+    current_state = new_state ? WAITING_FOR_INIT : WIFI_ETH_LINK_DOWN;
+}
+
 void app_main()
 {
     uart_set_baudrate(UART_NUM_0, 2000000);
@@ -409,8 +424,9 @@ void app_main()
     ws2812_write_leds(ws_led);
 
     //printf("The core is : %d\n",xPortGetCoreID());
-    printf("ETH/WIFI command size %u\n", sizeof(struct wifi_eth_packet_init));
+    printf("ETH/WIFI init size %u\n", sizeof(struct wifi_eth_packet_init));
     printf("ETH/WIFI command size %u\n", sizeof(struct wifi_eth_packet_command));
+    printf("ETH/WIFI ack size %u\n", sizeof(struct wifi_eth_packet_ack));
     printf("ETH/WIFI sensor size %u\n", sizeof(struct wifi_eth_packet_sensor));
 
     printf("SPI size %u\n", SPI_TOTAL_LEN * 2);
@@ -422,17 +438,19 @@ void app_main()
 
     if (useWIFI)
     {
-        wifi_init();
         wifi_attach_recv_cb(wifi_eth_receive_cb);
+        wifi_init();
+        current_state = WAITING_FOR_INIT; // link is never down in wifi
     }
     else
     {
-        eth_init();
+        eth_attach_link_state_cb(wifi_eth_link_state_cb);
         eth_attach_recv_cb(wifi_eth_receive_cb);
+        eth_init();
+        current_state = WIFI_ETH_LINK_DOWN; // link is down just after setup
     }
 
     printf("Setup done\n");
-    current_state = WAITING_FOR_FIRST_INIT;
 
     while (1)
     {
