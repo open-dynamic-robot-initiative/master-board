@@ -89,7 +89,7 @@ static void periodic_timer_callback(void *arg)
 
     ms_cpt++;
 
-    //if (ms_cpt % 500 == 0) printf("current_state = %d, session_id = %d\n", current_state, session_id);
+    if (ms_cpt % 500 == 0) printf("current_state = %d, session_id = %d\n", current_state, session_id);
 
     /* LEDs */
     bool blink = (ms_cpt % 1000) > 500;
@@ -438,8 +438,8 @@ void app_main()
 
     if (useWIFI)
     {
-        wifi_attach_recv_cb(wifi_eth_receive_cb);
         wifi_init();
+        wifi_attach_recv_cb(wifi_eth_receive_cb);
         current_state = WAITING_FOR_INIT; // link is never down in wifi
     }
     else
