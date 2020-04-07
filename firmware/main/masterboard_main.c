@@ -96,9 +96,6 @@ static void periodic_timer_callback(void *arg)
     float fade_blink = (ms_cpt % 1000 < 500) ? (ms_cpt % 1000) / 500.0 : (1000 - (ms_cpt % 1000)) / 500.0;
 
 
-    if (!gpio_get_level(CONFIG_BUTTON_GPIO))
-        current_state = WAITING_FOR_FIRST_INIT; // TODO: think about button behaviour
-
     /* Prepare spi transactions */
     spi_transaction_t *p_trans[CONFIG_N_SLAVES];
     spi_index_trans++;
