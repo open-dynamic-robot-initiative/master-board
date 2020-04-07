@@ -34,6 +34,8 @@ boost::python::tuple wrap_adc(MotorDriver const * motDriver)
             .def("PrintADC", &MasterBoardInterface::PrintADC)
             .def("PrintMotors", &MasterBoardInterface::PrintMotors)
             .def("PrintMotorDrivers", &MasterBoardInterface::PrintMotorDrivers)
+            .def("PrintCmdStats", &MasterBoardInterface::PrintCmdStats)
+            .def("PrintSensorStats", &MasterBoardInterface::PrintSensorStats)
             .def("ResetTimeout", &MasterBoardInterface::ResetTimeout)
             .def("IsTimeout", &MasterBoardInterface::IsTimeout)
             .def("GetDriver", make_function(&MasterBoardInterface::GetDriver, return_value_policy<boost::python::reference_existing_object>()))
@@ -43,8 +45,6 @@ boost::python::tuple wrap_adc(MotorDriver const * motDriver)
             .def("imu_data_attitude", make_function(&MasterBoardInterface::imu_data_attitude))
             .def("imu_data_linear_acceleration", make_function(&MasterBoardInterface::imu_data_linear_acceleration))
 
-            // Public properties of MasterBoardInterface class
-            .add_property("nb_recv", &MasterBoardInterface::get_nb_recv, &MasterBoardInterface::set_nb_recv)
         ;
         // End of bindings for MasterBoardInterface class
         

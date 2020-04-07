@@ -88,7 +88,11 @@ int main(int argc, char **argv)
 				robot_if.PrintADC();
 				robot_if.PrintMotors();
 				robot_if.PrintMotorDrivers();
+				robot_if.PrintCmdStats();
+				robot_if.PrintSensorStats();
 				fflush(stdout);
+				 
+
 			}
 			robot_if.SendCommand(); //This will send the command packet
 		}
