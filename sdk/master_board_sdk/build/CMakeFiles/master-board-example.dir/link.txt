@@ -1,1 +1,0 @@
-/usr/bin/c++   -pedantic -Wno-long-long -Wall -Wextra -Wcast-align -Wcast-qual -Wformat -Wwrite-strings -Wconversion  -O3 -DNDEBUG  -rdynamic CMakeFiles/master-board-example.dir/example/example.cpp.o  -o master-board-example -Wl,-rpath,/home/apotier/esp/master-board/sdk/master_board_sdk/build: libmaster-board-sdk.so -lpthread 

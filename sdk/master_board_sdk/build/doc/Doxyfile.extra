@@ -1,4 +1,0 @@
-INPUT                  = /home/apotier/esp/master-board/sdk/master_board_sdk/include
-IMAGE_PATH             = /home/apotier/esp/master-board/sdk/master_board_sdk/doc/pictures
-FILE_PATTERNS          = *.h *.idl
-
