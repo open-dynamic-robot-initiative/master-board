@@ -31,11 +31,15 @@ extern uint8_t eth_dst_mac[6];
 
 void (*eth_recv_cb)(uint8_t src_mac[6], uint8_t *data, int len);
 
+void (*eth_link_state_cb)(bool link_state);
+
 void eth_init();
 esp_err_t eth_send_frame(eth_frame *p_frame);
 void eth_init_frame(eth_frame *p_frame);
 void eth_send_data(uint8_t* data, int len);
 void eth_attach_recv_cb(void (*cb)(uint8_t src_mac[6], uint8_t *data, int len));
 void eth_detach_recv_cb();
+void eth_attach_link_state_cb(void (*eth_link_state_cb)(bool link_state));
+void eth_detach_link_state_cb();
 
 #endif

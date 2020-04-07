@@ -5,6 +5,8 @@ uint8_t eth_dst_mac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
 void (*eth_recv_cb)(uint8_t src_mac[6], uint8_t *data, int len) = NULL;
 
+void (*eth_link_state_cb)(bool link_state) = NULL;
+
 static const char *ETH_TAG = "Direct_Ethernet";
 static esp_eth_handle_t eth_handle = NULL;
 
@@ -12,13 +14,14 @@ static esp_eth_handle_t eth_handle = NULL;
 static void eth_event_handler(void *arg, esp_event_base_t event_base,
                               int32_t event_id, void *event_data)
 {
-
   /* we can get the ethernet driver handle from event data */
   eth_handle = *(esp_eth_handle_t *)event_data;
 
   switch (event_id)
   {
   case ETHERNET_EVENT_CONNECTED:
+    eth_link_state_cb(true);
+
     esp_eth_ioctl(eth_handle, ETH_CMD_G_MAC_ADDR, eth_src_mac);
 
     ESP_LOGI(ETH_TAG, "Ethernet Link Up");
@@ -26,6 +29,8 @@ static void eth_event_handler(void *arg, esp_event_base_t event_base,
              eth_src_mac[0], eth_src_mac[1], eth_src_mac[2], eth_src_mac[3], eth_src_mac[4], eth_src_mac[5]);
     break;
   case ETHERNET_EVENT_DISCONNECTED:
+    eth_link_state_cb(false);
+
     ESP_LOGI(ETH_TAG, "Ethernet Link Down");
     break;
   case ETHERNET_EVENT_START:
@@ -84,7 +89,7 @@ esp_err_t eth_send_frame(eth_frame *p_frame)
 
   if (err != 0)
   {
-    ESP_LOGE(ETH_TAG, "Error occurred while sending eth frame: errno %d", errno);
+    ESP_LOGE(ETH_TAG, "Error occurred while sending eth frame: error code 0x%x", err);
     return ESP_FAIL;
   }
 
@@ -108,6 +113,16 @@ void eth_detach_recv_cb()
 void eth_attach_recv_cb(void (*cb)(uint8_t src_mac[6], uint8_t *data, int len))
 {
   eth_recv_cb = cb;
+}
+
+void eth_detach_link_state_cb()
+{
+  eth_link_state_cb = NULL;
+}
+
+void eth_attach_link_state_cb(void (*cb)(bool link_state))
+{
+   eth_link_state_cb = cb;
 }
 
 void eth_init()
