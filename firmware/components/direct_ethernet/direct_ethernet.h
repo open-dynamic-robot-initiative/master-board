@@ -1,3 +1,4 @@
+/*
 #ifndef DIRECT_ETHERNET_H
 #define DIRECT_ETHERNET_H
 
@@ -12,7 +13,7 @@
 #include "esp_eth.h"
 #include "tcpip_adapter.h"
 
-#include "eth_phy/phy_lan8720.h"
+//#include "eth_phy/phy_lan8720.h"
 
 #define CONFIG_PHY_CLOCK_MODE 3
 #define ETHERNET_PHY_CONFIG phy_lan8720_default_ethernet_config
@@ -34,10 +35,11 @@ typedef struct {
   uint16_t ethertype;
 
   /* Custom payload*/
-  uint16_t data_len;
-  uint8_t data[CONFIG_MAX_ETH_DATA_LEN];
-} eth_frame;
+//  uint16_t data_len;
+//  uint8_t data[CONFIG_MAX_ETH_DATA_LEN];
+//} eth_frame;
 
+/*
 extern uint8_t eth_src_mac[6];
 extern uint8_t eth_dst_mac[6];
 
@@ -51,3 +53,4 @@ void eth_attach_recv_cb(void (*cb)(uint8_t src_mac[6], uint8_t *data, int len));
 void eth_detach_recv_cb();
 
 #endif
+*/

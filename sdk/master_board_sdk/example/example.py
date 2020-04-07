@@ -79,6 +79,8 @@ def example_script(name_interface):
                 robot_if.PrintADC()
                 robot_if.PrintMotors()
                 robot_if.PrintMotorDrivers()
+                robot_if.PrintCmdStats()
+                robot_if.PrintSensorStats()
                 sys.stdout.flush()  # for Python 2, use print( .... , flush=True) for Python 3
 
             robot_if.SendCommand()  # Send the reference currents to the master board

@@ -20,7 +20,7 @@ int main(int argc, char **argv)
 	double iq_sat = 4.0;
 	double freq = 0.5;
 	double amplitude = M_PI;
-	double init_pos[N_SLAVES * 2] = {0};
+	double init_pos[N_SLAVES * 2] = {};
 	int state = 0;
 	nice(-20); //give the process a high priority
 	printf("-- Main --\n");
@@ -88,19 +88,10 @@ int main(int argc, char **argv)
 				robot_if.PrintADC();
 				robot_if.PrintMotors();
 				robot_if.PrintMotorDrivers();
+				robot_if.PrintCmdStats();
+				robot_if.PrintSensorStats();
 				fflush(stdout);
 				 
-				printf("cmd_lost = %d\n",robot_if.get_nb_cmd_lost()); 
-				printf("cmd_ratio = %.02f\n",100.*robot_if.get_nb_cmd_lost()/robot_if.get_nb_cmd_sent());
-
-				printf("sensor_lost = %d\n",robot_if.get_nb_sensors_lost()); 
-				printf("sensor_ratio = %.02f\n",100.*robot_if.get_nb_sensors_lost()/robot_if.get_nb_sensors_sent());
-				
-				printf("Histogram command : ");
-				robot_if.PrintHistogram(robot_if.histogram_lost_sensor_packets);
-
-				printf("Histogram sensor : ");
-				robot_if.PrintHistogram(robot_if.histogram_lost_sensor_packets);
 
 			}
 			robot_if.SendCommand(); //This will send the command packet

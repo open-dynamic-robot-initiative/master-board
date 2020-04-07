@@ -1,0 +1,19 @@
+prefix=/usr/local
+exec_prefix=/usr/local
+libdir=lib/python2.7/site-packages
+bindir=lib/python2.7/site-packages
+pkglibdir=/usr/local/lib/master-board-sdk
+includedir=/usr/local/include
+datarootdir=/usr/local/share
+pkgdatarootdir=/usr/local/share
+docdir=/usr/local/share/doc/master-board-sdk
+doxygendocdir=/usr/local/share/doc/master-board-sdk/doxygen-html
+
+Name: master-board-sdk-py
+Description: Python bindings of master board SDK
+URL: https://github.com/open-dynamic-robot-initiative/master-board
+Version: UNKNOWN-dirty
+Requires: master-board-sdk
+Conflicts: 
+Libs: -L${libdir} -lmaster_board_sdk_pywrap -lboost_python
+Cflags: -I${includedir} -I/usr/local/include -I/usr/include/python2.7

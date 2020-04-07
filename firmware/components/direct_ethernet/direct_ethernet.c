@@ -1,3 +1,4 @@
+/*
 #include "direct_ethernet.h"
 
 uint8_t eth_src_mac[6] = {0xb4, 0xe6, 0x2d, 0xb5, 0x9f, 0x88};
@@ -149,3 +150,4 @@ void eth_init() {
     xEventGroupWaitBits(udp_event_group, WIFI_CONNECTED_BIT,true, true, portMAX_DELAY);
     ESP_LOGI(ETH_TAG, "Connected");
 }
+*/

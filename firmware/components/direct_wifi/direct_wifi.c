@@ -42,7 +42,19 @@ void wifi_init() {
     ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
     ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
     ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
+
+    wifi_country_t country;
+    country.cc[0]='J';
+    country.cc[1]='P';
+    country.cc[2]='\0';
+    country.schan = 1;
+    country.nchan = 14;
+    country.max_tx_power = esp_wifi_set_max_tx_power;
+    country.policy = WIFI_COUNTRY_POLICY_AUTO;
+
     ESP_ERROR_CHECK( esp_wifi_start() );
+    ESP_ERROR_CHECK( esp_wifi_set_promiscuous(true) );
+    ESP_ERROR_CHECK( esp_wifi_set_country (&country) );
     ESP_ERROR_CHECK( esp_wifi_set_channel(CONFIG_WIFI_CHANNEL, WIFI_SECOND_CHAN_NONE) );
     ESP_ERROR_CHECK( esp_wifi_internal_set_fix_rate(ESP_IF_WIFI_STA, true, CONFIG_WIFI_DATARATE) );
 
@@ -56,4 +68,5 @@ void wifi_init() {
     peer.encrypt = false;
     memcpy(peer.peer_addr, s_example_broadcast_mac, ESP_NOW_ETH_ALEN);
     ESP_ERROR_CHECK( esp_now_add_peer(&peer) );
+    
   }

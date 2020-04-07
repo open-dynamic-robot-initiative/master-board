@@ -10,7 +10,7 @@
 #include "esp_timer.h"
 
 #include "direct_wifi.h"
-#include "direct_ethernet.h"
+//#include "direct_ethernet.h"
 
 #include "spi_manager.h"
 #include "spi_quad_packet.h"
@@ -20,7 +20,7 @@
 
 #include "defines.h"
 
-#define useWIFI false
+#define useWIFI true
 
 #define ENABLE_DEBUG_PRINTF false
 
@@ -45,14 +45,12 @@ static uint16_t spi_tx_packet_a[CONFIG_N_SLAVES][SPI_TOTAL_LEN];
 static uint16_t spi_tx_packet_b[CONFIG_N_SLAVES][SPI_TOTAL_LEN];
 static uint16_t spi_tx_packet_stop[CONFIG_N_SLAVES][SPI_TOTAL_LEN];
 
-uint16_t command_index_prev = -1;
+uint16_t command_index_prev = 0;
 
 struct wifi_eth_packet_sensor wifi_eth_tx_data;
 
 bool spi_use_a = true;
 
-uint16_t index_sensor_packet = 0;
-uint16_t nb_sensor_packets_sent = 0;
 
 void print_packet(uint8_t *data, int len)
 {
@@ -221,9 +219,7 @@ static void periodic_timer_callback(void *arg)
 
     /* Send all spi_sensor packets to PC */
 
-    wifi_eth_tx_data.sensor_index = index_sensor_packet; 
-    index_sensor_packet ++;
-    nb_sensor_packets_sent ++;
+    wifi_eth_tx_data.sensor_index ++; 
     
 
     if (useWIFI)
@@ -232,7 +228,7 @@ static void periodic_timer_callback(void *arg)
     }
     else
     {
-        eth_send_data(&wifi_eth_tx_data, sizeof(struct wifi_eth_packet_sensor));
+        //eth_send_data(&wifi_eth_tx_data, sizeof(struct wifi_eth_packet_sensor));
     }
 }
 
@@ -323,8 +319,6 @@ void app_main()
     imu_init();
     printf("done?\n");
 
-    index_sensor_packet = 0;
-    nb_sensor_packets_sent = 0;
 
 
     if (useWIFI)
@@ -334,8 +328,8 @@ void app_main()
     }
     else
     {
-        eth_init();
-        eth_attach_recv_cb(wifi_eth_receive_cb);
+        //eth_init();
+        //eth_attach_recv_cb(wifi_eth_receive_cb);
     }
 
     while (1)

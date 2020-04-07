@@ -23,18 +23,22 @@ int MasterBoardInterface::Init()
 {
   printf("if_name: %s\n", if_name_.c_str());
   //reset the variables
-  nb_sensors_recv = 0;
-  nb_cmd_sent = 0;
-  index_cmd_packet = 0;
   wifi_eth_first_recv = false;
-  last_sensor_index = -1;
-  nb_sensors_sent = 0; //this variable deduce the total number of received sensor packet from sensor index and previous sensor index
+
+  nb_sensors_recv = 0;
+  nb_sensors_sent = 0;
   nb_sensors_lost = 0;
+
+  index_cmd_packet = 0;
+  last_sensor_index = 0;
+  nb_cmd_sent = 0;
   nb_cmd_lost = 0;
+
   for(int i=0; i<MAX_HIST; i++ ){
 		histogram_lost_sensor_packets[i]=0;
     histogram_lost_cmd_packets[i]=0;
 	}
+
   memset(&command_packet, 0, sizeof(command_packet_t)); //todo make it more C++
   memset(&sensor_packet, 0, sizeof(sensor_packet_t));
   if (if_name_[0] == 'e')
@@ -49,7 +53,7 @@ int MasterBoardInterface::Init()
   {
     /*WiFi*/
     printf("Using WiFi (%s)\n", if_name_.c_str());
-    link_handler_ = new ESPNOW_manager(if_name_, DATARATE_24Mbps, CHANNEL_freq_5, my_mac_, dest_mac_, false); //TODO write setter for espnow specific parametters
+    link_handler_ = new ESPNOW_manager(if_name_, DATARATE_24Mbps, CHANNEL_freq_13, my_mac_, dest_mac_, false); //TODO write setter for espnow specific parametters
     link_handler_->set_recv_callback(this);
     link_handler_->start();
     ((ESPNOW_manager *)link_handler_)->bind_filter();
@@ -176,19 +180,31 @@ void MasterBoardInterface::callback(uint8_t src_mac[6], uint8_t *data, int len)
     last_sensor_index = packet_recv->sensor_index - 1;
   }
 
-
+//Sensor_loss
   if(packet_recv->sensor_index - last_sensor_index - 1 != 0){
-    histogram_lost_sensor_packets[packet_recv->sensor_index - last_sensor_index - 2]++; // index 0 = 1 packet lost !
-    nb_sensors_lost+=packet_recv->sensor_index - last_sensor_index - 1;
+    if((packet_recv->sensor_index - last_sensor_index - 2)  >= MAX_HIST){
+      histogram_lost_sensor_packets[MAX_HIST-1]++; //add all sequence too big at the end of the histogram
+    }
+    else{
+      histogram_lost_sensor_packets[packet_recv->sensor_index - last_sensor_index - 2]++; // index 0 -> 1 packet lost !
+    }
   }
+  nb_sensors_lost += uint16_t(packet_recv->sensor_index - last_sensor_index - 1);
 
+//Command_loss
   if(packet_recv->packet_loss != nb_cmd_lost){
-    histogram_lost_cmd_packets[packet_recv->packet_loss - nb_cmd_lost - 1]++; // index 0 = 1 packet lost !
-    nb_cmd_lost = packet_recv->packet_loss; 
+    if((packet_recv->packet_loss - nb_cmd_lost - 1)  >= MAX_HIST){
+      histogram_lost_cmd_packets[MAX_HIST-1]++; //add all sequence too big at the end of the histogram
+    }
+    else{
+      histogram_lost_cmd_packets[packet_recv->packet_loss - nb_cmd_lost - 1]++; // index 0 -> 1 packet lost !
+    }
   }
+  nb_cmd_lost = packet_recv->packet_loss; 
 
-  last_sensor_index = packet_recv->sensor_index;
-  nb_sensors_sent = last_sensor_index; //useless, just makes it easier to read
+
+nb_sensors_sent += uint16_t(packet_recv->sensor_index - last_sensor_index);
+last_sensor_index = packet_recv->sensor_index;
 
 }
 
@@ -316,9 +332,27 @@ void MasterBoardInterface::set_motor_drivers(MotorDriver input_motor_drivers [])
   }
 }
 
-void MasterBoardInterface::PrintHistogram(int* histogram){
+void MasterBoardInterface::PrintSensorStats(){
+  printf("sensor_lost = %u\n",nb_sensors_lost);
+  printf("sensor_sent = %u\n",nb_sensors_sent); 
+	printf("sensor_ratio = %.02f\n",100.*nb_sensors_lost/nb_sensors_sent);
+			
+  printf("Histogram sensor : ");
   for(int i=0; i<MAX_HIST; i++ ){ 
-		printf("%d ", histogram[i]);
+		printf("%d ",  histogram_lost_sensor_packets[i]);
+	}
+	printf("\n");
+}
+
+
+void MasterBoardInterface::PrintCmdStats(){
+  printf("cmd_lost = %u\n",nb_cmd_lost); 
+  printf("cmd_sent = %u\n",nb_cmd_sent); 
+	printf("cmd_ratio = %.02f\n",100.*nb_cmd_lost/nb_cmd_sent);
+
+  printf("Histogram command : ");
+  for(int i=0; i<MAX_HIST; i++ ){ 
+		printf("%d ", histogram_lost_cmd_packets[i]);
 	}
 	printf("\n");
 }
