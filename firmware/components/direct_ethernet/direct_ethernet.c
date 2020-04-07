@@ -20,7 +20,14 @@ static void eth_event_handler(void *arg, esp_event_base_t event_base,
   switch (event_id)
   {
   case ETHERNET_EVENT_CONNECTED:
-    eth_link_state_cb(true);
+    if (eth_link_state_cb == NULL)
+    {
+    ESP_LOGW(ETH_TAG, "Ethernet link Up but no callback function is set");
+    }
+    else
+    {
+      eth_link_state_cb(true);
+    }
 
     esp_eth_ioctl(eth_handle, ETH_CMD_G_MAC_ADDR, eth_src_mac);
 
@@ -29,8 +36,15 @@ static void eth_event_handler(void *arg, esp_event_base_t event_base,
              eth_src_mac[0], eth_src_mac[1], eth_src_mac[2], eth_src_mac[3], eth_src_mac[4], eth_src_mac[5]);
     break;
   case ETHERNET_EVENT_DISCONNECTED:
-    eth_link_state_cb(false);
-
+    if (eth_link_state_cb == NULL)
+    {
+    ESP_LOGW(ETH_TAG, "Ethernet link Down but no callback function is set");
+    }
+    else
+    {
+      eth_link_state_cb(false);
+    }
+    
     ESP_LOGI(ETH_TAG, "Ethernet Link Down");
     break;
   case ETHERNET_EVENT_START:
