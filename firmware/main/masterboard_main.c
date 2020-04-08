@@ -215,7 +215,13 @@ static void periodic_timer_callback(void *arg)
                 //if (spi_count % 500 == 0) printf("p_trans[%d] not NULL, try %d\n", i, spi_try);
 
                 // waiting for transaction to finish and checking if data is correct
-                if (spi_is_successful(&(p_trans[i])) && packet_check_CRC(spi_rx_packet[i])) //blocking until transaction is finished
+                while (!spi_is_finished(&(p_trans[i])))
+                {
+                    //Wait for it to be finished
+                }
+
+                //if (spi_is_successful(&(p_trans[i])) && packet_check_CRC(spi_rx_packet[i])) //blocking until transaction is finished
+                if (packet_check_CRC(spi_rx_packet[i]))
                 {
                     spi_connected[i] = 1;
 
