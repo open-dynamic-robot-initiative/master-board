@@ -89,7 +89,7 @@ static void periodic_timer_callback(void *arg)
 
     ms_cpt++;
 
-    if (ms_cpt % 500 == 0) printf("current_state = %d, session_id = %d\n", current_state, session_id);
+    //if (ms_cpt % 500 == 0) printf("current_state = %d, session_id = %d\n", current_state, session_id);
 
     /* LEDs */
     bool blink = (ms_cpt % 1000) > 500;
@@ -97,7 +97,7 @@ static void periodic_timer_callback(void *arg)
 
 
     /* Prepare spi transactions */
-    spi_transaction_t *p_trans[CONFIG_N_SLAVES];
+    spi_transaction_t *p_trans[CONFIG_N_SLAVES] = {0};
     spi_index_trans++;
 
 
