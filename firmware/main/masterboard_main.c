@@ -58,7 +58,8 @@ struct wifi_eth_packet_ack wifi_eth_tx_ack;
 
 bool spi_use_a = true;
 
-void print_spi_connected() {
+void print_spi_connected()
+{
     printf("[ ");
     for (int i = 0; i < CONFIG_N_SLAVES; i++)
     {
@@ -95,17 +96,14 @@ static void periodic_timer_callback(void *arg)
     bool blink = (ms_cpt % 1000) > 500;
     float fade_blink = (ms_cpt % 1000 < 500) ? (ms_cpt % 1000) / 500.0 : (1000 - (ms_cpt % 1000)) / 500.0;
 
-
     /* Prepare spi transactions */
     spi_transaction_t *p_trans[CONFIG_N_SLAVES] = {0};
     spi_index_trans++;
-
 
     /* Choose spi packets to send*/
     uint16_t(*p_tx)[SPI_TOTAL_LEN];
 
     p_tx = spi_tx_packet_stop; // default command is stop
-
 
     //printf("%d\n", wifi_eth_count);
     switch (current_state)
@@ -177,8 +175,9 @@ static void periodic_timer_callback(void *arg)
 
         for (int i = 0; i < CONFIG_N_SLAVES; i++)
         {
-            if (!spi_connected[i] && spi_count > SPI_CHECK_CONNECTED_MAX_COUNT) continue;
-            
+            if (!spi_connected[i] && spi_count > SPI_CHECK_CONNECTED_MAX_COUNT)
+                continue; // ignoring this slave if it is not connected
+
             printf("[%d] sent : %ld, ok : %ld, ratio : %.02f\n", i, spi_count, spi_ok[i], 100. * spi_ok[i] / spi_count);
         }
         //print_imu();
@@ -191,7 +190,8 @@ static void periodic_timer_callback(void *arg)
     // send and receive packets to/from every slave
     for (int i = 0; i < CONFIG_N_SLAVES; i++)
     {
-        if (!spi_connected[i] && spi_count > SPI_CHECK_CONNECTED_MAX_COUNT) continue;
+        if (!spi_connected[i] && spi_count > SPI_CHECK_CONNECTED_MAX_COUNT)
+            continue; // ignoring this slave if it is not connected
 
         SPI_REG_u16(p_tx[i], SPI_TOTAL_INDEX) = SPI_SWAP_DATA_TX(spi_index_trans, 16);
         SPI_REG_u32(p_tx[i], SPI_TOTAL_CRC) = SPI_SWAP_DATA_TX(packet_compute_CRC(p_tx[i]), 32);
@@ -203,26 +203,25 @@ static void periodic_timer_callback(void *arg)
     {
         for (int i = 0; i < CONFIG_N_SLAVES; i++)
         {
-            if (!spi_connected[i] && spi_count > SPI_CHECK_CONNECTED_MAX_COUNT) continue;
+            if (!spi_connected[i] && spi_count > SPI_CHECK_CONNECTED_MAX_COUNT)
+                continue; // ignoring this slave if it is not connected
 
             if (p_trans[i] == NULL)
             {
-                //No associated ongoing transaction, either the alloc failed or it does not need to be sent again
-                //if (spi_count % 500 == 0) printf("p_trans[%d] NULL, try %d\n", i, spi_try);
+                // No associated ongoing transaction, either the alloc failed or it does not need to be sent again
             }
             else
             {
-                //if (spi_count % 500 == 0) printf("p_trans[%d] not NULL, try %d\n", i, spi_try);
-
-                // waiting for transaction to finish and checking if data is correct
+                // waiting for transaction to finish
                 while (!spi_is_finished(&(p_trans[i])))
                 {
-                    //Wait for it to be finished
+                    // Wait for it to be finished
                 }
 
+                // checking if data is correct
                 if (packet_check_CRC(spi_rx_packet[i]))
                 {
-                    spi_connected[i] = 1;
+                    spi_connected[i] = 1; // noting that this slave is connected and working properly
 
                     spi_ok[i]++;
 
@@ -256,8 +255,6 @@ static void periodic_timer_callback(void *arg)
 
                     memset(&(wifi_eth_tx_data.sensor[i]), 0, sizeof(struct sensor_data));
                 }
-
-                
             }
         }
     }
@@ -323,7 +320,6 @@ static void periodic_timer_callback(void *arg)
         // we send nothing to PC in case of a state machine error (should never happen)
         break;
     }
-
 }
 
 void setup_spi()
@@ -349,6 +345,7 @@ void setup_spi()
 
 void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len)
 {
+    // received an init msg while waiting for one
     if (len == sizeof(struct wifi_eth_packet_init) && (current_state == WAITING_FOR_INIT || current_state == WIFI_ETH_ERROR))
     {
         struct wifi_eth_packet_init *packet_recv = (struct wifi_eth_packet_init *)data;
@@ -358,11 +355,14 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len)
         memset(spi_ok, 0, CONFIG_N_SLAVES * sizeof(long int));
         spi_count = 0;
 
-        session_id = packet_recv->session_id;
-        current_state = SENDING_INIT_ACK;
+        session_id = packet_recv->session_id; // set session id
+        current_state = SENDING_INIT_ACK;     // state transition
+
+        // reset count for communication timeout
         wifi_eth_count = 0;
     }
 
+    // received a command msg while waiting for one
     else if (len == sizeof(struct wifi_eth_packet_command) && (current_state == SENDING_INIT_ACK || current_state == ACTIVE_CONTROL))
     {
         struct wifi_eth_packet_command *packet_recv = (struct wifi_eth_packet_command *)data;
@@ -375,7 +375,7 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len)
 
         if (current_state == SENDING_INIT_ACK)
         {
-            current_state = ACTIVE_CONTROL;
+            current_state = ACTIVE_CONTROL; // state transition
             command_index_prev = packet_recv->command_index - 1;
         }
 
@@ -384,7 +384,8 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len)
 
         for (int i = 0; i < CONFIG_N_SLAVES; i++)
         {
-            if (!spi_connected[i] && spi_count > SPI_CHECK_CONNECTED_MAX_COUNT) continue;
+            if (!spi_connected[i] && spi_count > SPI_CHECK_CONNECTED_MAX_COUNT)
+                continue; // ignoring this slave if it is not connected
 
             SPI_REG_u16(to_fill[i], SPI_COMMAND_MODE) = SPI_SWAP_DATA_TX(packet_recv->command[i].mode, 16);
             SPI_REG_32(to_fill[i], SPI_COMMAND_POS_1) = SPI_SWAP_DATA_TX(packet_recv->command[i].position[0], 32);
@@ -405,7 +406,7 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len)
         wifi_eth_tx_data.packet_loss += ((struct wifi_eth_packet_command *)data)->command_index - command_index_prev - 1;
         command_index_prev = ((struct wifi_eth_packet_command *)data)->command_index;
 
-        /* Reset watchdog timer */
+        // reset count for communication timeout
         wifi_eth_count = 0;
     }
 }
@@ -413,7 +414,7 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len)
 //function that will be called on a link state change
 void wifi_eth_link_state_cb(bool new_state)
 {
-    current_state = new_state ? WAITING_FOR_INIT : WIFI_ETH_LINK_DOWN;
+    current_state = new_state ? WAITING_FOR_INIT : WIFI_ETH_LINK_DOWN; // transitioning to the corresponding state
 }
 
 void app_main()
@@ -439,7 +440,6 @@ void app_main()
 
     printf("initialise IMU\n");
     imu_init();
-    printf("done?\n");
 
     if (useWIFI)
     {
