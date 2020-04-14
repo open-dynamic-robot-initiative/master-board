@@ -220,7 +220,6 @@ static void periodic_timer_callback(void *arg)
                     //Wait for it to be finished
                 }
 
-                //if (spi_is_successful(&(p_trans[i])) && packet_check_CRC(spi_rx_packet[i])) //blocking until transaction is finished
                 if (packet_check_CRC(spi_rx_packet[i]))
                 {
                     spi_connected[i] = 1;
