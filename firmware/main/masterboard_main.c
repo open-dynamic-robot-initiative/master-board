@@ -88,10 +88,9 @@ void print_packet(uint8_t *data, int len)
 static void periodic_timer_callback(void *arg)
 {
     if (current_state != next_state) {
-        printf("%d\n", current_state);
+        current_state = next_state;
+        //printf("%d\n", current_state);
     }
-
-    current_state = next_state;
 
     if (current_state == SETUP)
     {
