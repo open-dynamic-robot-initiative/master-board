@@ -149,7 +149,7 @@ static void periodic_timer_callback(void *arg)
         break;
 
     case WIFI_ETH_LINK_DOWN:
-        ws_led.leds[0] = RGB(0x3f * blink, 0x3f * blink, 0); //Orange blink, ethernet link down state awaiting for link up
+        ws_led.leds[0] = RGB(0x3f * blink, 0x3f * blink, 0); //Yellow blink, ethernet link down state awaiting for link up
         ws_led.leds[1] = RGB(0x3f * blink, 0x3f * blink, 0);
 
         wifi_eth_count = 0; // we can't receive any messages if link is down
