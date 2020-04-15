@@ -84,12 +84,12 @@ void print_packet(uint8_t *data, int len)
 
 static void periodic_timer_callback(void *arg)
 {
+    current_state = next_state;
+
     if (current_state == SETUP)
     {
         return;
     }
-
-    current_state = next_state;
 
     ms_cpt++;
 
