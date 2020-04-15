@@ -55,10 +55,11 @@ struct wifi_eth_packet_sensor {
 enum State {
 	SETUP = 0, // setting up every component
 	WAITING_FOR_INIT = 1, // waiting for initialization msg
-	SENDING_INIT_ACK = 2, // sending acknowlegment msg to PC
-	ACTIVE_CONTROL = 3, // normal active control behaviour with the robot
-	WIFI_ETH_LINK_DOWN = 4, // ethernet link is down
-	WIFI_ETH_ERROR = 5 // master board has not received any meaningful message over wifi or ethernet
+	SPI_AUTODETECT = 2,
+	SENDING_INIT_ACK = 3, // sending acknowlegment msg to PC
+	ACTIVE_CONTROL = 4, // normal active control behaviour with the robot
+	WIFI_ETH_LINK_DOWN = 5, // ethernet link is down
+	WIFI_ETH_ERROR = 6 // master board has not received any meaningful message over wifi or ethernet
 					   // over a certain period of time (timeouts to configure) in SENDING_INIT_ACK or ACTIVE_CONTROL state
 };
 

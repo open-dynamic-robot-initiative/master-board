@@ -24,19 +24,22 @@
 
 #define ENABLE_DEBUG_PRINTF false
 
-#define SPI_CHECK_CONNECTED_MAX_COUNT 50 // number of spi transaction for which the master board will try to detect spi slaves
+#define SPI_AUTODETECT_MAX_COUNT 1000 // number of spi transaction for which the master board will try to detect spi slaves
 
 #define RGB(r, g, b) ((uint8_t)(g) << 16 | (uint8_t)(r) << 8 | (uint8_t)(b))
 
 long int spi_count = 0;
+
+bool spi_autodetect = false;
+int spi_n_attempt = CONFIG_SPI_N_ATTEMPT;
 
 bool spi_connected[CONFIG_N_SLAVES] = {0};
 long int spi_ok[CONFIG_N_SLAVES] = {0};
 
 int wifi_eth_count = 0; // counter that counts the ms without a message being received from PC
 
-uint16_t session_id = 0; // session id
-enum State next_state = SETUP; // this is updated before current_state
+uint16_t session_id = 0;          // session id
+enum State next_state = SETUP;    // this is updated before current_state
 enum State current_state = SETUP; // updated by the 1000 Hz cb
 
 unsigned int ms_cpt = 0;
@@ -84,6 +87,10 @@ void print_packet(uint8_t *data, int len)
 
 static void periodic_timer_callback(void *arg)
 {
+    if (current_state != next_state) {
+        printf("%d\n", current_state);
+    }
+
     current_state = next_state;
 
     if (current_state == SETUP)
@@ -108,6 +115,11 @@ static void periodic_timer_callback(void *arg)
 
     p_tx = spi_tx_packet_stop; // default command is stop
 
+    spi_count++;
+
+    spi_autodetect = (current_state == SPI_AUTODETECT);
+    spi_n_attempt = spi_autodetect ? 1 : CONFIG_SPI_N_ATTEMPT;
+
     //printf("%d\n", wifi_eth_count);
     switch (current_state)
     {
@@ -116,6 +128,18 @@ static void periodic_timer_callback(void *arg)
         ws_led.leds[1] = RGB(0xff * fade_blink, 0, 0);
 
         wifi_eth_count = 0; // we allow not receiving messages if waiting for init
+        break;
+
+    case SPI_AUTODETECT:
+        ws_led.leds[0] = RGB(0xff * fade_blink, 0, 0xff * fade_blink); //Magenta fade, Waiting for init
+        ws_led.leds[1] = RGB(0xff * fade_blink, 0, 0xff * fade_blink);
+
+        if (spi_count > SPI_AUTODETECT_MAX_COUNT)
+        {
+            next_state = SENDING_INIT_ACK;
+        }
+
+        wifi_eth_count = 0; // we allow not receiving messages while checking for spi slaves
         break;
 
     case SENDING_INIT_ACK:
@@ -168,8 +192,6 @@ static void periodic_timer_callback(void *arg)
         break;
     }
 
-    spi_count++;
-
     /* Debug */
     if (ENABLE_DEBUG_PRINTF && spi_count % 1000 == 0)
     {
@@ -180,7 +202,7 @@ static void periodic_timer_callback(void *arg)
 
         for (int i = 0; i < CONFIG_N_SLAVES; i++)
         {
-            if (!spi_connected[i] && spi_count > SPI_CHECK_CONNECTED_MAX_COUNT)
+            if (!spi_connected[i] && !spi_autodetect)
                 continue; // ignoring this slave if it is not connected
 
             printf("[%d] sent : %ld, ok : %ld, ratio : %.02f\n", i, spi_count, spi_ok[i], 100. * spi_ok[i] / spi_count);
@@ -195,7 +217,7 @@ static void periodic_timer_callback(void *arg)
     // send and receive packets to/from every slave
     for (int i = 0; i < CONFIG_N_SLAVES; i++)
     {
-        if (!spi_connected[i] && spi_count > SPI_CHECK_CONNECTED_MAX_COUNT)
+        if (!spi_connected[i] && !spi_autodetect)
             continue; // ignoring this slave if it is not connected
 
         SPI_REG_u16(p_tx[i], SPI_TOTAL_INDEX) = SPI_SWAP_DATA_TX(spi_index_trans, 16);
@@ -204,11 +226,11 @@ static void periodic_timer_callback(void *arg)
     }
 
     /* Wait for SPI transactions to finish */
-    for (int spi_try = 0; spi_try < CONFIG_SPI_N_ATTEMPT; spi_try++)
+    for (int spi_try = 0; spi_try < spi_n_attempt; spi_try++)
     {
         for (int i = 0; i < CONFIG_N_SLAVES; i++)
         {
-            if (!spi_connected[i] && spi_count > SPI_CHECK_CONNECTED_MAX_COUNT)
+            if (!spi_connected[i] && !spi_autodetect)
                 continue; // ignoring this slave if it is not connected
 
             if (p_trans[i] == NULL)
@@ -255,7 +277,7 @@ static void periodic_timer_callback(void *arg)
                 else
                 {
                     //transaction failed, try to re-send
-                    if (spi_try + 1 < CONFIG_SPI_N_ATTEMPT)
+                    if (spi_try + 1 < spi_n_attempt)
                         p_trans[i] = spi_send(i, (uint8_t *)p_tx[i], (uint8_t *)spi_rx_packet[i], SPI_TOTAL_LEN * 2);
 
                     memset(&(wifi_eth_tx_data.sensor[i]), 0, sizeof(struct sensor_data));
@@ -303,6 +325,7 @@ static void periodic_timer_callback(void *arg)
         break;
 
     case WAITING_FOR_INIT:
+    case SPI_AUTODETECT:
     case ACTIVE_CONTROL:
     case WIFI_ETH_ERROR:
         /* Send all spi_sensor packets to PC */
@@ -365,7 +388,7 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len)
         wifi_eth_tx_data.packet_loss = 0;
 
         session_id = packet_recv->session_id; // set session id
-        next_state = SENDING_INIT_ACK;     // state transition
+        next_state = SPI_AUTODETECT;          // state transition
 
         // reset count for communication timeout
         wifi_eth_count = 0;
@@ -393,7 +416,7 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len)
 
         for (int i = 0; i < CONFIG_N_SLAVES; i++)
         {
-            if (!spi_connected[i] && spi_count > SPI_CHECK_CONNECTED_MAX_COUNT)
+            if (!spi_connected[i] && !spi_autodetect)
                 continue; // ignoring this slave if it is not connected
 
             SPI_REG_u16(to_fill[i], SPI_COMMAND_MODE) = SPI_SWAP_DATA_TX(packet_recv->command[i].mode, 16);
