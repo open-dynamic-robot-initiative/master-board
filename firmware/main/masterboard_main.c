@@ -36,7 +36,8 @@ long int spi_ok[CONFIG_N_SLAVES] = {0};
 int wifi_eth_count = 0; // counter that counts the ms without a message being received from PC
 
 uint16_t session_id = 0; // session id
-enum State current_state = SETUP;
+enum State next_state = SETUP; // this is updated before current_state
+enum State current_state = SETUP; // updated by the 1000 Hz cb
 
 unsigned int ms_cpt = 0;
 
@@ -88,6 +89,8 @@ static void periodic_timer_callback(void *arg)
         return;
     }
 
+    current_state = next_state;
+
     ms_cpt++;
 
     //if (ms_cpt % 500 == 0) printf("current_state = %d, session_id = %d\n", current_state, session_id);
@@ -121,6 +124,7 @@ static void periodic_timer_callback(void *arg)
 
         if (wifi_eth_count > CONFIG_WIFI_ETH_TIMEOUT_ACK)
         {
+            next_state = WIFI_ETH_ERROR;
             current_state = WIFI_ETH_ERROR;
         }
 
@@ -133,6 +137,7 @@ static void periodic_timer_callback(void *arg)
 
         if (wifi_eth_count > CONFIG_WIFI_ETH_TIMEOUT_CONTROL)
         {
+            next_state = WIFI_ETH_ERROR;
             current_state = WIFI_ETH_ERROR;
         }
         else
@@ -360,7 +365,7 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len)
         wifi_eth_tx_data.packet_loss = 0;
 
         session_id = packet_recv->session_id; // set session id
-        current_state = SENDING_INIT_ACK;     // state transition
+        next_state = SENDING_INIT_ACK;     // state transition
 
         // reset count for communication timeout
         wifi_eth_count = 0;
@@ -379,7 +384,7 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len)
 
         if (current_state == SENDING_INIT_ACK)
         {
-            current_state = ACTIVE_CONTROL; // state transition
+            next_state = ACTIVE_CONTROL; // state transition
             command_index_prev = packet_recv->command_index - 1;
         }
 
@@ -418,7 +423,7 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len)
 //function that will be called on a link state change
 void wifi_eth_link_state_cb(bool new_state)
 {
-    current_state = new_state ? WAITING_FOR_INIT : WIFI_ETH_LINK_DOWN; // transitioning to the corresponding state
+    next_state = new_state ? WAITING_FOR_INIT : WIFI_ETH_LINK_DOWN; // transitioning to the corresponding state
 }
 
 void app_main()
@@ -449,14 +454,14 @@ void app_main()
     {
         wifi_init();
         wifi_attach_recv_cb(wifi_eth_receive_cb);
-        current_state = WAITING_FOR_INIT; // link is never down in wifi
+        next_state = WAITING_FOR_INIT; // link is never down in wifi
     }
     else
     {
         eth_attach_link_state_cb(wifi_eth_link_state_cb);
         eth_attach_recv_cb(wifi_eth_receive_cb);
         eth_init();
-        current_state = WIFI_ETH_LINK_DOWN; // link is down just after setup
+        next_state = WIFI_ETH_LINK_DOWN; // link is down just after setup
     }
 
     printf("Setup done\n");
