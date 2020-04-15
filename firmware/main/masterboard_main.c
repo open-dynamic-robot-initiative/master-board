@@ -149,7 +149,6 @@ static void periodic_timer_callback(void *arg)
         if (wifi_eth_count > CONFIG_WIFI_ETH_TIMEOUT_ACK)
         {
             next_state = WIFI_ETH_ERROR;
-            current_state = WIFI_ETH_ERROR;
         }
 
         wifi_eth_count++;
@@ -162,7 +161,6 @@ static void periodic_timer_callback(void *arg)
         if (wifi_eth_count > CONFIG_WIFI_ETH_TIMEOUT_CONTROL)
         {
             next_state = WIFI_ETH_ERROR;
-            current_state = WIFI_ETH_ERROR;
         }
         else
         {
