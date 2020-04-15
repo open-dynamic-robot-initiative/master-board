@@ -355,6 +355,10 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len)
         memset(spi_ok, 0, CONFIG_N_SLAVES * sizeof(long int));
         spi_count = 0;
 
+        // reset packet loss feedback
+        wifi_eth_tx_data.sensor_index = 0;
+        wifi_eth_tx_data.packet_loss = 0;
+
         session_id = packet_recv->session_id; // set session id
         current_state = SENDING_INIT_ACK;     // state transition
 
