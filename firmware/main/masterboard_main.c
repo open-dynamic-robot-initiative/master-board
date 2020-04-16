@@ -130,7 +130,7 @@ static void periodic_timer_callback(void *arg)
         break;
 
     case SPI_AUTODETECT:
-        ws_led.leds[0] = RGB(0xff * fade_blink, 0, 0xff * fade_blink); //Magenta fade, Waiting for init
+        ws_led.leds[0] = RGB(0xff * fade_blink, 0, 0xff * fade_blink); //Magenta fade, SPI Autodetect
         ws_led.leds[1] = RGB(0xff * fade_blink, 0, 0xff * fade_blink);
 
         if (spi_count > SPI_AUTODETECT_MAX_COUNT)

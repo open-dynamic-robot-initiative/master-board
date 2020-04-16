@@ -55,7 +55,7 @@ struct wifi_eth_packet_sensor {
 enum State {
 	SETUP = 0, // setting up every component
 	WAITING_FOR_INIT = 1, // waiting for initialization msg
-	SPI_AUTODETECT = 2,
+	SPI_AUTODETECT = 2, // detecting connected spi slaves
 	SENDING_INIT_ACK = 3, // sending acknowlegment msg to PC
 	ACTIVE_CONTROL = 4, // normal active control behaviour with the robot
 	WIFI_ETH_LINK_DOWN = 5, // ethernet link is down
