@@ -21,7 +21,10 @@ public:
 	int Stop();
 	void SetMasterboardTimeoutMS(uint8_t); //Set the Master board timeout in ms
 	int SendCommand();										 //Send the command packet to the master board
+	
+	void ParseAckData(); // Parse and convert the latest received ack data. USer needs to call this before reading any field.
 	void ParseSensorData();								 //Parse and convert the latest received sensor data. User need to call this before reading any field.
+	
 	void PrintIMU();											 //Print IMU data on stdout. Usefull for debug.
 	void PrintADC();											 //Print ACD data on stdout. Usefull for debug.
 	void PrintMotors();										 //Print motors data on stdout. Usefull for debug.
@@ -34,6 +37,9 @@ public:
 
 	bool IsAckMsgReceived();
 	int SendInit(); //Send the init msg
+
+	bool IsSpiSlaveConnected(int slave);
+
 private:
 	void callback(uint8_t src_mac[6], uint8_t *data, int len);
 	uint8_t my_mac_[6];		// = {0xa0, 0x1d, 0x48, 0x12, 0xa0, 0xc5};	 //{0xF8, 0x1A, 0x67, 0xb7, 0xEB, 0x0B};
@@ -64,7 +70,7 @@ private:
 	int histogram_lost_cmd_packets[MAX_HIST];	//histogram_lost_packets[0] is the number of single packet loss, histogram_lost_packets[1] is the number of two consecutive packet loss, etc...
 
 
-	std::mutex sensor_packet_mutex;
+	std::mutex received_packet_mutex;
 
 	// Time duration [ms] after which the MasterBoardInterface shuts down if the
 	// master board is not responding while waiting for acknowledge msg (timeout)
@@ -88,11 +94,14 @@ private:
 	struct ack_packet_t ack_packet;
 
 	uint16_t session_id = 0;
+	uint8_t spi_connected = 0; // least significant bit: SPI0
+						   	   // most significant bit: SPI7
 
 	void GenerateSessionId();
 
 	bool init_sent = false;
 	bool ack_received = false;
+
 public:
 	Motor motors[N_SLAVES * 2];
 	MotorDriver motor_drivers[N_SLAVES];

@@ -8,7 +8,7 @@
 #include "master_board_sdk/master_board_interface.h"
 #include "master_board_sdk/defines.h"
 
-#define N_SLAVES_CONTROLED 1
+#define N_SLAVES_CONTROLED 6
 
 int main(int argc, char **argv)
 {
@@ -22,6 +22,9 @@ int main(int argc, char **argv)
 	double amplitude = M_PI;
 	double init_pos[N_SLAVES * 2] = {0};
 	int state = 0;
+
+	int spi_connected[N_SLAVES_CONTROLED] = {0}; // connected spi slaves array
+
 	nice(-20); //give the process a high priority
 	printf("-- Main --\n");
 	//assert(argc > 1);
@@ -52,7 +55,18 @@ int main(int argc, char **argv)
 	{
 		printf("Timeout while waiting for ack.\n");
 	}
-	
+	else
+	{
+		// parsing last acknowledgement msg data
+		robot_if.ParseAckData();
+
+		// filling the spi_connected array
+		for (int i = 0; i < N_SLAVES_CONTROLED; i++)
+		{
+			spi_connected[i] = robot_if.IsSpiSlaveConnected(i);
+		}
+	}
+
 	while (!robot_if.IsTimeout())
 	{
 		if (((std::chrono::duration<double>)(std::chrono::system_clock::now() - last)).count() > dt)
@@ -67,6 +81,8 @@ int main(int argc, char **argv)
 				state = 1;
 				for (int i = 0; i < N_SLAVES_CONTROLED * 2; i++)
 				{
+					if (!spi_connected[i / 2]) continue; // ignoring the motors of a disconnected slave
+
 					if (!(robot_if.motors[i].IsEnabled() && robot_if.motors[i].IsReady()))
 					{
 						state = 0;
@@ -79,6 +95,8 @@ int main(int argc, char **argv)
 				//closed loop, position
 				for (int i = 0; i < N_SLAVES_CONTROLED * 2; i++)
 				{
+					if (!spi_connected[i / 2]) continue; // ignoring the motors of a disconnected slave
+
 					if (robot_if.motors[i].IsEnabled())
 					{
 						double ref = init_pos[i] + amplitude * sin(2 * M_PI * freq * t);
@@ -98,6 +116,10 @@ int main(int argc, char **argv)
 			if (cpt % 100 == 0)
 			{
 				printf("\33[H\33[2J"); //clear screen
+				for (int i = 0; i < N_SLAVES_CONTROLED; i++)
+				{
+					printf("SPI%d %sconnected\n", i, spi_connected[i] ? "" : "not ");
+				}
 				robot_if.PrintIMU();
 				robot_if.PrintADC();
 				robot_if.PrintMotors();

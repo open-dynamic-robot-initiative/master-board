@@ -29,6 +29,7 @@ boost::python::tuple wrap_adc(MotorDriver const * motDriver)
             .def("Stop", &MasterBoardInterface::Stop)
             // .def("SetMasterboardTimeoutMS", &MasterBoardInterface::SetMasterboardTimeoutMS) // Not defined in master_board_interface.cpp but declared in master_board_interface.h
             .def("SendCommand", &MasterBoardInterface::SendCommand)
+            .def("ParseAckData", &MasterBoardInterface::ParseAckData)
             .def("ParseSensorData", &MasterBoardInterface::ParseSensorData)
             .def("PrintIMU", &MasterBoardInterface::PrintIMU)
             .def("PrintADC", &MasterBoardInterface::PrintADC)
@@ -47,6 +48,8 @@ boost::python::tuple wrap_adc(MotorDriver const * motDriver)
 
             .def("IsAckMsgReceived", &MasterBoardInterface::IsAckMsgReceived)
             .def("SendInit", &MasterBoardInterface::SendInit)
+
+            .def("IsSpiSlaveConnected", &MasterBoardInterface::IsSpiSlaveConnected)
 
         ;
         // End of bindings for MasterBoardInterface class

@@ -56,6 +56,8 @@ int MasterBoardInterface::Init()
   init_sent = false;
   ack_received = false;
 
+  spi_connected = 0;
+
   GenerateSessionId();
 
   if (if_name_[0] == 'e')
@@ -219,8 +221,13 @@ void MasterBoardInterface::callback(uint8_t src_mac[6], uint8_t *data, int len)
       return; // ignoring the packet
     }
 
+    received_packet_mutex.lock();
+    memcpy(&ack_packet, data, sizeof(ack_packet_t));
+    received_packet_mutex.unlock();
+
     ack_received = true;
   }
+
   else if (init_sent && ack_received && len == sizeof(sensor_packet_t))
   {
     if (((sensor_packet_t *)data)->session_id != session_id)
@@ -233,9 +240,9 @@ void MasterBoardInterface::callback(uint8_t src_mac[6], uint8_t *data, int len)
     t_last_packet = std::chrono::high_resolution_clock::now();
 
     nb_sensors_recv++;
-    sensor_packet_mutex.lock();
+    received_packet_mutex.lock();
     memcpy(&sensor_packet, data, sizeof(sensor_packet_t));
-    sensor_packet_mutex.unlock();
+    received_packet_mutex.unlock();
 
     struct sensor_packet_t *packet_recv = (struct sensor_packet_t *)data;
 
@@ -283,9 +290,18 @@ void MasterBoardInterface::callback(uint8_t src_mac[6], uint8_t *data, int len)
   }
 }
 
+void MasterBoardInterface::ParseAckData()
+{
+  received_packet_mutex.lock();
+
+  spi_connected = ack_packet.spi_connected;
+
+  received_packet_mutex.unlock();
+}
+
 void MasterBoardInterface::ParseSensorData()
 {
-  sensor_packet_mutex.lock();
+  received_packet_mutex.lock();
 
   /*Read IMU data*/
   for (int i = 0; i < 3; i++)
@@ -327,7 +343,7 @@ void MasterBoardInterface::ParseSensorData()
   }
   /*Stat on Packet loss*/
 
-  sensor_packet_mutex.unlock();
+  received_packet_mutex.unlock();
 }
 
 void MasterBoardInterface::PrintIMU()
@@ -391,6 +407,13 @@ bool MasterBoardInterface::IsTimeout()
 bool MasterBoardInterface::IsAckMsgReceived()
 {
   return ack_received;
+}
+
+bool MasterBoardInterface::IsSpiSlaveConnected(int slave)
+{
+  if (slave >= N_SLAVES) return false;
+
+  return (spi_connected & (1 << slave)) >> slave;
 }
 
 void MasterBoardInterface::set_motors(Motor input_motors[])

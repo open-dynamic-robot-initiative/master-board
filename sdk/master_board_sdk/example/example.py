@@ -12,7 +12,7 @@ import libmaster_board_sdk_pywrap as mbs
 def example_script(name_interface):
 
     N_SLAVES = 6  #  Maximum number of controled drivers
-    N_SLAVES_CONTROLED = 1  # Current number of controled drivers
+    N_SLAVES_CONTROLED = 6  # Current number of controled drivers
 
     cpt = 0  # Iteration counter
     dt = 0.001  #  Time step
@@ -24,6 +24,9 @@ def example_script(name_interface):
     amplitude = math.pi  # Amplitude of the sine wave
     init_pos = [0.0 for i in range(N_SLAVES * 2)]  # List that will store the initial position of motors
     state = 0  # State of the system (ready (1) or not (0))
+
+    spi_connected_indexes = [] # indexes of connected spi slaves
+    motors_spi_connected_indexes = [] # indexes of the motors on each connected slaves
 
     print("-- Start of example script --")
 
@@ -48,6 +51,16 @@ def example_script(name_interface):
 
     if robot_if.IsTimeout():
         print("Timeout while waiting for ack.")
+    else:
+        # get data received by ack messages
+        robot_if.ParseAckData()
+
+        # fill the connected indexes array
+        for i in range(N_SLAVES_CONTROLED):
+            if robot_if.IsSpiSlaveConnected(i):
+                spi_connected_indexes.append(i)
+                motors_spi_connected_indexes.append(2 * i)
+                motors_spi_connected_indexes.append(2 * i + 1)
 
     while ((not robot_if.IsTimeout())
            and (clock() < 20)):  # Stop after 15 seconds (around 5 seconds are used at the start for calibration)
@@ -60,13 +73,13 @@ def example_script(name_interface):
 
             if (state == 0):  #  If the system is not ready
                 state = 1
-                for i in range(N_SLAVES_CONTROLED * 2):  # Check if all motors are enabled and ready
+                for i in motors_spi_connected_indexes:  # Check if all motors are enabled and ready
                     if not (robot_if.GetMotor(i).IsEnabled() and robot_if.GetMotor(i).IsReady()):
                         state = 0
                     init_pos[i] = robot_if.GetMotor(i).GetPosition()
                     t = 0
             else:  # If the system is ready
-                for i in range(N_SLAVES_CONTROLED * 2):
+                for i in motors_spi_connected_indexes:
                     if robot_if.GetMotor(i).IsEnabled():
                         ref = init_pos[i] + amplitude * math.sin(2.0 * math.pi * freq * t)  # Sine wave pattern
                         v_ref = 2.0 * math.pi * freq * amplitude * math.cos(2.0 * math.pi * freq * t)
@@ -83,6 +96,8 @@ def example_script(name_interface):
                 print(chr(27) + "[2J")
                 # To read IMU data in Python use robot_if.imu_data_accelerometer(i), robot_if.imu_data_gyroscope(i)
                 # or robot_if.imu_data_attitude(i) with i = 0, 1 or 2
+                for i in spi_connected_indexes:
+                    print("SPI{} connected".format(i))
                 robot_if.PrintIMU()
                 robot_if.PrintADC()
                 robot_if.PrintMotors()
