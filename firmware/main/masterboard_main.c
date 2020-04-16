@@ -22,18 +22,21 @@
 
 #define useWIFI false
 
-#define ENABLE_DEBUG_PRINTF false
+#define ENABLE_DEBUG_PRINTF true
 
 #define SPI_AUTODETECT_MAX_COUNT 1000 // number of spi transaction for which the master board will try to detect spi slaves
 
 #define RGB(r, g, b) ((uint8_t)(g) << 16 | (uint8_t)(r) << 8 | (uint8_t)(b))
+
+#define TEST_BIT(field, bit) (((field) & (1 << (bit))) >> (bit))
 
 long int spi_count = 0;
 
 bool spi_autodetect = false;
 int spi_n_attempt = CONFIG_SPI_N_ATTEMPT;
 
-bool spi_connected[CONFIG_N_SLAVES] = {0};
+uint8_t spi_connected = 0; // least significant bit: SPI0
+                           // most significant bit: SPI7
 long int spi_ok[CONFIG_N_SLAVES] = {0};
 
 int wifi_eth_count = 0; // counter that counts the ms without a message being received from PC
@@ -67,7 +70,7 @@ void print_spi_connected()
     printf("[ ");
     for (int i = 0; i < CONFIG_N_SLAVES; i++)
     {
-        printf("%d ", spi_connected[i]);
+        printf("%d ", TEST_BIT(spi_connected, i));
     }
     printf("]\n\n");
 }
@@ -87,7 +90,8 @@ void print_packet(uint8_t *data, int len)
 
 static void periodic_timer_callback(void *arg)
 {
-    if (current_state != next_state) {
+    if (current_state != next_state)
+    {
         current_state = next_state;
         //printf("%d\n", current_state);
     }
@@ -199,7 +203,7 @@ static void periodic_timer_callback(void *arg)
 
         for (int i = 0; i < CONFIG_N_SLAVES; i++)
         {
-            if (!spi_connected[i] && !spi_autodetect)
+            if (!TEST_BIT(spi_connected, i) && !spi_autodetect)
                 continue; // ignoring this slave if it is not connected
 
             printf("[%d] sent : %ld, ok : %ld, ratio : %.02f\n", i, spi_count, spi_ok[i], 100. * spi_ok[i] / spi_count);
@@ -214,7 +218,7 @@ static void periodic_timer_callback(void *arg)
     // send and receive packets to/from every slave
     for (int i = 0; i < CONFIG_N_SLAVES; i++)
     {
-        if (!spi_connected[i] && !spi_autodetect)
+        if (!TEST_BIT(spi_connected, i) && !spi_autodetect)
             continue; // ignoring this slave if it is not connected
 
         SPI_REG_u16(p_tx[i], SPI_TOTAL_INDEX) = SPI_SWAP_DATA_TX(spi_index_trans, 16);
@@ -227,7 +231,7 @@ static void periodic_timer_callback(void *arg)
     {
         for (int i = 0; i < CONFIG_N_SLAVES; i++)
         {
-            if (!spi_connected[i] && !spi_autodetect)
+            if (!TEST_BIT(spi_connected, i) && !spi_autodetect)
                 continue; // ignoring this slave if it is not connected
 
             if (p_trans[i] == NULL)
@@ -245,7 +249,7 @@ static void periodic_timer_callback(void *arg)
                 // checking if data is correct
                 if (packet_check_CRC(spi_rx_packet[i]))
                 {
-                    spi_connected[i] = 1; // noting that this slave is connected and working properly
+                    spi_connected |= (1 << i); // noting that this slave is connected and working properly
 
                     spi_ok[i]++;
 
@@ -376,7 +380,7 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len)
         struct wifi_eth_packet_init *packet_recv = (struct wifi_eth_packet_init *)data;
 
         //reset spi stats and count for checking connected slaves
-        memset(spi_connected, 0, CONFIG_N_SLAVES * sizeof(bool));
+        spi_connected = 0;
         memset(spi_ok, 0, CONFIG_N_SLAVES * sizeof(long int));
         spi_count = 0;
 
@@ -413,7 +417,7 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len)
 
         for (int i = 0; i < CONFIG_N_SLAVES; i++)
         {
-            if (!spi_connected[i] && !spi_autodetect)
+            if (!TEST_BIT(spi_connected, i) && !spi_autodetect)
                 continue; // ignoring this slave if it is not connected
 
             SPI_REG_u16(to_fill[i], SPI_COMMAND_MODE) = SPI_SWAP_DATA_TX(packet_recv->command[i].mode, 16);
