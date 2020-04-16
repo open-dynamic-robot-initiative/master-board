@@ -22,7 +22,7 @@
 
 #define useWIFI false
 
-#define ENABLE_DEBUG_PRINTF true
+#define ENABLE_DEBUG_PRINTF false
 
 #define SPI_AUTODETECT_MAX_COUNT 1000 // number of spi transaction for which the master board will try to detect spi slaves
 
@@ -314,6 +314,9 @@ static void periodic_timer_callback(void *arg)
     {
 
     case SENDING_INIT_ACK:
+        // updating spi_connected in ack packet
+        wifi_eth_tx_ack.spi_connected = spi_connected;
+
         /* Send acknowledge packets to PC */
         if (useWIFI)
         {
