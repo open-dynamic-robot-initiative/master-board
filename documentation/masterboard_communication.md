@@ -40,21 +40,21 @@ Both WiFi and Ethernet use the same data packet format.
 
 There are four types of packets. Packets coming from the computer containing command data are called **Command** packets, and packets coming from the master board containing sensor data are called **Sensor** packets. On top of these two, an initialization packet called **Init** packet is used to put the master board in its control mode and bond it to an interface running on the computer. The master board will respond to an initialization packet with an acknowledgement packet called **Ack** packet. 
 
-All packets contain a number called **Session ID** identifyng the link between the master board and a specific instance of the interface. This is used to prevent multiple programs from controlling the robot at once.
-
-
-Both **Init** and **Ack** packets contain only the **Session ID**. The **Init** packet is used to set it up.
+All packets contain a number called **Session ID** identifyng the link between the master board and a specific instance of the interface. This is used to prevent multiple programs from controlling the robot at once. The **Init** packet is used to set it up.
 
 ### Init packet (2 Bytes)
 Session ID |
 --- |
 2 bytes |
 
-### Ack packet (2 Bytes)
-Session ID |
---- |
-2 bytes |
+The **Ack** packet 
 
+### Ack packet (3 Bytes)
+Session ID | SPI connected
+--- | --- 
+2 bytes | 1 byte
+
+The **SPI connected** field contains an 8 bit integer, each bit of which tells whether or not the corresponding SPI slave is connected (Least significant bit: SPI0, most significant bit: SPI7).
 
 Both **Command** and **Sensor** packets encapsulate 6 BLMC µDriver SPI interface packets,  without the **Index** and **CRC** fields. Additional, sensor packets also include IMU measurement and AHRS estimation.
 
