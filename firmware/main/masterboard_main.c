@@ -24,7 +24,7 @@
 
 #define ENABLE_DEBUG_PRINTF false
 
-#define SPI_AUTODETECT_MAX_COUNT 1000 // number of spi transaction for which the master board will try to detect spi slaves
+#define SPI_AUTODETECT_MAX_COUNT 50 // number of spi transaction for which the master board will try to detect spi slaves
 
 #define RGB(r, g, b) ((uint8_t)(g) << 16 | (uint8_t)(r) << 8 | (uint8_t)(b))
 
@@ -381,6 +381,12 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len)
     if (len == sizeof(struct wifi_eth_packet_init) && (current_state == WAITING_FOR_INIT || current_state == WIFI_ETH_ERROR))
     {
         struct wifi_eth_packet_init *packet_recv = (struct wifi_eth_packet_init *)data;
+
+        if (packet_recv->protocol_version != PROTOCOL_VERSION)
+        {
+            //printf("Wrong protocol version, got %d instead of %d, ignoring init packet\n", packet_recv->protocol_version, PROTOCOL_VERSION);
+            return; // ignoring packet
+        }
 
         //reset spi stats and count for checking connected slaves
         spi_connected = 0;

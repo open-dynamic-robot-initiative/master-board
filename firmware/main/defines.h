@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#define PROTOCOL_VERSION 2
+
 struct sensor_data {
 	uint16_t status;
 	uint16_t timestamp;
@@ -31,6 +33,7 @@ struct imu_data {
 } __attribute__((packed));
 
 struct wifi_eth_packet_init {
+	uint16_t protocol_version; // used to ensure both the interface and the firmware use the same protocol
 	uint16_t session_id;
 } __attribute__ ((packed));
 
