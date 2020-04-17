@@ -78,6 +78,7 @@ struct command_packet_t
 
 struct init_packet_t
 {
+	uint16_t protocol_version; // used to ensure both the interface and the firmware use the same protocol
 	uint16_t session_id;
 } __attribute__((packed));
 

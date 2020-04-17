@@ -105,6 +105,7 @@ int MasterBoardInterface::SendInit()
     return -1;
   }
 
+  init_packet.protocol_version = PROTOCOL_VERSION;
   init_packet.session_id = session_id;
 
   // Current time point
