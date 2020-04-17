@@ -73,13 +73,23 @@ def example_script(name_interface):
 
             if (state == 0):  #  If the system is not ready
                 state = 1
+
+                # for all motors on a connected slave
                 for i in motors_spi_connected_indexes:  # Check if all motors are enabled and ready
                     if not (robot_if.GetMotor(i).IsEnabled() and robot_if.GetMotor(i).IsReady()):
                         state = 0
                     init_pos[i] = robot_if.GetMotor(i).GetPosition()
                     t = 0
+
             else:  # If the system is ready
+
+                # for all motors on a connected slave
                 for i in motors_spi_connected_indexes:
+
+                    if robot_if.GetDriver(i / 2).error_code == 0xf:
+                        #print("Transaction with SPI{} failed".format(i / 2))
+                        continue #user should decide what to do in that case, here we ignore that motor
+
                     if robot_if.GetMotor(i).IsEnabled():
                         ref = init_pos[i] + amplitude * math.sin(2.0 * math.pi * freq * t)  # Sine wave pattern
                         v_ref = 2.0 * math.pi * freq * amplitude * math.cos(2.0 * math.pi * freq * t)
