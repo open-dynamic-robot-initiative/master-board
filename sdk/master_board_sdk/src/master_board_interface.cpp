@@ -1,13 +1,14 @@
 #include <math.h>
 #include "master_board_sdk/master_board_interface.h"
 
-MasterBoardInterface::MasterBoardInterface(const std::string &if_name)
+MasterBoardInterface::MasterBoardInterface(const std::string &if_name, bool listener_mode)
 {
   uint8_t my_mac[6] = {0xa0, 0x1d, 0x48, 0x12, 0xa0, 0xc5}; //take it as an argument?
   uint8_t dest_mac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
   memcpy(this->my_mac_, my_mac, 6);
   memcpy(this->dest_mac_, dest_mac, 6);
   this->if_name_ = if_name;
+  this->listener_mode = listener_mode;
   for (int i = 0; i < N_SLAVES; i++)
   {
     motors[2 * i].SetDriver(&motor_drivers[i]);
@@ -15,7 +16,7 @@ MasterBoardInterface::MasterBoardInterface(const std::string &if_name)
     motor_drivers[i].SetMotors(&motors[2 * i], &motors[2 * i + 1]);
   }
 }
-MasterBoardInterface::MasterBoardInterface(const MasterBoardInterface &to_be_copied) : MasterBoardInterface::MasterBoardInterface(to_be_copied.if_name_)
+MasterBoardInterface::MasterBoardInterface(const MasterBoardInterface &to_be_copied) : MasterBoardInterface::MasterBoardInterface(to_be_copied.if_name_, to_be_copied.listener_mode)
 {
 }
 
@@ -58,7 +59,8 @@ int MasterBoardInterface::Init()
 
   spi_connected = 0;
 
-  GenerateSessionId();
+  if (!listener_mode)
+    GenerateSessionId();
 
   if (if_name_[0] == 'e')
   {
@@ -129,12 +131,20 @@ int MasterBoardInterface::SendInit()
 
 int MasterBoardInterface::SendCommand()
 {
+
+  if (listener_mode)
+    return -1; // we don't allow sending commands in listener mode
+
   // If SendCommand is not called every N milli-second we shutdown the
   // connexion. This check is performed only from the first time SendCommand
   // is called. See the comment below for more information.
 
   if (!first_command_sent_)
   {
+    // reset variables for feedback on packet loss
+    index_cmd_packet = 0;
+    nb_cmd_sent = 0;
+
     t_last_packet = std::chrono::high_resolution_clock::now();
     first_command_sent_ = true;
   }
@@ -214,13 +224,18 @@ int MasterBoardInterface::SendCommand()
 
 void MasterBoardInterface::callback(uint8_t src_mac[6], uint8_t *data, int len)
 {
-  if (init_sent && !ack_received && len == sizeof(ack_packet_t))
+  if ((listener_mode || (init_sent && !ack_received)) && len == sizeof(ack_packet_t))
   {
-    if (((ack_packet_t *)data)->session_id != session_id)
+    // we don't check session id in listener mode
+    if (!listener_mode && (((ack_packet_t *)data)->session_id != session_id))
     {
       //printf("Wrong session id in ack msg, got %d instead of %d ignoring packet\n", ((ack_packet_t *)data)->session_id, session_id);
       return; // ignoring the packet
     }
+
+    // reset variables for feedback on packet loss
+    first_sensor_received = false;
+    nb_cmd_lost = 0;
 
     received_packet_mutex.lock();
     memcpy(&ack_packet, data, sizeof(ack_packet_t));
@@ -229,9 +244,10 @@ void MasterBoardInterface::callback(uint8_t src_mac[6], uint8_t *data, int len)
     ack_received = true;
   }
 
-  else if (init_sent && ack_received && len == sizeof(sensor_packet_t))
+  else if ((listener_mode || (init_sent && ack_received)) && len == sizeof(sensor_packet_t))
   {
-    if (((sensor_packet_t *)data)->session_id != session_id)
+    // we don't check session id in listener mode
+    if (!listener_mode && (((sensor_packet_t *)data)->session_id != session_id))
     {
       //printf("Wrong session id in sensor msg, got %d instead of %d, ignoring packet\n", ((sensor_packet_t *)data)->session_id, session_id);
       return; // ignoring the packet
@@ -241,17 +257,22 @@ void MasterBoardInterface::callback(uint8_t src_mac[6], uint8_t *data, int len)
     t_last_packet = std::chrono::high_resolution_clock::now();
 
     nb_sensors_recv++;
+
     received_packet_mutex.lock();
     memcpy(&sensor_packet, data, sizeof(sensor_packet_t));
     received_packet_mutex.unlock();
 
     struct sensor_packet_t *packet_recv = (struct sensor_packet_t *)data;
 
-    //initialisation of last_sensor_index at first reception
     if (!first_sensor_received)
     {
+      // reset variables for feedback on packet loss
+      nb_sensors_recv = 0;
+      nb_sensors_sent = 0;
+      nb_sensors_lost = 0;
+
       first_sensor_received = true;
-      last_sensor_index = packet_recv->sensor_index - 1;
+      last_sensor_index = packet_recv->sensor_index - 1; //initialisation of last_sensor_index at first reception
     }
 
     //Sensor_loss
@@ -412,7 +433,8 @@ bool MasterBoardInterface::IsAckMsgReceived()
 
 bool MasterBoardInterface::IsSpiSlaveConnected(int slave)
 {
-  if (slave >= N_SLAVES) return false;
+  if (slave >= N_SLAVES)
+    return false;
 
   return (spi_connected & (1 << slave)) >> slave;
 }
@@ -452,8 +474,13 @@ void MasterBoardInterface::PrintSensorStats()
 void MasterBoardInterface::PrintCmdStats()
 {
   printf("cmd_lost = %u\n", nb_cmd_lost);
-  printf("cmd_sent = %u\n", nb_cmd_sent);
-  printf("cmd_ratio = %.02f\n", 100. * nb_cmd_lost / nb_cmd_sent);
+
+  // this information is not accessible in listener mode
+  if (!listener_mode)
+  {
+    printf("cmd_sent = %u\n", nb_cmd_sent);
+    printf("cmd_ratio = %.02f\n", 100. * nb_cmd_lost / nb_cmd_sent);
+  }
 
   printf("Histogram command : ");
   for (int i = 0; i < MAX_HIST; i++)

@@ -15,7 +15,7 @@
 class MasterBoardInterface : public LINK_manager_callback
 {
 public:
-	MasterBoardInterface(const std::string &if_name);
+	MasterBoardInterface(const std::string &if_name, bool listener_mode);
 	MasterBoardInterface(const MasterBoardInterface&);
 	int Init();
 	int Stop();
@@ -47,6 +47,8 @@ private:
 	LINK_manager *link_handler_;
 	uint8_t payload_[127];
 	std::string if_name_;
+	bool listener_mode = false; // listener mode, allows to gather sensor packets data and to get rid of session id checking
+								// doesn't allow to send commands
 	struct command_packet_t command_packet;
 	struct sensor_packet_t sensor_packet;
 	struct dual_motor_driver_sensor_data_t dual_motor_driver_sensor_data[N_SLAVES];
