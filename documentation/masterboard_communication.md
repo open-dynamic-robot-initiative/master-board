@@ -42,12 +42,12 @@ There are four types of packets. Packets coming from the computer containing com
 
 All packets contain a number called **Session ID** identifyng the link between the master board and a specific instance of the interface. This is used to prevent multiple programs from controlling the robot at once. The **Init** packet is used to set it up.
 
-### Init packet (2 Bytes)
-Session ID |
---- |
-2 bytes |
+### Init packet (4 Bytes)
+Protocol version | Session ID |
+--- | ---
+2 bytes | 2 bytes
 
-The **Ack** packet 
+The **Protocol version** field is used to ensure both the interface and the masterboard firmware use the same protocol. The master board checks it when receiving an **Init** packet.
 
 ### Ack packet (3 Bytes)
 Session ID | SPI connected
