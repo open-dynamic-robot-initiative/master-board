@@ -97,6 +97,13 @@ int main(int argc, char **argv)
 				{
 					if (!spi_connected[i / 2]) continue; // ignoring the motors of a disconnected slave
 
+					// making sure that the transaction with the corresponding µdriver board succeeded
+					if (robot_if.motor_drivers[i / 2].error_code == 0xf)
+					{
+						//printf("Transaction with SPI%d failed\n", i / 2);
+						continue; //user should decide what to do in that case, here we ignore that motor
+					}
+
 					if (robot_if.motors[i].IsEnabled())
 					{
 						double ref = init_pos[i] + amplitude * sin(2 * M_PI * freq * t);
