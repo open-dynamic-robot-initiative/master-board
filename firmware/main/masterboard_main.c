@@ -35,8 +35,10 @@ long int spi_count = 0;
 bool spi_autodetect = false;
 int spi_n_attempt = CONFIG_SPI_N_ATTEMPT;
 
-uint8_t spi_connected = 0; // least significant bit: SPI0
-                           // most significant bit: SPI7
+uint8_t spi_connected = 0xff; // least significant bit: SPI0
+                              // most significant bit: SPI7
+                              // initialized at "every slave connected" so that sensor data can be gathered just after boot
+
 long int spi_ok[CONFIG_N_SLAVES] = {0};
 
 int wifi_eth_count = 0; // counter that counts the ms without a message being received from PC
@@ -90,9 +92,45 @@ void print_packet(uint8_t *data, int len)
 
 static void periodic_timer_callback(void *arg)
 {
+    // handling state change
     if (current_state != next_state)
     {
         current_state = next_state;
+
+        switch (current_state)
+        {
+        case SPI_AUTODETECT:
+            //reset spi stats and count for checking connected slaves
+            spi_connected = 0;
+            memset(spi_ok, 0, CONFIG_N_SLAVES * sizeof(long int));
+            spi_count = 0;
+
+            spi_autodetect = true;
+            spi_n_attempt = 1; // we only test each slave once while autodetecting
+            break;
+
+        case SENDING_INIT_ACK:
+            spi_autodetect = false;
+            spi_n_attempt = CONFIG_SPI_N_ATTEMPT;
+
+            // updating session ids
+            wifi_eth_tx_ack.session_id = session_id;
+            wifi_eth_tx_data.session_id = session_id;
+
+            // updating spi_connected in ack packet
+            wifi_eth_tx_ack.spi_connected = spi_connected;
+
+            // reset variables for packet loss feedback
+            wifi_eth_tx_data.sensor_index = 0;
+            wifi_eth_tx_data.packet_loss = 0;
+            break;
+
+        default:
+            spi_autodetect = false;
+            spi_n_attempt = CONFIG_SPI_N_ATTEMPT;
+            break;
+        }
+
         //printf("%d\n", current_state);
     }
 
@@ -119,9 +157,6 @@ static void periodic_timer_callback(void *arg)
     p_tx = spi_tx_packet_stop; // default command is stop
 
     spi_count++;
-
-    spi_autodetect = (current_state == SPI_AUTODETECT);
-    spi_n_attempt = spi_autodetect ? 1 : CONFIG_SPI_N_ATTEMPT;
 
     //printf("%d\n", wifi_eth_count);
     switch (current_state)
@@ -307,18 +342,11 @@ static void periodic_timer_callback(void *arg)
     wifi_eth_tx_data.imu.linear_acceleration[1] = get_linacc_y_in_D16QN();
     wifi_eth_tx_data.imu.linear_acceleration[2] = get_linacc_z_in_D16QN();
 
-    // updating session ids
-    wifi_eth_tx_ack.session_id = session_id;
-    wifi_eth_tx_data.session_id = session_id;
-
     /* Sends message to PC */
     switch (current_state)
     {
 
     case SENDING_INIT_ACK:
-        // updating spi_connected in ack packet
-        wifi_eth_tx_ack.spi_connected = spi_connected;
-
         /* Send acknowledge packets to PC */
         if (useWIFI)
         {
@@ -389,15 +417,6 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len)
             //printf("Wrong protocol version, got %d instead of %d, ignoring init packet\n", packet_recv->protocol_version, PROTOCOL_VERSION);
             return; // ignoring packet
         }
-
-        //reset spi stats and count for checking connected slaves
-        spi_connected = 0;
-        memset(spi_ok, 0, CONFIG_N_SLAVES * sizeof(long int));
-        spi_count = 0;
-
-        // reset packet loss feedback
-        wifi_eth_tx_data.sensor_index = 0;
-        wifi_eth_tx_data.packet_loss = 0;
 
         session_id = packet_recv->session_id; // set session id
         next_state = SPI_AUTODETECT;          // state transition
