@@ -36,6 +36,9 @@ The interface on the PC needs to support monitor mode and injection. ASUS PCE-AC
 
 Data packet
 -----------
+
+### Current protocol version: **2**
+
 Both WiFi and Ethernet use the same data packet format.
 
 There are four types of packets. Packets coming from the computer containing command data are called **Command** packets, and packets coming from the master board containing sensor data are called **Sensor** packets. On top of these two, an initialization packet called **Init** packet is used to put the master board in its control mode and bond it to an interface running on the computer. The master board will respond to an initialization packet with an acknowledgement packet called **Ack** packet. 
