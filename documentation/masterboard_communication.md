@@ -64,7 +64,7 @@ Both **Command** and **Sensor** packets encapsulate 6 BLMC µDriver SPI interfac
 ### Sensor packet (198 Bytes)
 Session ID | µDriver0 | µDriver1 | µDriver2 | µDriver3 | µDriver4 | µDriver5 | IMU | Sensor Index | Last Command Index
 --- | --- | --- | --- | --- | --- | --- | --- | --- | ---
-2 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 18 Bytes | 2 Bytes | 2 Bytes
+2 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 24 Bytes | 2 Bytes | 2 Bytes
  
 **µDriverX** corresponds to a BLMC µDriver SPI interface sensor packet without the CRC and index fields.
 
