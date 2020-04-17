@@ -22,7 +22,7 @@
 
 #define useWIFI false
 
-#define ENABLE_DEBUG_PRINTF false
+#define ENABLE_DEBUG_PRINTF true
 
 #define SPI_AUTODETECT_MAX_COUNT 50 // number of spi transaction for which the master board will try to detect spi slaves
 
@@ -281,7 +281,9 @@ static void periodic_timer_callback(void *arg)
                     if (spi_try + 1 < spi_n_attempt)
                         p_trans[i] = spi_send(i, (uint8_t *)p_tx[i], (uint8_t *)spi_rx_packet[i], SPI_TOTAL_LEN * 2);
 
+                    // zeroing sensor data in packet, except the status field
                     memset(&(wifi_eth_tx_data.sensor[i]), 0, sizeof(struct sensor_data));
+                    wifi_eth_tx_data.sensor[i].status = 0xf; // specifying that the transaction failed in the sensor packet
                 }
             }
         }
