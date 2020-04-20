@@ -477,7 +477,7 @@ void MasterBoardInterface::PrintCmdStats()
   }
   else
   {
-    printf("Commands lost : %u, nb_cmd_lost);
+    printf("Commands lost : %u", nb_cmd_lost);
   }
   
   printf("Histogram command : ");
