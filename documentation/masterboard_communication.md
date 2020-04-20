@@ -62,7 +62,7 @@ The **SPI connected** field contains an 8 bit integer, each bit of which tells w
 Both **Command** and **Sensor** packets encapsulate 6 BLMC µDriver SPI interface packets,  without the **Index** and **CRC** fields. Additional, sensor packets also include IMU measurement and AHRS estimation.
 
 ### Sensor packet (198 Bytes)
-Session ID | µDriver0 | µDriver1 | µDriver2 | µDriver3 | µDriver4 | µDriver5 | IMU | Sensor Index | Last Command Index
+Session ID | µDriver0 | µDriver1 | µDriver2 | µDriver3 | µDriver4 | µDriver5 | IMU | Sensor Index | Packet Loss
 --- | --- | --- | --- | --- | --- | --- | --- | --- | ---
 2 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 24 Bytes | 2 Bytes | 2 Bytes
  
@@ -84,7 +84,7 @@ AHRS R-P-Y | 16bits | rad | -4 | 3,9998779297 | 2^(-13)
 
 **Sensor Index** is a packet index to track packet loss.
 
-**Last Command Index** is the index of the last received command index, and can be used to track packet loss.
+**Packet Loss** is the number of command packets lost since the initialization, computed by the master board using **Command Packet**'s **Command Index**.
 
 ### Command packet (172 Bytes)
 Session ID | µDriver0 | µDriver1 | µDriver2 | µDriver3 | µDriver4 | µDriver5 | Command Index
