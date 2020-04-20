@@ -413,9 +413,7 @@ void MasterBoardInterface::set_motor_drivers(MotorDriver input_motor_drivers[])
 
 void MasterBoardInterface::PrintSensorStats()
 {
-  printf("sensor_lost = %u\n", nb_sensors_lost);
-  printf("sensor_sent = %u\n", nb_sensors_sent);
-  printf("sensor_ratio = %.02f\n", 100. * nb_sensors_lost / nb_sensors_sent);
+  printf("Sensors lost : %u, sent : %u, loss ratio : %.02f\n", nb_sensors_lost, nb_sensors_sent, 100. * nb_sensors_lost / nb_sensors_sent);
 
   printf("Histogram sensor : ");
   for (int i = 0; i < MAX_HIST; i++)
@@ -427,9 +425,7 @@ void MasterBoardInterface::PrintSensorStats()
 
 void MasterBoardInterface::PrintCmdStats()
 {
-  printf("cmd_lost = %u\n", nb_cmd_lost);
-  printf("cmd_sent = %u\n", nb_cmd_sent);
-  printf("cmd_ratio = %.02f\n", 100. * nb_cmd_lost / nb_cmd_sent);
+  printf("Commands lost : %u, sent : %u, loss ratio : %.02f\n", nb_cmd_lost, nb_cmd_sent, 100. * nb_cmd_lost / nb_cmd_sent);
 
   printf("Histogram command : ");
   for (int i = 0; i < MAX_HIST; i++)
@@ -437,4 +433,30 @@ void MasterBoardInterface::PrintCmdStats()
     printf("%d ", histogram_lost_cmd_packets[i]);
   }
   printf("\n");
+}
+
+uint32_t MasterBoardInterface::GetSensorsSent() { return nb_sensors_sent; }
+
+uint32_t MasterBoardInterface::GetSensorsLost() { return nb_sensors_lost; }
+
+uint32_t MasterBoardInterface::GetCmdSent() { return nb_cmd_sent; }
+
+uint32_t MasterBoardInterface::GetCmdLost() { return nb_cmd_lost; }
+
+int MasterBoardInterface::GetSensorHistogram(int index)
+{
+  if (index >= MAX_HIST)
+  {
+    return -1; //prevents user from being out of range
+  }
+  return histogram_lost_sensor_packets[index];
+}
+
+int MasterBoardInterface::GetCmdHistogram(int index)
+{
+  if (index >= MAX_HIST)
+  {
+    return -1; //prevents user from being out of range
+  }
+  return histogram_lost_cmd_packets[index];
 }

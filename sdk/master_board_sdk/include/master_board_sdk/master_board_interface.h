@@ -34,6 +34,14 @@ public:
 
 	bool IsAckMsgReceived();
 	int SendInit(); //Send the init msg
+
+	uint32_t GetSensorsSent();
+	uint32_t GetSensorsLost();
+	uint32_t GetCmdSent();
+	uint32_t GetCmdLost();
+	int GetSensorHistogram(int index);
+	int GetCmdHistogram(int index);
+
 private:
 	void callback(uint8_t src_mac[6], uint8_t *data, int len);
 	uint8_t my_mac_[6];		// = {0xa0, 0x1d, 0x48, 0x12, 0xa0, 0xc5};	 //{0xF8, 0x1A, 0x67, 0xb7, 0xEB, 0x0B};
