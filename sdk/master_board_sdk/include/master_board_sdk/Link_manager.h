@@ -36,7 +36,7 @@ public:
 	void set_interface(const std::string &interface);
 
 	void start();
-	void stop();
+	virtual void stop();
 	void end();
 
 	int send(uint8_t *payload, int len);
