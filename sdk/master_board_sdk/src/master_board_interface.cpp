@@ -85,23 +85,12 @@ int MasterBoardInterface::Init()
 int MasterBoardInterface::Stop()
 {
   printf("Shutting down connection (%s)\n", if_name_.c_str());
-  if (if_name_[0] == 'e')
+  if (if_name_[0] == 'w')
   {
-    /*Ethernet*/
-    link_handler_->stop();
-  }
-  else if (if_name_[0] == 'w')
-  {
-    /*WiFi*/
     ((ESPNOW_manager *)link_handler_)->unset_filter();
-    link_handler_->stop();
   }
-  else
-  {
-    return -1;
-  }
+  link_handler_->stop();
   return 0;
-  
 }
 
 int MasterBoardInterface::SendInit()
