@@ -222,7 +222,7 @@ void MasterBoardInterface::callback(uint8_t src_mac[6], uint8_t *data, int len)
       // ensuring that session id is right if in normal mode
       if (((ack_packet_t *)data)->session_id != session_id)
       {
-        printf("Wrong session id in ack msg, got %d instead of %d ignoring packet\n", ((ack_packet_t *)data)->session_id, session_id);
+        //printf("Wrong session id in ack msg, got %d instead of %d ignoring packet\n", ((ack_packet_t *)data)->session_id, session_id);
         return; // ignoring the packet
       }
     }
@@ -245,9 +245,9 @@ void MasterBoardInterface::callback(uint8_t src_mac[6], uint8_t *data, int len)
       // if the interface session id is not set
       if (session_id == -1)
         session_id = ((sensor_packet_t *)data)->session_id; // if we launch the interface in listener mode while the masterboard is running
-                                                            // session_id is set to the one of the first sensor_packet received received
+                                                            // session_id is set to the one of the first sensor packet received
 
-      // if current session id is not 0, the received session_id is 0, the master board has rebooted
+      // if current session id is not 0 and the received session id is 0, the master board has rebooted
       else if (session_id != 0 && ((sensor_packet_t *)data)->session_id == 0)
       {
         session_id = 0;
