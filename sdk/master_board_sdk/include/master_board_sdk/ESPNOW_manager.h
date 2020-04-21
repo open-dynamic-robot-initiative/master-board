@@ -20,6 +20,9 @@ class ESPNOW_manager : public LINK_manager {
 			set_src_mac(src_mac);
 			set_dst_mac(dst_mac);
 
+			bpf.filter = NULL;
+			bpf.len = 0;
+			
 			if(filterOn) {
 				set_filter(dst_mac, src_mac);
 			} else {
