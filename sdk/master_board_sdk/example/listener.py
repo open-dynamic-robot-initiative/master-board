@@ -31,10 +31,14 @@ def listener_script(name_interface):
             t += dt
             robot_if.ParseSensorData()  # Read sensor data sent by the masterboard
 
+            if (cpt % 10000 == 0): # Reset stats every 10s
+                robot_if.ResetPacketLossStats();
+
             if ((cpt % 100) == 0):  # Display state of the system once every 100 iterations of the main loop
                 print(chr(27) + "[2J")
                 # To read IMU data in Python use robot_if.imu_data_accelerometer(i), robot_if.imu_data_gyroscope(i)
                 # or robot_if.imu_data_attitude(i) with i = 0, 1 or 2
+                print("Session ID : {}".format(robot_if.GetSessionId()))
                 robot_if.PrintIMU()
                 robot_if.PrintADC()
                 robot_if.PrintMotors()

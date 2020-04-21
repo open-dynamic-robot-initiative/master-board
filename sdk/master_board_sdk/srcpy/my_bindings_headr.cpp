@@ -51,12 +51,16 @@ boost::python::tuple wrap_adc(MotorDriver const * motDriver)
 
             .def("IsSpiSlaveConnected", &MasterBoardInterface::IsSpiSlaveConnected)
 
+            .def("ResetPacketLossStats", &MasterBoardInterface::ResetPacketLossStats)
+
             .def("GetSensorsSent", &MasterBoardInterface::GetSensorsSent)
             .def("GetSensorsLost", &MasterBoardInterface::GetSensorsLost)
             .def("GetCmdSent", &MasterBoardInterface::GetCmdSent)
             .def("GetCmdLost", &MasterBoardInterface::GetCmdLost)
             .def("GetSensorHistogram", &MasterBoardInterface::GetSensorHistogram)
             .def("GetCmdHistogram", &MasterBoardInterface::GetCmdHistogram)
+
+            .def("GetSessionId", &MasterBoardInterface::GetSessionId)
 
         ;
         // End of bindings for MasterBoardInterface class

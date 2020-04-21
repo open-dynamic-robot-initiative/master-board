@@ -20,6 +20,7 @@ public:
 	int Init();
 	int Stop();
 	void SetMasterboardTimeoutMS(uint8_t); //Set the Master board timeout in ms
+	int SendInit();
 	int SendCommand();										 //Send the command packet to the master board
 	
 	void ParseAckData(); // Parse and convert the latest received ack data. USer needs to call this before reading any field.
@@ -36,9 +37,10 @@ public:
 	bool IsTimeout();     // Check if a timeout has been triggered because the master board did not respond
 
 	bool IsAckMsgReceived();
-	int SendInit(); //Send the init msg
 
 	bool IsSpiSlaveConnected(int slave);
+
+	int GetSessionId();
 
 	uint32_t GetSensorsSent();
 	uint32_t GetSensorsLost();
@@ -46,6 +48,8 @@ public:
 	uint32_t GetCmdLost();
 	int GetSensorHistogram(int index);
 	int GetCmdHistogram(int index);
+
+	void ResetPacketLossStats();
 
 private:
 	void callback(uint8_t src_mac[6], uint8_t *data, int len);
@@ -102,7 +106,7 @@ private:
 	struct init_packet_t init_packet;
 	struct ack_packet_t ack_packet;
 
-	uint16_t session_id = 0;
+	int session_id = -1; // -1 means not set
 	uint8_t spi_connected = 0; // least significant bit: SPI0
 						   	   // most significant bit: SPI7
 

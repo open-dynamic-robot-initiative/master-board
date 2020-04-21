@@ -22,29 +22,18 @@ MasterBoardInterface::MasterBoardInterface(const MasterBoardInterface &to_be_cop
 
 void MasterBoardInterface::GenerateSessionId()
 {
-  session_id = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(); // number of milliseconds since 01/01/1970 00:00:00, casted in 16 bits
+  // 0 is the default in the master board, it should not be used
+  do
+  {
+    // number of milliseconds since 01/01/1970 00:00:00, casted in 16 bits
+    session_id = (uint16_t)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+  } while (session_id == 0);
 }
 
 int MasterBoardInterface::Init()
 {
   printf("if_name: %s\n", if_name_.c_str());
-  //reset the variables
-  first_sensor_received = false;
-
-  nb_sensors_recv = 0;
-  nb_sensors_sent = 0;
-  nb_sensors_lost = 0;
-
-  index_cmd_packet = 0;
-  last_sensor_index = 0;
-  nb_cmd_sent = 0;
-  nb_cmd_lost = 0;
-
-  for (int i = 0; i < MAX_HIST; i++)
-  {
-    histogram_lost_sensor_packets[i] = 0;
-    histogram_lost_cmd_packets[i] = 0;
-  }
+  ResetPacketLossStats();
 
   memset(&command_packet, 0, sizeof(command_packet_t)); //todo make it more C++
   memset(&sensor_packet, 0, sizeof(sensor_packet_t));
@@ -59,8 +48,9 @@ int MasterBoardInterface::Init()
 
   spi_connected = 0;
 
+  session_id = -1; // default is -1, which means not set
   if (!listener_mode)
-    GenerateSessionId();
+    GenerateSessionId(); // we don't generate a session id, we will get it from the received packets
 
   if (if_name_[0] == 'e')
   {
@@ -141,10 +131,6 @@ int MasterBoardInterface::SendCommand()
 
   if (!first_command_sent_)
   {
-    // reset variables for feedback on packet loss
-    index_cmd_packet = 0;
-    nb_cmd_sent = 0;
-
     t_last_packet = std::chrono::high_resolution_clock::now();
     first_command_sent_ = true;
   }
@@ -226,16 +212,23 @@ void MasterBoardInterface::callback(uint8_t src_mac[6], uint8_t *data, int len)
 {
   if ((listener_mode || (init_sent && !ack_received)) && len == sizeof(ack_packet_t))
   {
-    // we don't check session id in listener mode
-    if (!listener_mode && (((ack_packet_t *)data)->session_id != session_id))
+    if (listener_mode)
     {
-      //printf("Wrong session id in ack msg, got %d instead of %d ignoring packet\n", ((ack_packet_t *)data)->session_id, session_id);
-      return; // ignoring the packet
+      // ack packets are used to set up the session id in listener mode
+      session_id = ((ack_packet_t *)data)->session_id;
+    }
+    else
+    {
+      // ensuring that session id is right if in normal mode
+      if (((ack_packet_t *)data)->session_id != session_id)
+      {
+        printf("Wrong session id in ack msg, got %d instead of %d ignoring packet\n", ((ack_packet_t *)data)->session_id, session_id);
+        return; // ignoring the packet
+      }
     }
 
     // reset variables for feedback on packet loss
-    first_sensor_received = false;
-    nb_cmd_lost = 0;
+    ResetPacketLossStats();
 
     received_packet_mutex.lock();
     memcpy(&ack_packet, data, sizeof(ack_packet_t));
@@ -246,8 +239,23 @@ void MasterBoardInterface::callback(uint8_t src_mac[6], uint8_t *data, int len)
 
   else if ((listener_mode || (init_sent && ack_received)) && len == sizeof(sensor_packet_t))
   {
-    // we don't check session id in listener mode
-    if (!listener_mode && (((sensor_packet_t *)data)->session_id != session_id))
+    // special cases for listener mode
+    if (listener_mode)
+    {
+      // if the interface session id is not set
+      if (session_id == -1)
+        session_id = ((sensor_packet_t *)data)->session_id; // if we launch the interface in listener mode while the masterboard is running
+                                                            // session_id is set to the one of the first sensor_packet received received
+
+      // if current session id is not 0, the received session_id is 0, the master board has rebooted
+      else if (session_id != 0 && ((sensor_packet_t *)data)->session_id == 0)
+      {
+        session_id = 0;
+        ResetPacketLossStats();
+      }
+    }
+
+    if (((sensor_packet_t *)data)->session_id != session_id)
     {
       //printf("Wrong session id in sensor msg, got %d instead of %d, ignoring packet\n", ((sensor_packet_t *)data)->session_id, session_id);
       return; // ignoring the packet
@@ -266,11 +274,6 @@ void MasterBoardInterface::callback(uint8_t src_mac[6], uint8_t *data, int len)
 
     if (!first_sensor_received)
     {
-      // reset variables for feedback on packet loss
-      nb_sensors_recv = 0;
-      nb_sensors_sent = 0;
-      nb_sensors_lost = 0;
-
       first_sensor_received = true;
       last_sensor_index = packet_recv->sensor_index - 1; //initialisation of last_sensor_index at first reception
     }
@@ -439,6 +442,11 @@ bool MasterBoardInterface::IsSpiSlaveConnected(int slave)
   return (spi_connected & (1 << slave)) >> slave;
 }
 
+int MasterBoardInterface::GetSessionId()
+{
+  return session_id;
+}
+
 void MasterBoardInterface::set_motors(Motor input_motors[])
 {
   for (int i = 0; i < (2 * N_SLAVES); i++)
@@ -477,9 +485,9 @@ void MasterBoardInterface::PrintCmdStats()
   }
   else
   {
-    printf("Commands lost : %u", nb_cmd_lost);
+    printf("Commands lost : %u\n", nb_cmd_lost);
   }
-  
+
   printf("Histogram command : ");
   for (int i = 0; i < MAX_HIST; i++)
   {
@@ -512,4 +520,21 @@ int MasterBoardInterface::GetCmdHistogram(int index)
     return -1; //prevents user from being out of range
   }
   return histogram_lost_cmd_packets[index];
+}
+
+void MasterBoardInterface::ResetPacketLossStats()
+{
+  //reset the variables
+  first_sensor_received = false;
+
+  nb_sensors_recv = 0;
+  nb_sensors_sent = 0;
+  nb_sensors_lost = 0;
+  memset(histogram_lost_sensor_packets, 0, MAX_HIST * sizeof(int));
+
+  index_cmd_packet = 0;
+  last_sensor_index = 0;
+  nb_cmd_sent = 0;
+  nb_cmd_lost = 0;
+  memset(histogram_lost_cmd_packets, 0, MAX_HIST * sizeof(int));
 }
