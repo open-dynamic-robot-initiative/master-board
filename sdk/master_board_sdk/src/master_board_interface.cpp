@@ -46,8 +46,6 @@ int MasterBoardInterface::Init()
   init_sent = false;
   ack_received = false;
 
-  spi_connected = 0;
-
   session_id = -1; // default is -1, which means not set
   if (!listener_mode)
     GenerateSessionId(); // we don't generate a session id, we will get it from the received packets
@@ -234,6 +232,12 @@ void MasterBoardInterface::callback(uint8_t src_mac[6], uint8_t *data, int len)
     memcpy(&ack_packet, data, sizeof(ack_packet_t));
     received_packet_mutex.unlock();
 
+    // parse ack data
+    for (int i = 0; i < N_SLAVES; i++)
+    {
+      motor_drivers[i].is_connected = (ack_packet.spi_connected & (1 << i)) >> i;
+    }
+
     ack_received = true;
   }
 
@@ -315,15 +319,6 @@ void MasterBoardInterface::callback(uint8_t src_mac[6], uint8_t *data, int len)
   }
 }
 
-void MasterBoardInterface::ParseAckData()
-{
-  received_packet_mutex.lock();
-
-  spi_connected = ack_packet.spi_connected;
-
-  received_packet_mutex.unlock();
-}
-
 void MasterBoardInterface::ParseSensorData()
 {
   received_packet_mutex.lock();
@@ -392,6 +387,9 @@ void MasterBoardInterface::PrintADC()
 {
   for (int i = 0; i < N_SLAVES; i++)
   {
+    if (!motor_drivers[i].is_connected)
+      continue;
+
     printf("ADC %2.2d -> %6.3f % 6.3f\n",
            i, motor_drivers[i].adc[0], motor_drivers[i].adc[1]);
   }
@@ -399,10 +397,15 @@ void MasterBoardInterface::PrintADC()
 
 void MasterBoardInterface::PrintMotors()
 {
-  for (int i = 0; i < (2 * N_SLAVES); i++)
+  for (int i = 0; i < N_SLAVES; i++)
   {
-    printf("Motor % 2.2d -> ", i);
-    motors[i].Print();
+    if (!motor_drivers[i].is_connected)
+      continue;
+
+    printf("Motor % 2.2d -> ", 2 *i);
+    motors[2 * i].Print();
+    printf("Motor % 2.2d -> ", 2 * i + 1);
+    motors[2 * i + 1].Print();
   }
 }
 
@@ -410,6 +413,9 @@ void MasterBoardInterface::PrintMotorDrivers()
 {
   for (int i = 0; i < N_SLAVES; i++)
   {
+    if (!motor_drivers[i].is_connected)
+      continue;
+
     printf("Motor Driver % 2.2d -> ", i);
     motor_drivers[i].Print();
   }
@@ -432,14 +438,6 @@ bool MasterBoardInterface::IsTimeout()
 bool MasterBoardInterface::IsAckMsgReceived()
 {
   return ack_received;
-}
-
-bool MasterBoardInterface::IsSpiSlaveConnected(int slave)
-{
-  if (slave >= N_SLAVES)
-    return false;
-
-  return (spi_connected & (1 << slave)) >> slave;
 }
 
 int MasterBoardInterface::GetSessionId()

@@ -29,7 +29,6 @@ boost::python::tuple wrap_adc(MotorDriver const * motDriver)
             .def("Stop", &MasterBoardInterface::Stop)
             // .def("SetMasterboardTimeoutMS", &MasterBoardInterface::SetMasterboardTimeoutMS) // Not defined in master_board_interface.cpp but declared in master_board_interface.h
             .def("SendCommand", &MasterBoardInterface::SendCommand)
-            .def("ParseAckData", &MasterBoardInterface::ParseAckData)
             .def("ParseSensorData", &MasterBoardInterface::ParseSensorData)
             .def("PrintIMU", &MasterBoardInterface::PrintIMU)
             .def("PrintADC", &MasterBoardInterface::PrintADC)
@@ -48,8 +47,6 @@ boost::python::tuple wrap_adc(MotorDriver const * motDriver)
 
             .def("IsAckMsgReceived", &MasterBoardInterface::IsAckMsgReceived)
             .def("SendInit", &MasterBoardInterface::SendInit)
-
-            .def("IsSpiSlaveConnected", &MasterBoardInterface::IsSpiSlaveConnected)
 
             .def("ResetPacketLossStats", &MasterBoardInterface::ResetPacketLossStats)
 
@@ -126,6 +123,7 @@ boost::python::tuple wrap_adc(MotorDriver const * motDriver)
             // Public properties of MotorDriver class
             .add_property("motor1", make_function(&MotorDriver::get_motor1, return_value_policy<boost::python::reference_existing_object>()), &MotorDriver::set_motor1)
             .add_property("motor2", make_function(&MotorDriver::get_motor2, return_value_policy<boost::python::reference_existing_object>()), &MotorDriver::set_motor2)
+            .add_property("is_connected", &MotorDriver::get_is_connected, &MotorDriver::set_is_connected)
             .add_property("is_enabled", &MotorDriver::get_is_enabled, &MotorDriver::set_is_enabled)
             .add_property("error_code", &MotorDriver::get_error_code, &MotorDriver::set_error_code)
             .add_property("enable", &MotorDriver::get_enable, &MotorDriver::set_enable)

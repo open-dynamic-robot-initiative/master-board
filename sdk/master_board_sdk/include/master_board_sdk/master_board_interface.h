@@ -22,8 +22,7 @@ public:
 	void SetMasterboardTimeoutMS(uint8_t); //Set the Master board timeout in ms
 	int SendInit();
 	int SendCommand();										 //Send the command packet to the master board
-	
-	void ParseAckData(); // Parse and convert the latest received ack data. USer needs to call this before reading any field.
+
 	void ParseSensorData();								 //Parse and convert the latest received sensor data. User need to call this before reading any field.
 	
 	void PrintIMU();											 //Print IMU data on stdout. Usefull for debug.
@@ -37,8 +36,6 @@ public:
 	bool IsTimeout();     // Check if a timeout has been triggered because the master board did not respond
 
 	bool IsAckMsgReceived();
-
-	bool IsSpiSlaveConnected(int slave);
 
 	int GetSessionId();
 
@@ -107,8 +104,6 @@ private:
 	struct ack_packet_t ack_packet;
 
 	int session_id = -1; // -1 means not set
-	uint8_t spi_connected = 0; // least significant bit: SPI0
-						   	   // most significant bit: SPI7
 
 	void GenerateSessionId();
 

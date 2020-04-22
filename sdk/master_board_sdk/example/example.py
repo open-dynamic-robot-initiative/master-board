@@ -25,7 +25,8 @@ def example_script(name_interface):
     init_pos = [0.0 for i in range(N_SLAVES * 2)]  # List that will store the initial position of motors
     state = 0  # State of the system (ready (1) or not (0))
 
-    spi_connected_indexes = [] # indexes of connected spi slaves
+    # contrary to c++, in python it is interesting to build arrays
+    # with connected motors indexes so we can simply go through them in main loop
     motors_spi_connected_indexes = [] # indexes of the motors on each connected slaves
 
     print("-- Start of example script --")
@@ -52,13 +53,11 @@ def example_script(name_interface):
     if robot_if.IsTimeout():
         print("Timeout while waiting for ack.")
     else:
-        # get data received by ack messages
-        robot_if.ParseAckData()
 
-        # fill the connected indexes array
+        # fill the connected motors indexes array
         for i in range(N_SLAVES_CONTROLED):
-            if robot_if.IsSpiSlaveConnected(i):
-                spi_connected_indexes.append(i)
+            if robot_if.GetDriver(i).is_connected:
+                # if slave i is connected then motors 2i and 2i+1 are potentially connected
                 motors_spi_connected_indexes.append(2 * i)
                 motors_spi_connected_indexes.append(2 * i + 1)
 
@@ -106,8 +105,6 @@ def example_script(name_interface):
                 print(chr(27) + "[2J")
                 # To read IMU data in Python use robot_if.imu_data_accelerometer(i), robot_if.imu_data_gyroscope(i)
                 # or robot_if.imu_data_attitude(i) with i = 0, 1 or 2
-                for i in spi_connected_indexes:
-                    print("SPI{} connected".format(i))
                 robot_if.PrintIMU()
                 robot_if.PrintADC()
                 robot_if.PrintMotors()

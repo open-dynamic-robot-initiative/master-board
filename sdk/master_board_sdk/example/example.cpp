@@ -23,8 +23,6 @@ int main(int argc, char **argv)
 	double init_pos[N_SLAVES * 2] = {0};
 	int state = 0;
 
-	int spi_connected[N_SLAVES_CONTROLED] = {0}; // connected spi slaves array
-
 	nice(-20); //give the process a high priority
 	printf("-- Main --\n");
 	//assert(argc > 1);
@@ -55,17 +53,6 @@ int main(int argc, char **argv)
 	{
 		printf("Timeout while waiting for ack.\n");
 	}
-	else
-	{
-		// parsing last acknowledgement msg data
-		robot_if.ParseAckData();
-
-		// filling the spi_connected array
-		for (int i = 0; i < N_SLAVES_CONTROLED; i++)
-		{
-			spi_connected[i] = robot_if.IsSpiSlaveConnected(i);
-		}
-	}
 
 	while (!robot_if.IsTimeout())
 	{
@@ -81,7 +68,7 @@ int main(int argc, char **argv)
 				state = 1;
 				for (int i = 0; i < N_SLAVES_CONTROLED * 2; i++)
 				{
-					if (!spi_connected[i / 2]) continue; // ignoring the motors of a disconnected slave
+					if (!robot_if.motor_drivers[i / 2].is_connected) continue; // ignoring the motors of a disconnected slave
 
 					if (!(robot_if.motors[i].IsEnabled() && robot_if.motors[i].IsReady()))
 					{
@@ -95,7 +82,7 @@ int main(int argc, char **argv)
 				//closed loop, position
 				for (int i = 0; i < N_SLAVES_CONTROLED * 2; i++)
 				{
-					if (!spi_connected[i / 2]) continue; // ignoring the motors of a disconnected slave
+					if (!robot_if.motor_drivers[i / 2].is_connected) continue; // ignoring the motors of a disconnected slave
 
 					// making sure that the transaction with the corresponding µdriver board succeeded
 					if (robot_if.motor_drivers[i / 2].error_code == 0xf)
@@ -123,10 +110,6 @@ int main(int argc, char **argv)
 			if (cpt % 100 == 0)
 			{
 				printf("\33[H\33[2J"); //clear screen
-				for (int i = 0; i < N_SLAVES_CONTROLED; i++)
-				{
-					printf("SPI%d %sconnected\n", i, spi_connected[i] ? "" : "not ");
-				}
 				robot_if.PrintIMU();
 				robot_if.PrintADC();
 				robot_if.PrintMotors();
