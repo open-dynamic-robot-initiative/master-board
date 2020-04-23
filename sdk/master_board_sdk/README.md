@@ -43,7 +43,7 @@ sudo ./bin/exec MY_INTERFACE
 ```
 where MY_INTERFACE is the name of the network interface used to connect to the master board.
 
-How to run the Python example
+How to run the Python examples
 --------
 
 * Clone the repository: `git clone --recursive https://github.com/open-dynamic-robot-initiative/master-board.git`
@@ -65,6 +65,11 @@ How to run the Python example
 * Run the control script with the name of your Ethernet interface instead of `name_interface` (for instance `enp1s0`): 
 
 `sudo PYTHONPATH=. python example/example.pyc -i name_interface`
+
+* Run the listener script with the name of your Ethernet interface instead of `name_interface` (for instance `enp1s0`): 
+
+`sudo PYTHONPATH=. python example/listener.pyc -i name_interface`
+
 
 How to run an executable based on the SDK without root permissions
 -------
