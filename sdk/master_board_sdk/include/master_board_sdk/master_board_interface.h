@@ -19,6 +19,7 @@ public:
 	MasterBoardInterface(const MasterBoardInterface&);
 	int Init();
 	int Stop();
+	static void KeyboardStop(int signum);
 	void SetMasterboardTimeoutMS(uint8_t); //Set the Master board timeout in ms
 	int SendCommand();										 //Send the command packet to the master board
 	void ParseSensorData();								 //Parse and convert the latest received sensor data. User need to call this before reading any field.
@@ -43,6 +44,7 @@ public:
 	int GetCmdHistogram(int index);
 
 private:
+	static MasterBoardInterface* instance;
 	void callback(uint8_t src_mac[6], uint8_t *data, int len);
 	uint8_t my_mac_[6];		// = {0xa0, 0x1d, 0x48, 0x12, 0xa0, 0xc5};	 //{0xF8, 0x1A, 0x67, 0xb7, 0xEB, 0x0B};
 	uint8_t dest_mac_[6]; //Broatcast to prevent acknoledgment behaviour

@@ -1,5 +1,8 @@
 #include <math.h>
+#include <signal.h>
 #include "master_board_sdk/master_board_interface.h"
+
+MasterBoardInterface* MasterBoardInterface::instance=NULL;
 
 MasterBoardInterface::MasterBoardInterface(const std::string &if_name)
 {
@@ -14,6 +17,7 @@ MasterBoardInterface::MasterBoardInterface(const std::string &if_name)
     motors[2 * i + 1].SetDriver(&motor_drivers[i]);
     motor_drivers[i].SetMotors(&motors[2 * i], &motors[2 * i + 1]);
   }
+  instance = this;
 }
 MasterBoardInterface::MasterBoardInterface(const MasterBoardInterface &to_be_copied) : MasterBoardInterface::MasterBoardInterface(to_be_copied.if_name_)
 {
@@ -79,6 +83,7 @@ int MasterBoardInterface::Init()
   {
     return -1;
   }
+  signal(SIGINT, KeyboardStop);
   return 0;
 }
 
@@ -87,6 +92,14 @@ int MasterBoardInterface::Stop()
   printf("Shutting down connection (%s)\n", if_name_.c_str());
   link_handler_->stop();
   return 0;
+}
+
+void MasterBoardInterface::KeyboardStop(int signum)
+{
+  printf("Keyboard Interrupt\n");
+  instance->Stop();
+  printf("-- End of script --\n");
+  exit(0);
 }
 
 int MasterBoardInterface::SendInit()
