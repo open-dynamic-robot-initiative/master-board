@@ -20,6 +20,9 @@ class ESPNOW_manager : public LINK_manager {
 			set_src_mac(src_mac);
 			set_dst_mac(dst_mac);
 
+			bpf.filter = NULL;
+			bpf.len = 0;
+			
 			if(filterOn) {
 				set_filter(dst_mac, src_mac);
 			} else {
@@ -30,6 +33,7 @@ class ESPNOW_manager : public LINK_manager {
 		void set_filter(uint8_t *src_mac, uint8_t *dst_mac);
 		void unset_filter();
 		void bind_filter();
+		virtual void stop() override;
 		
 		void set_channel(uint16_t channel_freq) { myWiFipacket.set_channel(channel_freq); }
 		void set_datarate(uint8_t datarate) { myWiFipacket.set_datarate(datarate); }
