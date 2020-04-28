@@ -18,7 +18,7 @@ def listener_script(name_interface):
     print("-- Start of listener script --")
 
     os.nice(-20)  #  Set the process to highest priority (from -20 highest to +20 lowest)
-    robot_if = mbs.MasterBoardInterface(name_interface, 1)
+    robot_if = mbs.MasterBoardInterface(name_interface, True)
     robot_if.Init()  # Initialization of the interface between the computer and the master board
 
     last = clock()

@@ -26,7 +26,7 @@ int main(int argc, char **argv)
 	nice(-20); //give the process a high priority
 	printf("-- Main --\n");
 	//assert(argc > 1);
-	MasterBoardInterface robot_if(argv[1], 0);
+	MasterBoardInterface robot_if(argv[1]);
 	robot_if.Init();
 	//Initialisation, send the init commands
 	for (int i = 0; i < N_SLAVES_CONTROLED; i++)

@@ -15,7 +15,7 @@
 class MasterBoardInterface : public LINK_manager_callback
 {
 public:
-	MasterBoardInterface(const std::string &if_name, bool listener_mode);
+	MasterBoardInterface(const std::string &if_name, bool listener_mode = false);
 	MasterBoardInterface(const MasterBoardInterface&);
 	int Init();
 	int Stop();

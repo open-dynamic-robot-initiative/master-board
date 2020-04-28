@@ -23,7 +23,7 @@ boost::python::tuple wrap_adc(MotorDriver const * motDriver)
         // End of bindings for LINK_manager_callback class
 
         // Bindings for MasterBoardInterface class
-        class_<MasterBoardInterface, bases<LINK_manager_callback> >("MasterBoardInterface", init<std::string, bool>())
+        class_<MasterBoardInterface, bases<LINK_manager_callback> >("MasterBoardInterface", init<std::string, optional<bool> >())
             // Methods of MasterBoardInterface class
             .def("Init", &MasterBoardInterface::Init)
             .def("Stop", &MasterBoardInterface::Stop)
