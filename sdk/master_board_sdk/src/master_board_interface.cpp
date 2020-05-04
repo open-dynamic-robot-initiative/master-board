@@ -4,7 +4,7 @@
 
 MasterBoardInterface* MasterBoardInterface::instance = NULL;
 
-MasterBoardInterface::MasterBoardInterface(const std::string &if_name)
+MasterBoardInterface::MasterBoardInterface(const std::string &if_name, bool listener_mode)
 {
   uint8_t my_mac[6] = {0xa0, 0x1d, 0x48, 0x12, 0xa0, 0xc5}; //take it as an argument?
   uint8_t dest_mac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
