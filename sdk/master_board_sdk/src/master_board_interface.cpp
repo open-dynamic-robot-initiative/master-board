@@ -99,6 +99,7 @@ void MasterBoardInterface::KeyboardStop(int signum)
   printf("Keyboard Interrupt\n");
   instance->Stop();
   printf("-- End of script --\n");
+  delete(instance->link_handler_);
   exit(0);
 }
 
