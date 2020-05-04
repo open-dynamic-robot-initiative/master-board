@@ -17,6 +17,7 @@ class MasterBoardInterface : public LINK_manager_callback
 public:
 	MasterBoardInterface(const std::string &if_name, bool listener_mode = false);
 	MasterBoardInterface(const MasterBoardInterface&);
+	~MasterBoardInterface();
 	int Init();
 	int Stop();
 	void SetMasterboardTimeoutMS(uint8_t); //Set the Master board timeout in ms
