@@ -1,7 +1,10 @@
 #include <math.h>
+#include <signal.h>
 #include "master_board_sdk/master_board_interface.h"
 
-MasterBoardInterface::MasterBoardInterface(const std::string &if_name, bool listener_mode)
+MasterBoardInterface* MasterBoardInterface::instance = NULL;
+
+MasterBoardInterface::MasterBoardInterface(const std::string &if_name)
 {
   uint8_t my_mac[6] = {0xa0, 0x1d, 0x48, 0x12, 0xa0, 0xc5}; //take it as an argument?
   uint8_t dest_mac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
@@ -15,6 +18,7 @@ MasterBoardInterface::MasterBoardInterface(const std::string &if_name, bool list
     motors[2 * i + 1].SetDriver(&motor_drivers[i]);
     motor_drivers[i].SetMotors(&motors[2 * i], &motors[2 * i + 1]);
   }
+  instance = this;
 }
 MasterBoardInterface::MasterBoardInterface(const MasterBoardInterface &to_be_copied) : MasterBoardInterface::MasterBoardInterface(to_be_copied.if_name_, to_be_copied.listener_mode)
 {
@@ -76,6 +80,7 @@ int MasterBoardInterface::Init()
   {
     return -1;
   }
+  signal(SIGINT, KeyboardStop);
   return 0;
 }
 
@@ -84,6 +89,15 @@ int MasterBoardInterface::Stop()
   printf("Shutting down connection (%s)\n", if_name_.c_str());
   link_handler_->stop();
   return 0;
+}
+
+void MasterBoardInterface::KeyboardStop(int signum)
+{
+  printf("Keyboard Interrupt\n");
+  instance->Stop();
+  printf("-- End of script --\n");
+  delete(instance->link_handler_);
+  exit(0);
 }
 
 int MasterBoardInterface::SendInit()
