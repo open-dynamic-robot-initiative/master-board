@@ -29,6 +29,7 @@ class ESPNOW_manager : public LINK_manager {
 				set_filter(NULL, NULL);
 			}
 		}
+		~ESPNOW_manager();
 
 		void set_filter(uint8_t *src_mac, uint8_t *dst_mac);
 		void unset_filter();

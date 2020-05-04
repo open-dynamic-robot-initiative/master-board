@@ -19,6 +19,11 @@ MasterBoardInterface::MasterBoardInterface(const MasterBoardInterface &to_be_cop
 {
 }
 
+MasterBoardInterface::~MasterBoardInterface()
+{
+  delete(link_handler_);
+}
+
 void MasterBoardInterface::GenerateSessionId()
 {
   session_id = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(); // number of milliseconds since 01/01/1970 00:00:00, casted in 16 bits
