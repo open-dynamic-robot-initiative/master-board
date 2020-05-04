@@ -20,6 +20,11 @@ MasterBoardInterface::MasterBoardInterface(const MasterBoardInterface &to_be_cop
 {
 }
 
+MasterBoardInterface::~MasterBoardInterface()
+{
+  delete(link_handler_);
+}
+
 void MasterBoardInterface::GenerateSessionId()
 {
   // 0 is the default in the master board, it should not be used
