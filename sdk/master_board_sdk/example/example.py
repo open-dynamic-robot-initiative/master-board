@@ -85,8 +85,8 @@ def example_script(name_interface):
                 # for all motors on a connected slave
                 for i in motors_spi_connected_indexes:
 
-                    if robot_if.GetDriver(i / 2).error_code == 0xf:
-                        #print("Transaction with SPI{} failed".format(i / 2))
+                    if i % 2 == 0 and robot_if.GetDriver(i // 2).error_code == 0xf:
+                        #print("Transaction with SPI{} failed".format(i // 2))
                         continue #user should decide what to do in that case, here we ignore that motor
 
                     if robot_if.GetMotor(i).IsEnabled():
