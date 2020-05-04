@@ -22,7 +22,7 @@
 
 #define useWIFI false
 
-#define ENABLE_DEBUG_PRINTF true
+#define ENABLE_DEBUG_PRINTF false
 
 #define SPI_AUTODETECT_MAX_COUNT 50 // number of spi transaction for which the master board will try to detect spi slaves
 
