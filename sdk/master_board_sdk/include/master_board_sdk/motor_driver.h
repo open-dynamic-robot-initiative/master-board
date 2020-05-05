@@ -28,6 +28,7 @@ public:
 	Motor *motor2;
 
 	//status
+	bool is_connected = 1; // if we don't know, we consider it connected
 	bool is_enabled;
 	int error_code;
 
@@ -39,6 +40,7 @@ public:
 	// Set functions for Python binding with Boost
   	void set_motor1(Motor* mot) { this->motor1 = mot; };
 	void set_motor2(Motor* mot) { this->motor2 = mot; };
+	void set_is_connected(bool val) { this->is_connected = val; };
 	void set_is_enabled(bool val) { this->is_enabled = val; };
 	void set_error_code(int val) { this->error_code = val; };
 	void set_enable(bool val) { this->enable = val;};
@@ -49,6 +51,7 @@ public:
 	// Get functions for Python binding with Boost
   	Motor* get_motor1() { return (this->motor1); };
 	Motor* get_motor2() { return (this->motor2); };
+	bool get_is_connected() { return this->is_connected; };
 	bool get_is_enabled() { return this->is_enabled; };
 	int get_error_code() { return this->error_code; };
 	bool get_enable() { return this->enable; };

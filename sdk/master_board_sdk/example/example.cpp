@@ -8,7 +8,7 @@
 #include "master_board_sdk/master_board_interface.h"
 #include "master_board_sdk/defines.h"
 
-#define N_SLAVES_CONTROLED 1
+#define N_SLAVES_CONTROLED 6
 
 int main(int argc, char **argv)
 {
@@ -22,6 +22,7 @@ int main(int argc, char **argv)
 	double amplitude = M_PI;
 	double init_pos[N_SLAVES * 2] = {0};
 	int state = 0;
+
 	nice(-20); //give the process a high priority
 	printf("-- Main --\n");
 	//assert(argc > 1);
@@ -52,7 +53,7 @@ int main(int argc, char **argv)
 	{
 		printf("Timeout while waiting for ack.\n");
 	}
-	
+
 	while (!robot_if.IsTimeout())
 	{
 		if (((std::chrono::duration<double>)(std::chrono::system_clock::now() - last)).count() > dt)
@@ -67,6 +68,8 @@ int main(int argc, char **argv)
 				state = 1;
 				for (int i = 0; i < N_SLAVES_CONTROLED * 2; i++)
 				{
+					if (!robot_if.motor_drivers[i / 2].is_connected) continue; // ignoring the motors of a disconnected slave
+
 					if (!(robot_if.motors[i].IsEnabled() && robot_if.motors[i].IsReady()))
 					{
 						state = 0;
@@ -79,6 +82,18 @@ int main(int argc, char **argv)
 				//closed loop, position
 				for (int i = 0; i < N_SLAVES_CONTROLED * 2; i++)
 				{
+					if (i % 2 == 0)
+					{
+						if (!robot_if.motor_drivers[i / 2].is_connected) continue; // ignoring the motors of a disconnected slave
+
+						// making sure that the transaction with the corresponding µdriver board succeeded
+						if (robot_if.motor_drivers[i / 2].error_code == 0xf)
+						{
+							//printf("Transaction with SPI%d failed\n", i / 2);
+							continue; //user should decide what to do in that case, here we ignore that motor
+						}
+					}
+
 					if (robot_if.motors[i].IsEnabled())
 					{
 						double ref = init_pos[i] + amplitude * sin(2 * M_PI * freq * t);

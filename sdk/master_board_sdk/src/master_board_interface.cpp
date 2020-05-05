@@ -2,15 +2,16 @@
 #include <signal.h>
 #include "master_board_sdk/master_board_interface.h"
 
-MasterBoardInterface* MasterBoardInterface::instance=NULL;
+MasterBoardInterface* MasterBoardInterface::instance = NULL;
 
-MasterBoardInterface::MasterBoardInterface(const std::string &if_name)
+MasterBoardInterface::MasterBoardInterface(const std::string &if_name, bool listener_mode)
 {
   uint8_t my_mac[6] = {0xa0, 0x1d, 0x48, 0x12, 0xa0, 0xc5}; //take it as an argument?
   uint8_t dest_mac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
   memcpy(this->my_mac_, my_mac, 6);
   memcpy(this->dest_mac_, dest_mac, 6);
   this->if_name_ = if_name;
+  this->listener_mode = listener_mode;
   for (int i = 0; i < N_SLAVES; i++)
   {
     motors[2 * i].SetDriver(&motor_drivers[i]);
@@ -19,7 +20,7 @@ MasterBoardInterface::MasterBoardInterface(const std::string &if_name)
   }
   instance = this;
 }
-MasterBoardInterface::MasterBoardInterface(const MasterBoardInterface &to_be_copied) : MasterBoardInterface::MasterBoardInterface(to_be_copied.if_name_)
+MasterBoardInterface::MasterBoardInterface(const MasterBoardInterface &to_be_copied) : MasterBoardInterface::MasterBoardInterface(to_be_copied.if_name_, to_be_copied.listener_mode)
 {
 }
 
@@ -30,29 +31,18 @@ MasterBoardInterface::~MasterBoardInterface()
 
 void MasterBoardInterface::GenerateSessionId()
 {
-  session_id = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(); // number of milliseconds since 01/01/1970 00:00:00, casted in 16 bits
+  // 0 is the default in the master board, it should not be used
+  do
+  {
+    // number of milliseconds since 01/01/1970 00:00:00, casted in 16 bits
+    session_id = (uint16_t)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+  } while (session_id == 0);
 }
 
 int MasterBoardInterface::Init()
 {
   printf("if_name: %s\n", if_name_.c_str());
-  //reset the variables
-  first_sensor_received = false;
-
-  nb_sensors_recv = 0;
-  nb_sensors_sent = 0;
-  nb_sensors_lost = 0;
-
-  index_cmd_packet = 0;
-  last_sensor_index = 0;
-  nb_cmd_sent = 0;
-  nb_cmd_lost = 0;
-
-  for (int i = 0; i < MAX_HIST; i++)
-  {
-    histogram_lost_sensor_packets[i] = 0;
-    histogram_lost_cmd_packets[i] = 0;
-  }
+  ResetPacketLossStats();
 
   memset(&command_packet, 0, sizeof(command_packet_t)); //todo make it more C++
   memset(&sensor_packet, 0, sizeof(sensor_packet_t));
@@ -65,7 +55,9 @@ int MasterBoardInterface::Init()
   init_sent = false;
   ack_received = false;
 
-  GenerateSessionId();
+  session_id = -1; // default is -1, which means not set
+  if (!listener_mode)
+    GenerateSessionId(); // we don't generate a session id, we will get it from the received packets
 
   if (if_name_[0] == 'e')
   {
@@ -121,6 +113,7 @@ int MasterBoardInterface::SendInit()
     return -1;
   }
 
+  init_packet.protocol_version = PROTOCOL_VERSION;
   init_packet.session_id = session_id;
 
   // Current time point
@@ -144,6 +137,10 @@ int MasterBoardInterface::SendInit()
 
 int MasterBoardInterface::SendCommand()
 {
+
+  if (listener_mode)
+    return -1; // we don't allow sending commands in listener mode
+
   // If SendCommand is not called every N milli-second we shutdown the
   // connexion. This check is performed only from the first time SendCommand
   // is called. See the comment below for more information.
@@ -229,18 +226,57 @@ int MasterBoardInterface::SendCommand()
 
 void MasterBoardInterface::callback(uint8_t src_mac[6], uint8_t *data, int len)
 {
-  if (init_sent && !ack_received && len == sizeof(ack_packet_t))
+  if ((listener_mode || (init_sent && !ack_received)) && len == sizeof(ack_packet_t))
   {
-    if (((ack_packet_t *)data)->session_id != session_id)
+    if (listener_mode)
     {
-      //printf("Wrong session id in ack msg, got %d instead of %d ignoring packet\n", ((ack_packet_t *)data)->session_id, session_id);
-      return; // ignoring the packet
+      // ack packets are used to set up the session id in listener mode
+      session_id = ((ack_packet_t *)data)->session_id;
+    }
+    else
+    {
+      // ensuring that session id is right if in normal mode
+      if (((ack_packet_t *)data)->session_id != session_id)
+      {
+        //printf("Wrong session id in ack msg, got %d instead of %d ignoring packet\n", ((ack_packet_t *)data)->session_id, session_id);
+        return; // ignoring the packet
+      }
+    }
+
+    // reset variables for feedback on packet loss
+    ResetPacketLossStats();
+
+    received_packet_mutex.lock();
+    memcpy(&ack_packet, data, sizeof(ack_packet_t));
+    received_packet_mutex.unlock();
+
+    // parse ack data
+    for (int i = 0; i < N_SLAVES; i++)
+    {
+      motor_drivers[i].is_connected = (ack_packet.spi_connected & (1 << i)) >> i;
     }
 
     ack_received = true;
   }
-  else if (init_sent && ack_received && len == sizeof(sensor_packet_t))
+
+  else if ((listener_mode || (init_sent && ack_received)) && len == sizeof(sensor_packet_t))
   {
+    // special cases for listener mode
+    if (listener_mode)
+    {
+      // if the interface session id is not set
+      if (session_id == -1)
+        session_id = ((sensor_packet_t *)data)->session_id; // if we launch the interface in listener mode while the masterboard is running
+                                                            // session_id is set to the one of the first sensor packet received
+
+      // if current session id is not 0 and the received session id is 0, the master board has rebooted
+      else if (session_id != 0 && ((sensor_packet_t *)data)->session_id == 0)
+      {
+        session_id = 0;
+        ResetPacketLossStats();
+      }
+    }
+
     if (((sensor_packet_t *)data)->session_id != session_id)
     {
       //printf("Wrong session id in sensor msg, got %d instead of %d, ignoring packet\n", ((sensor_packet_t *)data)->session_id, session_id);
@@ -251,17 +287,17 @@ void MasterBoardInterface::callback(uint8_t src_mac[6], uint8_t *data, int len)
     t_last_packet = std::chrono::high_resolution_clock::now();
 
     nb_sensors_recv++;
-    sensor_packet_mutex.lock();
+
+    received_packet_mutex.lock();
     memcpy(&sensor_packet, data, sizeof(sensor_packet_t));
-    sensor_packet_mutex.unlock();
+    received_packet_mutex.unlock();
 
     struct sensor_packet_t *packet_recv = (struct sensor_packet_t *)data;
 
-    //initialisation of last_sensor_index at first reception
     if (!first_sensor_received)
     {
       first_sensor_received = true;
-      last_sensor_index = packet_recv->sensor_index - 1;
+      last_sensor_index = packet_recv->sensor_index - 1; //initialisation of last_sensor_index at first reception
     }
 
     //Sensor_loss
@@ -303,7 +339,7 @@ void MasterBoardInterface::callback(uint8_t src_mac[6], uint8_t *data, int len)
 
 void MasterBoardInterface::ParseSensorData()
 {
-  sensor_packet_mutex.lock();
+  received_packet_mutex.lock();
 
   /*Read IMU data*/
   for (int i = 0; i < 3; i++)
@@ -345,7 +381,7 @@ void MasterBoardInterface::ParseSensorData()
   }
   /*Stat on Packet loss*/
 
-  sensor_packet_mutex.unlock();
+  received_packet_mutex.unlock();
 }
 
 void MasterBoardInterface::PrintIMU()
@@ -369,6 +405,9 @@ void MasterBoardInterface::PrintADC()
 {
   for (int i = 0; i < N_SLAVES; i++)
   {
+    if (!motor_drivers[i].is_connected)
+      continue;
+
     printf("ADC %2.2d -> %6.3f % 6.3f\n",
            i, motor_drivers[i].adc[0], motor_drivers[i].adc[1]);
   }
@@ -376,10 +415,15 @@ void MasterBoardInterface::PrintADC()
 
 void MasterBoardInterface::PrintMotors()
 {
-  for (int i = 0; i < (2 * N_SLAVES); i++)
+  for (int i = 0; i < N_SLAVES; i++)
   {
-    printf("Motor % 2.2d -> ", i);
-    motors[i].Print();
+    if (!motor_drivers[i].is_connected)
+      continue;
+
+    printf("Motor % 2.2d -> ", 2 *i);
+    motors[2 * i].Print();
+    printf("Motor % 2.2d -> ", 2 * i + 1);
+    motors[2 * i + 1].Print();
   }
 }
 
@@ -387,6 +431,9 @@ void MasterBoardInterface::PrintMotorDrivers()
 {
   for (int i = 0; i < N_SLAVES; i++)
   {
+    if (!motor_drivers[i].is_connected)
+      continue;
+
     printf("Motor Driver % 2.2d -> ", i);
     motor_drivers[i].Print();
   }
@@ -409,6 +456,11 @@ bool MasterBoardInterface::IsTimeout()
 bool MasterBoardInterface::IsAckMsgReceived()
 {
   return ack_received;
+}
+
+int MasterBoardInterface::GetSessionId()
+{
+  return session_id;
 }
 
 void MasterBoardInterface::set_motors(Motor input_motors[])
@@ -443,7 +495,14 @@ void MasterBoardInterface::PrintSensorStats()
 
 void MasterBoardInterface::PrintCmdStats()
 {
-  printf("Commands lost : %u, sent : %u, loss ratio : %.02f\n", nb_cmd_lost, nb_cmd_sent, 100. * nb_cmd_lost / nb_cmd_sent);
+  if (!listener_mode)
+  {
+    printf("Commands lost : %u, sent : %u, loss ratio : %.02f\n", nb_cmd_lost, nb_cmd_sent, 100. * nb_cmd_lost / nb_cmd_sent);
+  }
+  else
+  {
+    printf("Commands lost : %u\n", nb_cmd_lost);
+  }
 
   printf("Histogram command : ");
   for (int i = 0; i < MAX_HIST; i++)
@@ -477,4 +536,21 @@ int MasterBoardInterface::GetCmdHistogram(int index)
     return -1; //prevents user from being out of range
   }
   return histogram_lost_cmd_packets[index];
+}
+
+void MasterBoardInterface::ResetPacketLossStats()
+{
+  //reset the variables
+  first_sensor_received = false;
+
+  nb_sensors_recv = 0;
+  nb_sensors_sent = 0;
+  nb_sensors_lost = 0;
+  memset(histogram_lost_sensor_packets, 0, MAX_HIST * sizeof(int));
+
+  index_cmd_packet = 0;
+  last_sensor_index = 0;
+  nb_cmd_sent = 0;
+  nb_cmd_lost = 0;
+  memset(histogram_lost_cmd_packets, 0, MAX_HIST * sizeof(int));
 }

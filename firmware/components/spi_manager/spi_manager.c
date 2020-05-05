@@ -74,6 +74,12 @@ spi_transaction_t *spi_send(int slave, uint8_t *tx_data, uint8_t *rx_data, int l
     if(p_trans == NULL) return NULL;
 
     spi_trans_info *info = malloc(sizeof(spi_trans_info));
+    if (info == NULL)
+    {
+        free(p_trans);
+        return NULL;
+    }
+
     info->is_finished = false;
     info->demux_nb = slave;
 	p_trans->user = info;
@@ -82,7 +88,13 @@ spi_transaction_t *spi_send(int slave, uint8_t *tx_data, uint8_t *rx_data, int l
 	p_trans->tx_buffer = tx_data;
 	p_trans->length=8*len;
 	
-	spi_device_queue_trans(spi, p_trans, 2 > 1/portTICK_PERIOD_MS ? 2 : 1/portTICK_PERIOD_MS);
+	esp_err_t err = spi_device_queue_trans(spi, p_trans, 2 > 1/portTICK_PERIOD_MS ? 2 : 1/portTICK_PERIOD_MS);
+
+    if (err != ESP_OK){
+        free(info);
+        free(p_trans);
+        return NULL;
+    }
 
 	return p_trans;
 }
@@ -95,14 +107,4 @@ bool spi_is_finished(spi_transaction_t **p_trans) {
         return true;
     }
     return false;
-}
-
-bool spi_is_successful(spi_transaction_t **p_trans) {
-    esp_err_t err = spi_device_get_trans_result(spi, p_trans, portMAX_DELAY); // blocking
-
-    if((*p_trans)->user != NULL) free((*p_trans)->user);
-    free((*p_trans));
-    *p_trans = NULL;
-    
-    return (err == ESP_OK);
 }

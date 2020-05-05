@@ -15,15 +15,18 @@
 class MasterBoardInterface : public LINK_manager_callback
 {
 public:
-	MasterBoardInterface(const std::string &if_name);
+	MasterBoardInterface(const std::string &if_name, bool listener_mode = false);
 	MasterBoardInterface(const MasterBoardInterface&);
 	~MasterBoardInterface();
 	int Init();
 	int Stop();
 	static void KeyboardStop(int signum);
 	void SetMasterboardTimeoutMS(uint8_t); //Set the Master board timeout in ms
+	int SendInit();
 	int SendCommand();										 //Send the command packet to the master board
+
 	void ParseSensorData();								 //Parse and convert the latest received sensor data. User need to call this before reading any field.
+	
 	void PrintIMU();											 //Print IMU data on stdout. Usefull for debug.
 	void PrintADC();											 //Print ACD data on stdout. Usefull for debug.
 	void PrintMotors();										 //Print motors data on stdout. Usefull for debug.
@@ -35,7 +38,8 @@ public:
 	bool IsTimeout();     // Check if a timeout has been triggered because the master board did not respond
 
 	bool IsAckMsgReceived();
-	int SendInit(); //Send the init msg
+
+	int GetSessionId();
 
 	uint32_t GetSensorsSent();
 	uint32_t GetSensorsLost();
@@ -43,6 +47,8 @@ public:
 	uint32_t GetCmdLost();
 	int GetSensorHistogram(int index);
 	int GetCmdHistogram(int index);
+
+	void ResetPacketLossStats();
 
 private:
 	static MasterBoardInterface* instance;
@@ -52,6 +58,8 @@ private:
 	LINK_manager *link_handler_;
 	uint8_t payload_[127];
 	std::string if_name_;
+	bool listener_mode = false; // listener mode, allows to gather sensor packets data and to get rid of session id checking
+								// doesn't allow to send commands
 	struct command_packet_t command_packet;
 	struct sensor_packet_t sensor_packet;
 	struct dual_motor_driver_sensor_data_t dual_motor_driver_sensor_data[N_SLAVES];
@@ -75,7 +83,7 @@ private:
 	int histogram_lost_cmd_packets[MAX_HIST];	//histogram_lost_packets[0] is the number of single packet loss, histogram_lost_packets[1] is the number of two consecutive packet loss, etc...
 
 
-	std::mutex sensor_packet_mutex;
+	std::mutex received_packet_mutex;
 
 	// Time duration [ms] after which the MasterBoardInterface shuts down if the
 	// master board is not responding while waiting for acknowledge msg (timeout)
@@ -98,12 +106,13 @@ private:
 	struct init_packet_t init_packet;
 	struct ack_packet_t ack_packet;
 
-	uint16_t session_id = 0;
+	int session_id = -1; // -1 means not set
 
 	void GenerateSessionId();
 
 	bool init_sent = false;
 	bool ack_received = false;
+
 public:
 	Motor motors[N_SLAVES * 2];
 	MotorDriver motor_drivers[N_SLAVES];

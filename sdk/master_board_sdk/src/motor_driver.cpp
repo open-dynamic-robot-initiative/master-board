@@ -16,6 +16,7 @@ void MotorDriver::SetMotors(Motor *motor1, Motor *motor2)
 
 void MotorDriver::Print()
 {
+  printf("Connected:%d ", is_connected);
   printf("Enabled:%d ", is_enabled);
   printf("Error:%d ", error_code);
   printf("\n");
