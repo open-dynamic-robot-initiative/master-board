@@ -23,7 +23,7 @@ boost::python::tuple wrap_adc(MotorDriver const * motDriver)
         // End of bindings for LINK_manager_callback class
 
         // Bindings for MasterBoardInterface class
-        class_<MasterBoardInterface, bases<LINK_manager_callback> >("MasterBoardInterface", init<std::string>())
+        class_<MasterBoardInterface, bases<LINK_manager_callback> >("MasterBoardInterface", init<std::string, optional<bool> >())
             // Methods of MasterBoardInterface class
             .def("Init", &MasterBoardInterface::Init)
             .def("Stop", &MasterBoardInterface::Stop)
@@ -48,12 +48,16 @@ boost::python::tuple wrap_adc(MotorDriver const * motDriver)
             .def("IsAckMsgReceived", &MasterBoardInterface::IsAckMsgReceived)
             .def("SendInit", &MasterBoardInterface::SendInit)
 
+            .def("ResetPacketLossStats", &MasterBoardInterface::ResetPacketLossStats)
+
             .def("GetSensorsSent", &MasterBoardInterface::GetSensorsSent)
             .def("GetSensorsLost", &MasterBoardInterface::GetSensorsLost)
             .def("GetCmdSent", &MasterBoardInterface::GetCmdSent)
             .def("GetCmdLost", &MasterBoardInterface::GetCmdLost)
             .def("GetSensorHistogram", &MasterBoardInterface::GetSensorHistogram)
             .def("GetCmdHistogram", &MasterBoardInterface::GetCmdHistogram)
+
+            .def("GetSessionId", &MasterBoardInterface::GetSessionId)
 
         ;
         // End of bindings for MasterBoardInterface class
@@ -119,6 +123,7 @@ boost::python::tuple wrap_adc(MotorDriver const * motDriver)
             // Public properties of MotorDriver class
             .add_property("motor1", make_function(&MotorDriver::get_motor1, return_value_policy<boost::python::reference_existing_object>()), &MotorDriver::set_motor1)
             .add_property("motor2", make_function(&MotorDriver::get_motor2, return_value_policy<boost::python::reference_existing_object>()), &MotorDriver::set_motor2)
+            .add_property("is_connected", &MotorDriver::get_is_connected, &MotorDriver::set_is_connected)
             .add_property("is_enabled", &MotorDriver::get_is_enabled, &MotorDriver::set_is_enabled)
             .add_property("error_code", &MotorDriver::get_error_code, &MotorDriver::set_error_code)
             .add_property("enable", &MotorDriver::get_enable, &MotorDriver::set_enable)

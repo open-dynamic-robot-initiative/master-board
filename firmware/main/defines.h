@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#define PROTOCOL_VERSION 2
+
 struct sensor_data {
 	uint16_t status;
 	uint16_t timestamp;
@@ -31,6 +33,7 @@ struct imu_data {
 } __attribute__((packed));
 
 struct wifi_eth_packet_init {
+	uint16_t protocol_version; // used to ensure both the interface and the firmware use the same protocol
 	uint16_t session_id;
 } __attribute__ ((packed));
 
@@ -42,6 +45,8 @@ struct wifi_eth_packet_command {
 
 struct wifi_eth_packet_ack {
 	uint16_t session_id;
+	uint8_t spi_connected; // least significant bit: SPI0
+						   // most significant bit: SPI7
 } __attribute__ ((packed));
 
 struct wifi_eth_packet_sensor {
@@ -55,10 +60,11 @@ struct wifi_eth_packet_sensor {
 enum State {
 	SETUP = 0, // setting up every component
 	WAITING_FOR_INIT = 1, // waiting for initialization msg
-	SENDING_INIT_ACK = 2, // sending acknowlegment msg to PC
-	ACTIVE_CONTROL = 3, // normal active control behaviour with the robot
-	WIFI_ETH_LINK_DOWN = 4, // ethernet link is down
-	WIFI_ETH_ERROR = 5 // master board has not received any meaningful message over wifi or ethernet
+	SPI_AUTODETECT = 2, // detecting connected spi slaves
+	SENDING_INIT_ACK = 3, // sending acknowlegment msg to PC
+	ACTIVE_CONTROL = 4, // normal active control behaviour with the robot
+	WIFI_ETH_LINK_DOWN = 5, // ethernet link is down
+	WIFI_ETH_ERROR = 6 // master board has not received any meaningful message over wifi or ethernet
 					   // over a certain period of time (timeouts to configure) in SENDING_INIT_ACK or ACTIVE_CONTROL state
 };
 
