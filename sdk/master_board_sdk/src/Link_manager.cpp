@@ -75,6 +75,7 @@ void LINK_manager::stop()
 	if (recv_thd_id)
 	{
 		pthread_cancel(recv_thd_id);
+		pthread_join(recv_thd_id, NULL);
 	}
 	if (this->sock_fd > 0)
 	{

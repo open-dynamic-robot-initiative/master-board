@@ -17,6 +17,7 @@ class MasterBoardInterface : public LINK_manager_callback
 public:
 	MasterBoardInterface(const std::string &if_name);
 	MasterBoardInterface(const MasterBoardInterface&);
+	~MasterBoardInterface();
 	int Init();
 	int Stop();
 	static void KeyboardStop(int signum);
