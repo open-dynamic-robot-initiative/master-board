@@ -117,6 +117,8 @@ boost::python::tuple wrap_adc(MotorDriver const * motDriver)
             .def("EnablePositionRolloverError", &MotorDriver::EnablePositionRolloverError)
             .def("DisablePositionRolloverError", &MotorDriver::EnablePositionRolloverError)
             .def("SetTimeout", &MotorDriver::SetTimeout)
+            .def("IsConnected", &MotorDriver::IsConnected)
+            .def("GetErrorCode", &MotorDriver::GetErrorCode)
             .def("Enable", &MotorDriver::Enable)
             .def("Disable", &MotorDriver::Disable)
             

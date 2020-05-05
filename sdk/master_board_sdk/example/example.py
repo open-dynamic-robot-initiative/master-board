@@ -56,7 +56,7 @@ def example_script(name_interface):
 
         # fill the connected motors indexes array
         for i in range(N_SLAVES_CONTROLED):
-            if robot_if.GetDriver(i).is_connected:
+            if robot_if.GetDriver(i).IsConnected():
                 # if slave i is connected then motors 2i and 2i+1 are potentially connected
                 motors_spi_connected_indexes.append(2 * i)
                 motors_spi_connected_indexes.append(2 * i + 1)
@@ -85,7 +85,7 @@ def example_script(name_interface):
                 # for all motors on a connected slave
                 for i in motors_spi_connected_indexes:
 
-                    if i % 2 == 0 and robot_if.GetDriver(i // 2).error_code == 0xf:
+                    if i % 2 == 0 and robot_if.GetDriver(i // 2).GetErrorCode() == 0xf:
                         #print("Transaction with SPI{} failed".format(i // 2))
                         continue #user should decide what to do in that case, here we ignore that motor
 

@@ -47,6 +47,16 @@ void MotorDriver::SetTimeout(uint8_t time)
   timeout = time;
 }
 
+bool MotorDriver::IsConnected()
+{
+  return is_connected;
+}
+
+int MotorDriver::GetErrorCode()
+{
+  return error_code;
+}
+
 void MotorDriver::set_adc(float adc_val [])
 {
   // The adc property is defined as float adc[2]
