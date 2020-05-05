@@ -298,6 +298,7 @@ void MasterBoardInterface::callback(uint8_t src_mac[6], uint8_t *data, int len)
     {
       first_sensor_received = true;
       last_sensor_index = packet_recv->sensor_index - 1; //initialisation of last_sensor_index at first reception
+      nb_cmd_lost = packet_recv->packet_loss;
     }
 
     //Sensor_loss
