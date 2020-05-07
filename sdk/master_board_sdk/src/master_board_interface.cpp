@@ -298,6 +298,7 @@ void MasterBoardInterface::callback(uint8_t src_mac[6], uint8_t *data, int len)
     {
       first_sensor_received = true;
       last_sensor_index = packet_recv->sensor_index - 1; //initialisation of last_sensor_index at first reception
+      last_cmd_packet_loss = packet_recv->packet_loss;
     }
 
     //Sensor_loss
@@ -312,22 +313,25 @@ void MasterBoardInterface::callback(uint8_t src_mac[6], uint8_t *data, int len)
         histogram_lost_sensor_packets[packet_recv->sensor_index - last_sensor_index - 2]++; // index 0 -> 1 packet lost !
       }
     }
-    nb_sensors_lost += uint16_t(packet_recv->sensor_index - last_sensor_index - 1);
+    
 
     //Command_loss
-    if (packet_recv->packet_loss != nb_cmd_lost)
+    if (packet_recv->packet_loss != last_cmd_packet_loss)
     {
-      if ((packet_recv->packet_loss - nb_cmd_lost - 1) >= MAX_HIST)
+      if ((packet_recv->packet_loss - last_cmd_packet_loss - 1) >= MAX_HIST)
       {
         histogram_lost_cmd_packets[MAX_HIST - 1]++; //add all sequence too big at the end of the histogram
       }
       else
       {
-        histogram_lost_cmd_packets[packet_recv->packet_loss - nb_cmd_lost - 1]++; // index 0 -> 1 packet lost !
+        histogram_lost_cmd_packets[packet_recv->packet_loss - last_cmd_packet_loss - 1]++; // index 0 -> 1 packet lost !
       }
     }
-    nb_cmd_lost = packet_recv->packet_loss;
 
+    nb_cmd_lost += uint16_t(packet_recv->packet_loss - last_cmd_packet_loss);
+    last_cmd_packet_loss = packet_recv->packet_loss;
+
+    nb_sensors_lost += uint16_t(packet_recv->sensor_index - last_sensor_index - 1);
     nb_sensors_sent += uint16_t(packet_recv->sensor_index - last_sensor_index);
     last_sensor_index = packet_recv->sensor_index;
   }
@@ -544,12 +548,11 @@ void MasterBoardInterface::ResetPacketLossStats()
   first_sensor_received = false;
 
   nb_sensors_recv = 0;
+  last_sensor_index = 0;
   nb_sensors_sent = 0;
   nb_sensors_lost = 0;
   memset(histogram_lost_sensor_packets, 0, MAX_HIST * sizeof(int));
 
-  index_cmd_packet = 0;
-  last_sensor_index = 0;
   nb_cmd_sent = 0;
   nb_cmd_lost = 0;
   memset(histogram_lost_cmd_packets, 0, MAX_HIST * sizeof(int));

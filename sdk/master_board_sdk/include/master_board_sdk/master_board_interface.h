@@ -78,6 +78,7 @@ private:
 
 	//COMMAND PACKETS
 	uint16_t index_cmd_packet = 0;
+	uint16_t last_cmd_packet_loss = 0;
 	uint32_t nb_cmd_sent = 0;
 	uint32_t nb_cmd_lost = 0;
 	int histogram_lost_cmd_packets[MAX_HIST];	//histogram_lost_packets[0] is the number of single packet loss, histogram_lost_packets[1] is the number of two consecutive packet loss, etc...
