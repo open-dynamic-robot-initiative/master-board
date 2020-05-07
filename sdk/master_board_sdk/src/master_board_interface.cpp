@@ -486,7 +486,7 @@ void MasterBoardInterface::set_motor_drivers(MotorDriver input_motor_drivers[])
 
 void MasterBoardInterface::PrintSensorStats()
 {
-  printf("Sensors lost : %u, sent : %u, loss ratio : %.02f\n", nb_sensors_lost, nb_sensors_sent, 100. * nb_sensors_lost / nb_sensors_sent);
+  printf("Sensors lost : %u, sent : %u, loss ratio : %.02f\n", nb_sensors_lost, nb_sensors_sent, nb_sensors_sent != 0 ? 100. * nb_sensors_lost / nb_sensors_sent : 0);
 
   printf("Histogram sensor : ");
   for (int i = 0; i < MAX_HIST; i++)
@@ -500,7 +500,7 @@ void MasterBoardInterface::PrintCmdStats()
 {
   if (!listener_mode)
   {
-    printf("Commands lost : %u, sent : %u, loss ratio : %.02f\n", nb_cmd_lost, nb_cmd_sent, 100. * nb_cmd_lost / nb_cmd_sent);
+    printf("Commands lost : %u, sent : %u, loss ratio : %.02f\n", nb_cmd_lost, nb_cmd_sent, nb_cmd_sent != 0 ? 100. * nb_cmd_lost / nb_cmd_sent : 0);
   }
   else
   {
