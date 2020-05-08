@@ -52,6 +52,11 @@ bool MotorDriver::IsConnected()
   return is_connected;
 }
 
+bool MotorDriver::IsEnabled()
+{
+  return is_enabled;
+}
+
 int MotorDriver::GetErrorCode()
 {
   return error_code;

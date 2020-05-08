@@ -17,6 +17,7 @@ public:
   	void SetTimeout(uint8_t time);
 
 	bool IsConnected();
+	bool IsEnabled();
 	int GetErrorCode();
 
 	void Enable();
