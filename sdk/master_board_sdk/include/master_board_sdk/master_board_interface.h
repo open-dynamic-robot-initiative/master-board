@@ -55,7 +55,7 @@ private:
 	void callback(uint8_t src_mac[6], uint8_t *data, int len);
 	uint8_t my_mac_[6];		// = {0xa0, 0x1d, 0x48, 0x12, 0xa0, 0xc5};	 //{0xF8, 0x1A, 0x67, 0xb7, 0xEB, 0x0B};
 	uint8_t dest_mac_[6]; //Broatcast to prevent acknoledgment behaviour
-	LINK_manager *link_handler_;
+	LINK_manager *link_handler_ = NULL;
 	uint8_t payload_[127];
 	std::string if_name_;
 	bool listener_mode = false; // listener mode, allows to gather sensor packets data and to get rid of session id checking

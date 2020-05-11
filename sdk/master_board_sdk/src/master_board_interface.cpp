@@ -87,7 +87,8 @@ int MasterBoardInterface::Init()
 int MasterBoardInterface::Stop()
 {
   printf("Shutting down connection (%s)\n", if_name_.c_str());
-  link_handler_->stop();
+  if (link_handler_ != NULL)
+    link_handler_->stop();
   return 0;
 }
 
