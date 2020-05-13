@@ -69,7 +69,7 @@ bool spi_use_a = true;
 
 void print_spi_connected()
 {
-    printf("[ ");
+    printf("spi connected: [ ");
     for (int i = 0; i < CONFIG_N_SLAVES; i++)
     {
         printf("%d ", TEST_BIT(spi_connected, i));
@@ -131,7 +131,6 @@ static void periodic_timer_callback(void *arg)
             break;
         }
 
-        //printf("%d\n", current_state);
     }
 
     if (current_state == SETUP)
@@ -140,8 +139,6 @@ static void periodic_timer_callback(void *arg)
     }
 
     ms_cpt++;
-
-    //if (ms_cpt % 500 == 0) printf("current_state = %d, session_id = %d\n", current_state, session_id);
 
     /* LEDs */
     bool blink = (ms_cpt % 1000) > 500;
@@ -158,7 +155,6 @@ static void periodic_timer_callback(void *arg)
 
     spi_count++;
 
-    //printf("%d\n", wifi_eth_count);
     switch (current_state)
     {
     case WAITING_FOR_INIT:
@@ -232,7 +228,9 @@ static void periodic_timer_callback(void *arg)
     if (ENABLE_DEBUG_PRINTF && spi_count % 1000 == 0)
     {
         printf("\e[1;1H\e[2J");
-        printf("--- SPI ---\n");
+        printf("current_state: %d, session_id: %d\n", current_state, session_id);
+
+        printf("\n--- SPI ---\n");
 
         print_spi_connected();
 
