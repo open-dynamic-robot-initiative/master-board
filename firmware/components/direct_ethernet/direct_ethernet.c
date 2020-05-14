@@ -1,6 +1,6 @@
 #include "direct_ethernet.h"
 
-uint8_t eth_src_mac[6] = {0};
+uint8_t eth_src_mac[6] = {0xb4, 0xe6, 0x2d, 0xb5, 0x9f, 0x88};
 uint8_t eth_dst_mac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
 void (*eth_recv_cb)(uint8_t src_mac[6], uint8_t *data, int len, char eth_or_wifi) = NULL; // eth_or_wifi = 'e' when eth is used, 'w' when wifi is used
@@ -8,18 +8,27 @@ void (*eth_recv_cb)(uint8_t src_mac[6], uint8_t *data, int len, char eth_or_wifi
 void (*eth_link_state_cb)(bool link_state) = NULL;
 
 static const char *ETH_TAG = "Direct_Ethernet";
-static esp_eth_handle_t eth_handle = NULL;
 
-/** Event handler for Ethernet events */
-static void eth_event_handler(void *arg, esp_event_base_t event_base,
-                              int32_t event_id, void *event_data)
+static void eth_gpio_config_rmii(void)
 {
-  /* we can get the ethernet driver handle from event data */
-  eth_handle = *(esp_eth_handle_t *)event_data;
+  // RMII data pins are fixed:
+  // TXD0 = GPIO19
+  // TXD1 = GPIO22
+  // TX_EN = GPIO21
+  // RXD0 = GPIO25
+  // RXD1 = GPIO26
+  // CLK == GPIO0
+  phy_rmii_configure_data_interface_pins();
+  phy_rmii_smi_configure_pins(PIN_SMI_MDC, PIN_SMI_MDIO);
+}
 
-  switch (event_id)
+static esp_err_t eth_event_handler(void *ctx, system_event_t *event)
+{
+  tcpip_adapter_ip_info_t ipInfo;
+
+  switch (event->event_id)
   {
-  case ETHERNET_EVENT_CONNECTED:
+  case SYSTEM_EVENT_ETH_CONNECTED:
     if (eth_link_state_cb == NULL)
     {
       ESP_LOGW(ETH_TAG, "Ethernet link Up but no callback function is set");
@@ -28,14 +37,9 @@ static void eth_event_handler(void *arg, esp_event_base_t event_base,
     {
       eth_link_state_cb(true);
     }
-
-    esp_eth_ioctl(eth_handle, ETH_CMD_G_MAC_ADDR, eth_src_mac);
-
     ESP_LOGI(ETH_TAG, "Ethernet Link Up");
-    ESP_LOGI(ETH_TAG, "Ethernet HW Addr %02x:%02x:%02x:%02x:%02x:%02x",
-             eth_src_mac[0], eth_src_mac[1], eth_src_mac[2], eth_src_mac[3], eth_src_mac[4], eth_src_mac[5]);
     break;
-  case ETHERNET_EVENT_DISCONNECTED:
+  case SYSTEM_EVENT_ETH_DISCONNECTED:
     if (eth_link_state_cb == NULL)
     {
       ESP_LOGW(ETH_TAG, "Ethernet link Down but no callback function is set");
@@ -44,24 +48,33 @@ static void eth_event_handler(void *arg, esp_event_base_t event_base,
     {
       eth_link_state_cb(false);
     }
-
     ESP_LOGI(ETH_TAG, "Ethernet Link Down");
     break;
-  case ETHERNET_EVENT_START:
+  case SYSTEM_EVENT_ETH_START:
     ESP_LOGI(ETH_TAG, "Ethernet Started");
     break;
-  case ETHERNET_EVENT_STOP:
+  case SYSTEM_EVENT_ETH_STOP:
     ESP_LOGI(ETH_TAG, "Ethernet Stopped");
     break;
+  case SYSTEM_EVENT_ETH_GOT_IP:
+    ESP_LOGI(ETH_TAG, "Ethernet got IP");
+    ESP_ERROR_CHECK(tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_ETH, &ipInfo));
+    ESP_LOGI(ETH_TAG, "TCP/IP initialization finished.");
+    ESP_LOGI(ETH_TAG, "TCP|IP \t IP:" IPSTR, IP2STR(&ipInfo.ip));
+    ESP_LOGI(ETH_TAG, "TCP|IP \t MASK:" IPSTR, IP2STR(&ipInfo.netmask));
+    ESP_LOGI(ETH_TAG, "TCP|IP \t GW:" IPSTR, IP2STR(&ipInfo.gw));
+    xEventGroupSetBits(udp_event_group, WIFI_CONNECTED_BIT);
+    break;
   default:
-    ESP_LOGI(ETH_TAG, "Unhandled Ethernet event (id = %d)", event_id);
+    ESP_LOGI(ETH_TAG, "Unhandled Ethernet event (id = %d)", event->event_id);
     break;
   }
+  return ESP_OK;
 }
 
-static esp_err_t eth_recv_func(esp_eth_handle_t eth_handle, uint8_t *buffer, uint32_t len)
+static esp_err_t eth_recv_func(void *buffer, uint16_t len, void *eb)
 {
-  eth_frame *frame = (eth_frame *)buffer;
+  eth_frame *frame = buffer;
   if (eth_recv_cb == NULL)
   {
     ESP_LOGW(ETH_TAG, "Ethernet frame received but no callback function is set on received...");
@@ -86,7 +99,6 @@ static esp_err_t eth_recv_func(esp_eth_handle_t eth_handle, uint8_t *buffer, uin
   {
     eth_recv_cb(frame->src_mac, frame->data, frame->data_len, 'e');
   }
-  free(buffer);
   return ESP_OK;
 }
 
@@ -99,7 +111,7 @@ void eth_init_frame(eth_frame *p_frame)
 
 esp_err_t eth_send_frame(eth_frame *p_frame)
 {
-  int err = esp_eth_transmit(eth_handle, (uint8_t *)p_frame, sizeof(eth_frame) + (p_frame->data_len) - CONFIG_MAX_ETH_DATA_LEN);
+  int err = esp_eth_tx((uint8_t *)p_frame, sizeof(eth_frame) + (p_frame->data_len) - CONFIG_MAX_ETH_DATA_LEN);
 
   if (err != 0)
   {
@@ -141,26 +153,48 @@ void eth_attach_link_state_cb(void (*cb)(bool link_state))
 
 void eth_init()
 {
-  ESP_ERROR_CHECK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, NULL));
+  ////////////////////////////////////
+  //EVENT HANDLER (CALLBACK)
+  ////////////////////////////////////
+  //TCP/IP event handling & group (akin to flags and semaphores)
+  udp_event_group = xEventGroupCreate();
+  ESP_ERROR_CHECK(esp_event_loop_init(eth_event_handler, NULL));
 
-  eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
-  eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
+  ////////////////////////////////////
+  //TCP/IP DRIVER INIT WITH A STATIC IP
+  ////////////////////////////////////
+  tcpip_adapter_init();
+  tcpip_adapter_ip_info_t ipInfo;
 
-  esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&mac_config);
-  esp_eth_phy_t *phy = esp_eth_phy_new_lan8720(&phy_config);
+  //Stop DHCP
+  tcpip_adapter_dhcpc_stop(TCPIP_ADAPTER_IF_ETH);
 
-  esp_eth_config_t config = ETH_DEFAULT_CONFIG(mac, phy);
+  //Set the static IP
+  ip4addr_aton(DEVICE_IP, &ipInfo.ip);
+  ip4addr_aton(DEVICE_GW, &ipInfo.gw);
+  ip4addr_aton(DEVICE_NETMASK, &ipInfo.netmask);
+  ESP_ERROR_CHECK(tcpip_adapter_set_ip_info(TCPIP_ADAPTER_IF_ETH, &ipInfo));
 
-  config.stack_input = eth_recv_func;
+  ////////////////////////////////////
+  //ETHERNET CONFIGURATION & INIT
+  ////////////////////////////////////
 
-  ESP_ERROR_CHECK(esp_eth_driver_install(&config, &eth_handle));
-  printf("Driver installed\n");
-  ESP_ERROR_CHECK(esp_eth_start(eth_handle));
-  printf("Driver started\n");
+  eth_config_t config = ETHERNET_PHY_CONFIG;
+  config.phy_addr = PHY1;
+  config.gpio_config = eth_gpio_config_rmii;
+  config.tcpip_input = &eth_recv_func;
+  config.clock_mode = CONFIG_PHY_CLOCK_MODE;
+
+  ESP_ERROR_CHECK(esp_eth_init(&config));
+  ESP_ERROR_CHECK(esp_eth_enable());
+
+  /*ESP_LOGI(ETH_TAG, "Establishing connetion...");
+  xEventGroupWaitBits(udp_event_group, WIFI_CONNECTED_BIT, true, true, portMAX_DELAY);
+  ESP_LOGI(ETH_TAG, "Connected");*/
 }
 
 void eth_deinit()
 {
-  ESP_ERROR_CHECK(esp_eth_stop(eth_handle));
-  ESP_ERROR_CHECK(esp_eth_driver_uninstall(eth_handle));
+  ESP_ERROR_CHECK(esp_eth_disable());
+  ESP_ERROR_CHECK(esp_eth_deinit());
 }
