@@ -45,6 +45,8 @@ public:
 	uint32_t GetSensorsLost();
 	uint32_t GetCmdSent();
 	uint32_t GetCmdLost();
+	uint16_t GetLastRecvCmdIndex();
+	uint16_t GetCmdPacketIndex();
 	int GetSensorHistogram(int index);
 	int GetCmdHistogram(int index);
 
@@ -73,11 +75,12 @@ private:
 	uint16_t last_sensor_index = 0; 
 	uint32_t nb_sensors_sent = 0;
 	uint32_t nb_sensors_lost = 0;
+	uint16_t last_recv_cmd_index = 0;
 	int histogram_lost_sensor_packets[MAX_HIST]; //histogram_lost_packets[0] is the number of single packet loss, histogram_lost_packets[1] is the number of two consecutive packet loss, etc...
 
 
 	//COMMAND PACKETS
-	uint16_t index_cmd_packet = 0;
+	uint16_t cmd_packet_index = 0;
 	uint16_t last_cmd_packet_loss = 0;
 	uint32_t nb_cmd_sent = 0;
 	uint32_t nb_cmd_lost = 0;
