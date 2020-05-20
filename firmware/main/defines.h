@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define PROTOCOL_VERSION 2
+#define PROTOCOL_VERSION 3
 
 struct sensor_data {
 	uint16_t status;

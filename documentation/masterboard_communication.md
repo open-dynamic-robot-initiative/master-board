@@ -37,7 +37,7 @@ The interface on the PC needs to support monitor mode and injection. ASUS PCE-AC
 Data packet
 -----------
 
-### Current protocol version: **2**
+### Current protocol version: **3**
 
 Both WiFi and Ethernet use the same data packet format.
 
