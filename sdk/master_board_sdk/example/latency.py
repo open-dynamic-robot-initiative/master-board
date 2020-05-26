@@ -8,6 +8,8 @@ from time import clock
 
 import libmaster_board_sdk_pywrap as mbs
 import matplotlib.pyplot as plt
+from matplotlib.offsetbox import AnchoredText
+import numpy as np
 
 
 def example_script(name_interface):
@@ -18,7 +20,7 @@ def example_script(name_interface):
     cpt = 0
     dt = 0.001  #  Time step
     state = 0  # State of the system (ready (1) or not (0))
-    duration = 30 # Duration in seconds
+    duration = 60 # Duration in seconds, init included
 
     if (duration == 0) :
         print("Null duration selected, end of script")
@@ -113,16 +115,39 @@ def example_script(name_interface):
 
     latency = []
     for i in range(1, len(sent_list)-1):
-        if(received_list[i] != 0 and sent_list[i] != 0) :
-            latency.append(received_list[i]-sent_list[i])
+        if (received_list[i] != 0 and sent_list[i] != 0):
+            latency.append(1000 * (received_list[i]-sent_list[i]))
+        else:
+            latency.append(0) # 0 means not sent or not received
 
-    if latency != [] :
-        average = sum(latency)/len(latency)
-        print("average latency : %f s" %average)
+    # computing avg and std for non zero values
+    nonzero = [latency[i] for i in np.nonzero(latency)[0]]
+    if len(nonzero) != 0:
+        average = np.mean(nonzero)
+        print("average latency : %f ms" %average)
+        std = np.std(nonzero)
+        print("standard deviation : %f ms" %std)
 
-        plt.plot(range(len(latency)), latency, 'ro')
-        plt.ylabel('latency (s)')
-        plt.text(0, max(latency), 'average latency : %f s' %average)
+        anchored_text = AnchoredText("average latency : %f ms\nstandard deviation : %f ms" %(average, std), loc=2)
+
+        if len(latency) > 5000:
+            ax1 = plt.subplot(2, 1, 1)
+        else:
+            ax1 = plt.subplot(1, 1, 1)
+        ax1.plot(latency, '.')
+        ax1.set_xlabel('index')
+        ax1.set_ylabel('latency (ms)')
+        ax1.add_artist(anchored_text)
+
+        # plotting zoomed version to see pattern
+        if len(latency) > 5000:
+            ax2 = plt.subplot(2, 1, 2)
+            ax2.plot(latency, '.')
+            ax2.set_xlabel('index')
+            ax2.set_ylabel('latency (ms)')
+            ax2.set_xlim(len(latency)/2, len(latency)/2 + 2000)
+            ax2.set_ylim(-0.1, 2.1)
+
         plt.show()
 
     if robot_if.IsTimeout():
