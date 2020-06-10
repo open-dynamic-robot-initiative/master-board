@@ -17,7 +17,9 @@ def listener_script(name_interface):
 
     print("-- Start of listener script --")
 
-    os.nice(-20)  #  Set the process to highest priority (from -20 highest to +20 lowest)
+    #os.nice(-20)  #  Set the process to highest priority (from -20 highest to +20 lowest)
+    os.sched_setscheduler(0, os.SCHED_FIFO, os.sched_param(99))
+    
     robot_if = mbs.MasterBoardInterface(name_interface, True)
     robot_if.Init()  # Initialization of the interface between the computer and the master board
 

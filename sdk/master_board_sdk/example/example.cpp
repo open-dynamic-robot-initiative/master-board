@@ -23,7 +23,10 @@ int main(int argc, char **argv)
 	double init_pos[N_SLAVES * 2] = {0};
 	int state = 0;
 
-	nice(-20); //give the process a high priority
+	//nice(-20); //give the process a high priority
+	struct sched_param param = {.sched_priority = 99};
+	sched_setscheduler(0, SCHED_FIFO, &param);
+
 	printf("-- Main --\n");
 	//assert(argc > 1);
 	MasterBoardInterface robot_if(argv[1]);

@@ -31,7 +31,9 @@ def example_script(name_interface):
 
     print("-- Start of example script --")
 
-    os.nice(-20)  #  Set the process to highest priority (from -20 highest to +20 lowest)
+    #os.nice(-20)  #  Set the process to highest priority (from -20 highest to +20 lowest)
+    os.sched_setscheduler(0, os.SCHED_FIFO, os.sched_param(99))
+    
     robot_if = mbs.MasterBoardInterface(name_interface)
     robot_if.Init()  # Initialization of the interface between the computer and the master board
     for i in range(N_SLAVES_CONTROLED):  #  We enable each controler driver and its two associated motors
