@@ -218,9 +218,9 @@ int MasterBoardInterface::SendCommand()
     Stop();
     return -1; // Return -1 since the command has not been sent.
   }
-  command_packet.command_index = index_cmd_packet;
+  command_packet.command_index = cmd_packet_index;
   link_handler_->send((uint8_t *)&command_packet, sizeof(command_packet_t));
-  index_cmd_packet++;
+  cmd_packet_index++;
   nb_cmd_sent++;
   return 0; // Return 0 since the command has been sent.
 }
@@ -334,6 +334,8 @@ void MasterBoardInterface::callback(uint8_t src_mac[6], uint8_t *data, int len)
     nb_sensors_lost += uint16_t(packet_recv->sensor_index - last_sensor_index - 1);
     nb_sensors_sent += uint16_t(packet_recv->sensor_index - last_sensor_index);
     last_sensor_index = packet_recv->sensor_index;
+
+    last_recv_cmd_index = packet_recv->last_cmd_index;
   }
   else
   {
@@ -523,6 +525,10 @@ uint32_t MasterBoardInterface::GetSensorsLost() { return nb_sensors_lost; }
 uint32_t MasterBoardInterface::GetCmdSent() { return nb_cmd_sent; }
 
 uint32_t MasterBoardInterface::GetCmdLost() { return nb_cmd_lost; }
+
+uint16_t MasterBoardInterface::GetLastRecvCmdIndex() { return last_recv_cmd_index; }
+
+uint16_t MasterBoardInterface::GetCmdPacketIndex() { return cmd_packet_index; }
 
 int MasterBoardInterface::GetSensorHistogram(int index)
 {

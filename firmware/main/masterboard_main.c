@@ -465,6 +465,7 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len)
 
         /* Compute data for next wifi_eth_sensor packet */
         wifi_eth_tx_data.packet_loss += ((struct wifi_eth_packet_command *)data)->command_index - command_index_prev - 1;
+        wifi_eth_tx_data.last_cmd_index = ((struct wifi_eth_packet_command *)data)->command_index;
         command_index_prev = ((struct wifi_eth_packet_command *)data)->command_index;
 
         // reset count for communication timeout

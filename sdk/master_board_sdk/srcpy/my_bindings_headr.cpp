@@ -56,7 +56,9 @@ boost::python::tuple wrap_adc(MotorDriver const * motDriver)
             .def("GetCmdLost", &MasterBoardInterface::GetCmdLost)
             .def("GetSensorHistogram", &MasterBoardInterface::GetSensorHistogram)
             .def("GetCmdHistogram", &MasterBoardInterface::GetCmdHistogram)
-
+            .def("GetLastRecvCmdIndex", &MasterBoardInterface::GetLastRecvCmdIndex)
+            .def("GetCmdPacketIndex", &MasterBoardInterface::GetCmdPacketIndex)
+            
             .def("GetSessionId", &MasterBoardInterface::GetSessionId)
 
         ;
