@@ -34,7 +34,6 @@
 #endif
 
 void spi_init();
-spi_transaction_t *spi_send(int slave, uint8_t *tx_data, uint8_t *rx_data, int len);
-bool spi_is_finished(spi_transaction_t **trans);
+bool spi_send(int slave, uint8_t *tx_data, uint8_t *rx_data, int len);
 
 #endif
