@@ -25,13 +25,13 @@ void Motor::SetDriver(MotorDriver *driver)
 
 void Motor::Print()
 {
-  printf("enabled:%d ", is_enabled);
-  printf("ready:%d ", is_ready);
-  printf("IDXT:%d ", index_toggle_bit);
-  printf("Index detected:%d ", has_index_been_detected);
-  printf("position:%8f ", position);
-  printf("velocity:%8f ", velocity);
-  printf("current:%8f ", current);
+  printf("%7d | ", is_enabled);
+  printf("%5d | ", is_ready);
+  printf("%4d | ", index_toggle_bit);
+  printf("%9d | ", has_index_been_detected);
+  printf("%13e | ", position);
+  printf("%13e | ", velocity);
+  printf("%13e | ", current);
   printf("\n");
 }
 

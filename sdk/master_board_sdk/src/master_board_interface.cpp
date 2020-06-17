@@ -390,7 +390,8 @@ void MasterBoardInterface::ParseSensorData()
 
 void MasterBoardInterface::PrintIMU()
 {
-  printf("IMU:% 6.3f % 6.3f % 6.3f - % 6.3f % 6.3f % 6.3f - % 6.3f % 6.3f % 6.3f - % 6.3f % 6.3f % 6.3f\n",
+  printf("    |     accelerometer    |       gyroscope      |       attitude       |  linear acceleration |\n");
+  printf("IMU | %6.2f %6.2f %6.2f | %6.2f %6.2f %6.2f | %6.2f %6.2f %6.2f | %6.2f %6.2f %6.2f |\n\n",
          imu_data.accelerometer[0],
          imu_data.accelerometer[1],
          imu_data.accelerometer[2],
@@ -412,35 +413,44 @@ void MasterBoardInterface::PrintADC()
     if (!motor_drivers[i].is_connected)
       continue;
 
-    printf("ADC %2.2d -> %6.3f % 6.3f\n",
+    printf("ADC %2.2d | %6.3f | % 6.3f |\n",
            i, motor_drivers[i].adc[0], motor_drivers[i].adc[1]);
   }
+  printf("\n");
 }
 
 void MasterBoardInterface::PrintMotors()
 {
+  printf("Motor | enabled | ready | IDXT | Index det |    position   |    velocity   |    current    |\n");
   for (int i = 0; i < N_SLAVES; i++)
   {
     if (!motor_drivers[i].is_connected)
       continue;
 
-    printf("Motor % 2.2d -> ", 2 *i);
+    
+    printf("%5.2d | ", 2 *i);
     motors[2 * i].Print();
-    printf("Motor % 2.2d -> ", 2 * i + 1);
+    printf("%5.2d | ", 2 * i + 1);
     motors[2 * i + 1].Print();
   }
+  printf("\n");
 }
 
 void MasterBoardInterface::PrintMotorDrivers()
 {
+  printf("Motor Driver | Connected | ");
+  printf("Enabled | ");
+  printf("Error |");
+  printf("\n");
   for (int i = 0; i < N_SLAVES; i++)
   {
     if (!motor_drivers[i].is_connected)
       continue;
 
-    printf("Motor Driver % 2.2d -> ", i);
+    printf("%12.2d | ", i);
     motor_drivers[i].Print();
   }
+  printf("\n");
 }
 
 void MasterBoardInterface::ResetTimeout()
