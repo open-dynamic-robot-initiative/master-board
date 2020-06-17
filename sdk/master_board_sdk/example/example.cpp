@@ -117,8 +117,7 @@ int main(int argc, char **argv)
 				robot_if.PrintADC();
 				robot_if.PrintMotors();
 				robot_if.PrintMotorDrivers();
-				robot_if.PrintCmdStats();
-				robot_if.PrintSensorStats();
+				robot_if.PrintStats();
 				fflush(stdout);
 				 
 
