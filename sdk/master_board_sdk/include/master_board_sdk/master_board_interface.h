@@ -31,8 +31,7 @@ public:
 	void PrintADC();											 //Print ACD data on stdout. Usefull for debug.
 	void PrintMotors();										 //Print motors data on stdout. Usefull for debug.
 	void PrintMotorDrivers();							 //Print motor drivers data on stdout. Usefull for debug.  void PrintMotors(); //Print Motors data on stdout. Usefull for debug.
-	void PrintSensorStats();
-	void PrintCmdStats();
+	void PrintStats();
 
 	void ResetTimeout();  // Reset the interface after at timeout to send packets again
 	bool IsTimeout();     // Check if a timeout has been triggered because the master board did not respond
