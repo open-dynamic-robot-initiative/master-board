@@ -421,36 +421,46 @@ void MasterBoardInterface::PrintADC()
 
 void MasterBoardInterface::PrintMotors()
 {
-  printf("Motor | enabled | ready | IDXT | Index det |    position   |    velocity   |    current    |\n");
+  bool header_printed = 0;
   for (int i = 0; i < N_SLAVES; i++)
   {
     if (!motor_drivers[i].is_connected)
       continue;
-
     
+    if(!header_printed)
+    {
+      printf("Motor | enabled | ready | IDXT | Index det |    position   |    velocity   |    current    |\n");
+      header_printed = 1;
+    }
+
     printf("%5.2d | ", 2 *i);
     motors[2 * i].Print();
     printf("%5.2d | ", 2 * i + 1);
     motors[2 * i + 1].Print();
   }
-  printf("\n");
+  if(header_printed)
+    printf("\n");
 }
 
 void MasterBoardInterface::PrintMotorDrivers()
 {
-  printf("Motor Driver | Connected | ");
-  printf("Enabled | ");
-  printf("Error |");
-  printf("\n");
+  bool header_printed = 0;
   for (int i = 0; i < N_SLAVES; i++)
   {
     if (!motor_drivers[i].is_connected)
       continue;
+    
+    if(!header_printed)
+    {
+      printf("Motor Driver | Connected | Enabled | Error |\n");
+      header_printed = 1;
+    }
 
     printf("%12.2d | ", i);
     motor_drivers[i].Print();
   }
-  printf("\n");
+  if(header_printed)
+    printf("\n");
 }
 
 void MasterBoardInterface::ResetTimeout()
