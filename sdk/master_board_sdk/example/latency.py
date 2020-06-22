@@ -7,6 +7,9 @@ import sys
 from time import clock
 
 import libmaster_board_sdk_pywrap as mbs
+import matplotlib.pyplot as plt
+from matplotlib.offsetbox import AnchoredText
+import numpy as np
 
 
 def example_script(name_interface):
@@ -14,16 +17,17 @@ def example_script(name_interface):
     N_SLAVES = 6  #  Maximum number of controled drivers
     N_SLAVES_CONTROLED = 6  # Current number of controled drivers
 
-    cpt = 0  # Iteration counter
+    cpt = 0
     dt = 0.001  #  Time step
-    t = 0  # Current time
-    kp = 5.0  #  Proportional gain
-    kd = 0.1  # Derivative gain
-    iq_sat = 1.0  # Maximum amperage (A)
-    freq = 0.5  # Frequency of the sine wave
-    amplitude = math.pi  # Amplitude of the sine wave
-    init_pos = [0.0 for i in range(N_SLAVES * 2)]  # List that will store the initial position of motors
     state = 0  # State of the system (ready (1) or not (0))
+    duration = 60 # Duration in seconds, init included
+
+    if (duration == 0) :
+        print("Null duration selected, end of script")
+        return
+
+    sent_list = [0.0 for i in range(int(duration*1000))]
+    received_list = [0.0 for i in range(int(duration*1000))]
 
     # contrary to c++, in python it is interesting to build arrays
     # with connected motors indexes so we can simply go through them in main loop
@@ -56,18 +60,21 @@ def example_script(name_interface):
 
         # fill the connected motors indexes array
         for i in range(N_SLAVES_CONTROLED):
-            if robot_if.GetDriver(i).IsConnected():
+            if robot_if.GetDriver(i).is_connected:
                 # if slave i is connected then motors 2i and 2i+1 are potentially connected
                 motors_spi_connected_indexes.append(2 * i)
                 motors_spi_connected_indexes.append(2 * i + 1)
 
     while ((not robot_if.IsTimeout())
-           and (clock() < 20)):  # Stop after 15 seconds (around 5 seconds are used at the start for calibration)
+           and (clock() < duration)):  # Stop after 15 seconds (around 5 seconds are used at the start for calibration)
 
+        if(received_list[robot_if.GetLastRecvCmdIndex()] == 0) :
+                received_list[robot_if.GetLastRecvCmdIndex()] = clock()
+        
         if ((clock() - last) > dt):
             last = clock()
             cpt += 1
-            t += dt
+            
             robot_if.ParseSensorData()  # Read sensor data sent by the masterboard
 
             if (state == 0):  #  If the system is not ready
@@ -77,44 +84,71 @@ def example_script(name_interface):
                 for i in motors_spi_connected_indexes:  # Check if all motors are enabled and ready
                     if not (robot_if.GetMotor(i).IsEnabled() and robot_if.GetMotor(i).IsReady()):
                         state = 0
-                    init_pos[i] = robot_if.GetMotor(i).GetPosition()
-                    t = 0
 
             else:  # If the system is ready
 
                 # for all motors on a connected slave
                 for i in motors_spi_connected_indexes:
 
-                    if i % 2 == 0 and robot_if.GetDriver(i // 2).GetErrorCode() == 0xf:
+                    if i % 2 == 0 and robot_if.GetDriver(i // 2).error_code == 0xf:
                         #print("Transaction with SPI{} failed".format(i // 2))
                         continue #user should decide what to do in that case, here we ignore that motor
 
                     if robot_if.GetMotor(i).IsEnabled():
-                        ref = init_pos[i] + amplitude * math.sin(2.0 * math.pi * freq * t)  # Sine wave pattern
-                        v_ref = 2.0 * math.pi * freq * amplitude * math.cos(2.0 * math.pi * freq * t)
-                        p_err = ref - robot_if.GetMotor(i).GetPosition()  # Position error
-                        v_err = v_ref - robot_if.GetMotor(i).GetVelocity()  # Velocity error
-                        cur = kp * p_err + kd * v_err  #  Output of the PD controler (amperage)
-                        if (cur > iq_sat):  #  Check saturation
-                            cur = iq_sat
-                        if (cur < -iq_sat):
-                            cur = -iq_sat
-                        robot_if.GetMotor(i).SetCurrentReference(cur)  # Set reference currents
+                        robot_if.GetMotor(i).SetCurrentReference(0)  # Set reference currents
 
             if ((cpt % 100) == 0):  # Display state of the system once every 100 iterations of the main loop
                 print(chr(27) + "[2J")
                 # To read IMU data in Python use robot_if.imu_data_accelerometer(i), robot_if.imu_data_gyroscope(i)
                 # or robot_if.imu_data_attitude(i) with i = 0, 1 or 2
-                robot_if.PrintIMU()
-                robot_if.PrintADC()
-                robot_if.PrintMotors()
-                robot_if.PrintMotorDrivers()
-                robot_if.PrintStats()
+                robot_if.PrintCmdStats()
+                robot_if.PrintSensorStats()
                 sys.stdout.flush()  # for Python 2, use print( .... , flush=True) for Python 3
 
+
+            sent_list[robot_if.GetCmdPacketIndex()] = clock()
             robot_if.SendCommand()  # Send the reference currents to the master board
+            
 
     robot_if.Stop()  # Shut down the interface between the computer and the master board
+
+
+    latency = []
+    for i in range(1, len(sent_list)-1):
+        if (received_list[i] != 0 and sent_list[i] != 0):
+            latency.append(1000 * (received_list[i]-sent_list[i]))
+        else:
+            latency.append(0) # 0 means not sent or not received
+
+    # computing avg and std for non zero values
+    nonzero = [latency[i] for i in np.nonzero(latency)[0]]
+    if len(nonzero) != 0:
+        average = np.mean(nonzero)
+        print("average latency : %f ms" %average)
+        std = np.std(nonzero)
+        print("standard deviation : %f ms" %std)
+
+        anchored_text = AnchoredText("average latency : %f ms\nstandard deviation : %f ms" %(average, std), loc=2)
+
+        if len(latency) > 5000:
+            ax1 = plt.subplot(2, 1, 1)
+        else:
+            ax1 = plt.subplot(1, 1, 1)
+        ax1.plot(latency, '.')
+        ax1.set_xlabel('index')
+        ax1.set_ylabel('latency (ms)')
+        ax1.add_artist(anchored_text)
+
+        # plotting zoomed version to see pattern
+        if len(latency) > 5000:
+            ax2 = plt.subplot(2, 1, 2)
+            ax2.plot(latency, '.')
+            ax2.set_xlabel('index')
+            ax2.set_ylabel('latency (ms)')
+            ax2.set_xlim(len(latency)/2, len(latency)/2 + 2000)
+            ax2.set_ylim(-0.1, 2.1)
+
+        plt.show()
 
     if robot_if.IsTimeout():
         print("Masterboard timeout detected.")

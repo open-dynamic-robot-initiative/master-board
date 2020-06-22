@@ -2,7 +2,7 @@
 #include <signal.h>
 #include "master_board_sdk/master_board_interface.h"
 
-MasterBoardInterface* MasterBoardInterface::instance = NULL;
+MasterBoardInterface *MasterBoardInterface::instance = NULL;
 
 MasterBoardInterface::MasterBoardInterface(const std::string &if_name, bool listener_mode)
 {
@@ -26,7 +26,7 @@ MasterBoardInterface::MasterBoardInterface(const MasterBoardInterface &to_be_cop
 
 MasterBoardInterface::~MasterBoardInterface()
 {
-  delete(link_handler_);
+  delete (link_handler_);
 }
 
 void MasterBoardInterface::GenerateSessionId()
@@ -87,7 +87,8 @@ int MasterBoardInterface::Init()
 int MasterBoardInterface::Stop()
 {
   printf("Shutting down connection (%s)\n", if_name_.c_str());
-  link_handler_->stop();
+  if (link_handler_ != NULL)
+    link_handler_->stop();
   return 0;
 }
 
@@ -96,7 +97,7 @@ void MasterBoardInterface::KeyboardStop(int signum)
   printf("Keyboard Interrupt\n");
   instance->Stop();
   printf("-- End of script --\n");
-  delete(instance->link_handler_);
+  delete (instance->link_handler_);
   exit(0);
 }
 
@@ -217,9 +218,9 @@ int MasterBoardInterface::SendCommand()
     Stop();
     return -1; // Return -1 since the command has not been sent.
   }
-  command_packet.command_index = index_cmd_packet;
+  command_packet.command_index = cmd_packet_index;
   link_handler_->send((uint8_t *)&command_packet, sizeof(command_packet_t));
-  index_cmd_packet++;
+  cmd_packet_index++;
   nb_cmd_sent++;
   return 0; // Return 0 since the command has been sent.
 }
@@ -313,7 +314,6 @@ void MasterBoardInterface::callback(uint8_t src_mac[6], uint8_t *data, int len)
         histogram_lost_sensor_packets[packet_recv->sensor_index - last_sensor_index - 2]++; // index 0 -> 1 packet lost !
       }
     }
-    
 
     //Command_loss
     if (packet_recv->packet_loss != last_cmd_packet_loss)
@@ -334,6 +334,8 @@ void MasterBoardInterface::callback(uint8_t src_mac[6], uint8_t *data, int len)
     nb_sensors_lost += uint16_t(packet_recv->sensor_index - last_sensor_index - 1);
     nb_sensors_sent += uint16_t(packet_recv->sensor_index - last_sensor_index);
     last_sensor_index = packet_recv->sensor_index;
+
+    last_recv_cmd_index = packet_recv->last_cmd_index;
   }
   else
   {
@@ -390,7 +392,8 @@ void MasterBoardInterface::ParseSensorData()
 
 void MasterBoardInterface::PrintIMU()
 {
-  printf("IMU:% 6.3f % 6.3f % 6.3f - % 6.3f % 6.3f % 6.3f - % 6.3f % 6.3f % 6.3f - % 6.3f % 6.3f % 6.3f\n",
+  printf("    |     accelerometer    |       gyroscope      |       attitude       |  linear acceleration |\n");
+  printf("IMU | %6.2f %6.2f %6.2f | %6.2f %6.2f %6.2f | %6.2f %6.2f %6.2f | %6.2f %6.2f %6.2f |\n\n",
          imu_data.accelerometer[0],
          imu_data.accelerometer[1],
          imu_data.accelerometer[2],
@@ -407,40 +410,62 @@ void MasterBoardInterface::PrintIMU()
 
 void MasterBoardInterface::PrintADC()
 {
+  bool printed = 0;
   for (int i = 0; i < N_SLAVES; i++)
   {
     if (!motor_drivers[i].is_connected)
       continue;
 
-    printf("ADC %2.2d -> %6.3f % 6.3f\n",
+    printf("ADC %2.2d | %6.3f | % 6.3f |\n",
            i, motor_drivers[i].adc[0], motor_drivers[i].adc[1]);
+    printed = 1;
   }
+  if (printed)
+    printf("\n");
 }
 
 void MasterBoardInterface::PrintMotors()
 {
+  bool header_printed = 0;
   for (int i = 0; i < N_SLAVES; i++)
   {
     if (!motor_drivers[i].is_connected)
       continue;
 
-    printf("Motor % 2.2d -> ", 2 *i);
+    if (!header_printed)
+    {
+      printf("Motor | enabled | ready | IDXT | Index det |    position   |    velocity   |    current    |\n");
+      header_printed = 1;
+    }
+
+    printf("%5.2d | ", 2 * i);
     motors[2 * i].Print();
-    printf("Motor % 2.2d -> ", 2 * i + 1);
+    printf("%5.2d | ", 2 * i + 1);
     motors[2 * i + 1].Print();
   }
+  if (header_printed)
+    printf("\n");
 }
 
 void MasterBoardInterface::PrintMotorDrivers()
 {
+  bool header_printed = 0;
   for (int i = 0; i < N_SLAVES; i++)
   {
     if (!motor_drivers[i].is_connected)
       continue;
 
-    printf("Motor Driver % 2.2d -> ", i);
+    if (!header_printed)
+    {
+      printf("Motor Driver | Connected | Enabled | Error |\n");
+      header_printed = 1;
+    }
+
+    printf("%12.2d | ", i);
     motor_drivers[i].Print();
   }
+  if (header_printed)
+    printf("\n");
 }
 
 void MasterBoardInterface::ResetTimeout()
@@ -485,35 +510,34 @@ void MasterBoardInterface::set_motor_drivers(MotorDriver input_motor_drivers[])
   }
 }
 
-void MasterBoardInterface::PrintSensorStats()
+void MasterBoardInterface::PrintStats()
 {
-  printf("Sensors lost : %u, sent : %u, loss ratio : %.02f\n", nb_sensors_lost, nb_sensors_sent, 100. * nb_sensors_lost / nb_sensors_sent);
+  printf("         |   lost   |   sent   | loss ratio | histogram\n");
 
-  printf("Histogram sensor : ");
-  for (int i = 0; i < MAX_HIST; i++)
-  {
-    printf("%d ", histogram_lost_sensor_packets[i]);
-  }
-  printf("\n");
-}
-
-void MasterBoardInterface::PrintCmdStats()
-{
+  //Command stats
   if (!listener_mode)
   {
-    printf("Commands lost : %u, sent : %u, loss ratio : %.02f\n", nb_cmd_lost, nb_cmd_sent, 100. * nb_cmd_lost / nb_cmd_sent);
+    printf("Commands | %8u | %8u | %10.02f | ", nb_cmd_lost, nb_cmd_sent, 100. * nb_cmd_lost / nb_cmd_sent);
   }
   else
   {
-    printf("Commands lost : %u\n", nb_cmd_lost);
+    printf("Commands | %8u |          |            | ", nb_cmd_lost);
   }
 
-  printf("Histogram command : ");
   for (int i = 0; i < MAX_HIST; i++)
   {
     printf("%d ", histogram_lost_cmd_packets[i]);
   }
   printf("\n");
+
+  //Sensor stats
+  printf("Sensors  | %8u | %8u | %10.02f | ", nb_sensors_lost, nb_sensors_sent, 100. * nb_sensors_lost / nb_sensors_sent);
+
+  for (int i = 0; i < MAX_HIST; i++)
+  {
+    printf("%d ", histogram_lost_sensor_packets[i]);
+  }
+  printf("\n\n");
 }
 
 uint32_t MasterBoardInterface::GetSensorsSent() { return nb_sensors_sent; }
@@ -523,6 +547,10 @@ uint32_t MasterBoardInterface::GetSensorsLost() { return nb_sensors_lost; }
 uint32_t MasterBoardInterface::GetCmdSent() { return nb_cmd_sent; }
 
 uint32_t MasterBoardInterface::GetCmdLost() { return nb_cmd_lost; }
+
+uint16_t MasterBoardInterface::GetLastRecvCmdIndex() { return last_recv_cmd_index; }
+
+uint16_t MasterBoardInterface::GetCmdPacketIndex() { return cmd_packet_index; }
 
 int MasterBoardInterface::GetSensorHistogram(int index)
 {

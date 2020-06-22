@@ -16,10 +16,15 @@ void MotorDriver::SetMotors(Motor *motor1, Motor *motor2)
 
 void MotorDriver::Print()
 {
-  printf("Connected:%d ", is_connected);
-  printf("Enabled:%d ", is_enabled);
-  printf("Error:%d ", error_code);
-  printf("\n");
+  printf("%9d | ", is_connected);
+  printf("%7d | ", is_enabled);
+  if (error_code != 0) //error code printed in red
+  {
+    printf("\033[0;31m");
+  }
+  printf("%5d", error_code);
+  printf("\033[0m");
+  printf(" | \n");
 }
 
 void MotorDriver::Enable()
@@ -45,6 +50,21 @@ void MotorDriver::DisablePositionRolloverError()
 void MotorDriver::SetTimeout(uint8_t time)
 {
   timeout = time;
+}
+
+bool MotorDriver::IsConnected()
+{
+  return is_connected;
+}
+
+bool MotorDriver::IsEnabled()
+{
+  return is_enabled;
+}
+
+int MotorDriver::GetErrorCode()
+{
+  return error_code;
 }
 
 void MotorDriver::set_adc(float adc_val [])

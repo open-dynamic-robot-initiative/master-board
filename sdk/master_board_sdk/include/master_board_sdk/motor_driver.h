@@ -16,6 +16,9 @@ public:
   	void DisablePositionRolloverError();
   	void SetTimeout(uint8_t time);
 
+	bool IsConnected();
+	bool IsEnabled();
+	int GetErrorCode();
 
 	void Enable();
 	void Disable();

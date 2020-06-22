@@ -69,7 +69,7 @@ bool spi_use_a = true;
 
 void print_spi_connected()
 {
-    printf("[ ");
+    printf("spi connected: [ ");
     for (int i = 0; i < CONFIG_N_SLAVES; i++)
     {
         printf("%d ", TEST_BIT(spi_connected, i));
@@ -88,6 +88,14 @@ void print_packet(uint8_t *data, int len)
         printf("%02X ", data[i]);
     }
     printf("\n");
+}
+
+void set_all_leds(uint32_t rgb)
+{
+    for (int led = 0; led < NUM_LEDS; led++)
+    {
+        ws_led.leds[led] = rgb;
+    }
 }
 
 static void periodic_timer_callback(void *arg)
@@ -130,8 +138,6 @@ static void periodic_timer_callback(void *arg)
             spi_n_attempt = CONFIG_SPI_N_ATTEMPT;
             break;
         }
-
-        //printf("%d\n", current_state);
     }
 
     if (current_state == SETUP)
@@ -140,8 +146,6 @@ static void periodic_timer_callback(void *arg)
     }
 
     ms_cpt++;
-
-    //if (ms_cpt % 500 == 0) printf("current_state = %d, session_id = %d\n", current_state, session_id);
 
     /* LEDs */
     bool blink = (ms_cpt % 1000) > 500;
@@ -158,19 +162,16 @@ static void periodic_timer_callback(void *arg)
 
     spi_count++;
 
-    //printf("%d\n", wifi_eth_count);
     switch (current_state)
     {
     case WAITING_FOR_INIT:
-        ws_led.leds[0] = RGB(0xff * fade_blink, 0, 0); //Red fade, Waiting for init
-        ws_led.leds[1] = RGB(0xff * fade_blink, 0, 0);
+        set_all_leds(RGB(0xff * fade_blink, 0, 0)); //Red fade, Waiting for init
 
         wifi_eth_count = 0; // we allow not receiving messages if waiting for init
         break;
 
     case SPI_AUTODETECT:
-        ws_led.leds[0] = RGB(0xff * fade_blink, 0, 0xff * fade_blink); //Magenta fade, SPI Autodetect
-        ws_led.leds[1] = RGB(0xff * fade_blink, 0, 0xff * fade_blink);
+        set_all_leds(RGB(0xff * fade_blink, 0, 0xff * fade_blink)); //Magenta fade, SPI Autodetect
 
         if (spi_count > SPI_AUTODETECT_MAX_COUNT)
         {
@@ -181,8 +182,7 @@ static void periodic_timer_callback(void *arg)
         break;
 
     case SENDING_INIT_ACK:
-        ws_led.leds[0] = RGB(0, 0, 0xff * fade_blink); //Blue fade, waiting for first commmand
-        ws_led.leds[1] = RGB(0, 0, 0xff * fade_blink);
+        set_all_leds(RGB(0, 0, 0xff * fade_blink)); //Blue fade, waiting for first commmand
 
         if (wifi_eth_count > CONFIG_WIFI_ETH_TIMEOUT_ACK)
         {
@@ -193,8 +193,7 @@ static void periodic_timer_callback(void *arg)
         break;
 
     case ACTIVE_CONTROL:
-        ws_led.leds[0] = RGB(0, 0xff * fade_blink, 0); //Green fade, Active control
-        ws_led.leds[1] = RGB(0, 0xff * fade_blink, 0);
+        set_all_leds(RGB(0, 0xff * fade_blink, 0)); //Green fade, Active control
 
         if (wifi_eth_count > CONFIG_WIFI_ETH_TIMEOUT_CONTROL)
         {
@@ -209,22 +208,19 @@ static void periodic_timer_callback(void *arg)
         break;
 
     case WIFI_ETH_LINK_DOWN:
-        ws_led.leds[0] = RGB(0x3f * blink, 0x3f * blink, 0); //Yellow blink, ethernet link down state awaiting for link up
-        ws_led.leds[1] = RGB(0x3f * blink, 0x3f * blink, 0);
+        set_all_leds(RGB(0x3f * blink, 0x3f * blink, 0)); //Yellow blink, ethernet link down state awaiting for link up
 
         wifi_eth_count = 0; // we can't receive any messages if link is down
         break;
 
     case WIFI_ETH_ERROR:
-        ws_led.leds[0] = RGB(0xff * blink, 0, 0); //Red blink, error state (communication with PC), awaiting for new init msg
-        ws_led.leds[1] = RGB(0xff * blink, 0, 0);
+        set_all_leds(RGB(0xff * blink, 0, 0)); //Red blink, error state (communication with PC), awaiting for new init msg
 
         wifi_eth_count = 0; // we allow not receiving messages if waiting for init in error state
         break;
 
     default:
-        ws_led.leds[0] = RGB(0xff * blink, 0xff * blink, 0xff * blink); //White blink, state machine error (should never happen)
-        ws_led.leds[1] = RGB(0xff * blink, 0xff * blink, 0xff * blink);
+        set_all_leds(RGB(0xff * blink, 0xff * blink, 0xff * blink)); //White blink, state machine error (should never happen)
         break;
     }
 
@@ -232,7 +228,9 @@ static void periodic_timer_callback(void *arg)
     if (ENABLE_DEBUG_PRINTF && spi_count % 1000 == 0)
     {
         printf("\e[1;1H\e[2J");
-        printf("--- SPI ---\n");
+        printf("current_state: %d, session_id: %d\n", current_state, session_id);
+
+        printf("\n--- SPI ---\n");
 
         print_spi_connected();
 
@@ -467,6 +465,7 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len)
 
         /* Compute data for next wifi_eth_sensor packet */
         wifi_eth_tx_data.packet_loss += ((struct wifi_eth_packet_command *)data)->command_index - command_index_prev - 1;
+        wifi_eth_tx_data.last_cmd_index = ((struct wifi_eth_packet_command *)data)->command_index;
         command_index_prev = ((struct wifi_eth_packet_command *)data)->command_index;
 
         // reset count for communication timeout
@@ -486,9 +485,7 @@ void app_main()
     nvs_flash_init();
 
     ws2812_control_init(); //init the LEDs
-    ws_led.leds[0] = 0x0f0f0f;
-    ws_led.leds[1] = 0x0f0f0f;
-    ws_led.leds[2] = 0x0f0f0f;
+    set_all_leds(0x0f0f0f);
 
     ws2812_write_leds(ws_led);
 

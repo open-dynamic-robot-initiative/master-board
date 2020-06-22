@@ -66,6 +66,7 @@ struct sensor_packet_t
 	struct imu_packet_t imu;
 	uint16_t sensor_index;
 	uint16_t packet_loss;
+	uint16_t last_cmd_index;
 } __attribute__((packed));
 
 struct command_packet_t

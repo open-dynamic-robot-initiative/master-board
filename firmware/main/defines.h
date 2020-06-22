@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define PROTOCOL_VERSION 2
+#define PROTOCOL_VERSION 3
 
 struct sensor_data {
 	uint16_t status;
@@ -55,6 +55,7 @@ struct wifi_eth_packet_sensor {
     struct imu_data imu;
     uint16_t sensor_index;
     uint16_t packet_loss;
+	uint16_t last_cmd_index;
 } __attribute__ ((packed));
 
 enum State {
