@@ -3,6 +3,7 @@ firmware/build/
 
 sdk/master_board_sdk/bin/
 sdk/master_board_sdk/build/
+sdk/master_board_sdk/graphs/
 
 firmware/sdkconfig\.old
 

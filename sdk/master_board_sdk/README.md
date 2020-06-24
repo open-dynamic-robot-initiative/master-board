@@ -70,9 +70,9 @@ How to run the Python examples
 
 `sudo PYTHONPATH=. python example/listener.pyc -i name_interface`
 
-* Run the latency calculator script with the name of your Ethernet interface instead of `name_interface` (for instance `enp1s0`): 
+* Run the communication analyser script with the name of your Ethernet interface instead of `name_interface` (for instance `enp1s0`): 
 
-`sudo PYTHONPATH=. python example/latency.pyc -i name_interface`
+`sudo PYTHONPATH=. python example/com_analyser.pyc -i name_interface`
 
 
 How to run an executable based on the SDK without root permissions
