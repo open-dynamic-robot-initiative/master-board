@@ -39,6 +39,7 @@ public:
 	bool IsAckMsgReceived();
 
 	int GetSessionId();
+	int GetProtocolVersion();
 
 	uint32_t GetSensorsSent();
 	uint32_t GetSensorsLost();
@@ -48,6 +49,7 @@ public:
 	uint16_t GetCmdPacketIndex();
 	int GetSensorHistogram(int index);
 	int GetCmdHistogram(int index);
+	int GetWifiChannel();
 
 	void ResetPacketLossStats();
 

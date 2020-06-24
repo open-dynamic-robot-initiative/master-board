@@ -37,6 +37,7 @@ class ESPNOW_manager : public LINK_manager {
 		void stop() override;
 		
 		void set_channel(uint16_t channel_freq) { myWiFipacket.set_channel(channel_freq); }
+		uint16_t get_channel() { return myWiFipacket.data.radiotap.channel_freq; }
 		void set_datarate(uint8_t datarate) { myWiFipacket.set_datarate(datarate); }
 
 
