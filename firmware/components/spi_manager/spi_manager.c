@@ -53,7 +53,7 @@ void spi_init() {
         .sclk_io_num=PIN_NUM_CLK,
         .quadwp_io_num=-1,
         .quadhd_io_num=-1,
-        .max_transfer_sz=16
+        .max_transfer_sz=SPI_TOTAL_LEN*2
     };
 
     spi_device_interface_config_t devcfg={
@@ -66,7 +66,7 @@ void spi_init() {
     };
 
     //Initialize the SPI bus
-    ESP_ERROR_CHECK(spi_bus_initialize(HSPI_HOST, &buscfg, 1));
+    ESP_ERROR_CHECK(spi_bus_initialize(HSPI_HOST, &buscfg, 0));
     ESP_ERROR_CHECK(spi_bus_add_device(HSPI_HOST, &devcfg, &spi));
 }
 

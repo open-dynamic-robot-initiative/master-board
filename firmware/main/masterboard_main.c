@@ -56,7 +56,7 @@ struct led_state ws_led;
 
 static uint16_t spi_index_trans = 0;
 
-static uint16_t spi_rx_packet[CONFIG_N_SLAVES][SPI_TOTAL_LEN + 1]; //SPI write DMA by blocks of 32bits. +1 prevents any overflow
+static uint16_t spi_rx_packet[CONFIG_N_SLAVES][SPI_TOTAL_LEN + 1]; // +1 prevents any overflow
 
 static uint16_t spi_tx_packet_a[CONFIG_N_SLAVES][SPI_TOTAL_LEN];
 static uint16_t spi_tx_packet_b[CONFIG_N_SLAVES][SPI_TOTAL_LEN];
@@ -155,7 +155,7 @@ static void periodic_timer_callback(void *arg)
     float fade_blink = (ms_cpt % 1000 < 500) ? (ms_cpt % 1000) / 500.0 : (1000 - (ms_cpt % 1000)) / 500.0;
 
     /* Prepare spi transactions */
-    bool spi_done[CONFIG_N_SLAVES] = {0};
+    bool spi_done[CONFIG_N_SLAVES] = {0}; // used to keep track of which spi transactions are done
     spi_index_trans++;
 
     /* Choose spi packets to send*/
