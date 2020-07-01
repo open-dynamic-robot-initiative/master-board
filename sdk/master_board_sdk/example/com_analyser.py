@@ -80,7 +80,7 @@ def example_script(name_interface):
     while ((not robot_if.IsTimeout())
            and (clock() < duration)):  # Stop after 15 seconds (around 5 seconds are used at the start for calibration)
 
-        if (received_list[robot_if.GetLastRecvCmdIndex()] == 0) :
+        if (received_list[robot_if.GetLastRecvCmdIndex()] == 0):
                 received_list[robot_if.GetLastRecvCmdIndex()] = clock()
         
         if ((clock() - last) > dt):
@@ -158,13 +158,13 @@ def example_script(name_interface):
     nonzero = [latency[i] for i in np.nonzero(latency)[0]]
     if len(nonzero) != 0:
         average = np.mean(nonzero)
-        print("average latency : %f ms" %average)
+        print("average latency: %f ms" %average)
         std = np.std(nonzero)
-        print("standard deviation : %f ms" %std)
+        print("standard deviation: %f ms" %std)
 
         plt.figure("wifi-ethernet latency", figsize=(20,15), dpi=200)
 
-        anchored_text = AnchoredText("average latency : %f ms\nstandard deviation : %f ms" %(average, std), loc=2, prop=dict(fontsize='xx-large'))
+        anchored_text = AnchoredText("average latency: %f ms\nstandard deviation: %f ms" %(average, std), loc=2, prop=dict(fontsize='xx-large'))
 
         if len(latency) > 5000:
             ax1 = plt.subplot(2, 1, 1)
@@ -236,7 +236,7 @@ def example_script(name_interface):
 
     if (name_interface[0] == 'w'):
         current_freq = robot_if.GetWifiChannel()
-        plt.suptitle("Wifi statistics : channel " + str(current_freq), fontsize='xx-large')
+        plt.suptitle("Wifi statistics: channel " + str(current_freq), fontsize='xx-large')
 
     else :
         plt.suptitle("Ethernet statistics", fontsize='xx-large')
@@ -247,7 +247,7 @@ def example_script(name_interface):
 
     # plotting the evolution of command loop duration
     plt.figure("loop duration", figsize=(20, 15), dpi=200)
-    anchored_text = AnchoredText("average duration : %f ms\nstandard deviation : %f ms" %(np.mean(loop_duration), np.std(loop_duration)), loc=2, prop=dict(fontsize='xx-large'))
+    anchored_text = AnchoredText("average duration: %f ms\nstandard deviation: %f ms" %(np.mean(loop_duration), np.std(loop_duration)), loc=2, prop=dict(fontsize='xx-large'))
 
     ax9 = plt.subplot(1, 1, 1)
     ax9.plot(loop_duration, '.')
@@ -262,14 +262,14 @@ def example_script(name_interface):
 
     # creation of the text file with system info
     text_file = open("../graphs/" + dir_name + '/' + dir_name + "-system-info.txt", 'w')
-    text_file.write("Current date and time : " + time.strftime("%c") + '\n')
-    text_file.write("Linux distribution : " + platform.linux_distribution()[0] + ' ' + platform.linux_distribution()[1] + ' ' + platform.linux_distribution()[2] + '\n')
-    text_file.write("Computer : " + os.uname()[1] + '\n')
-    text_file.write("Interface : " + name_interface + '\n')
+    text_file.write("Current date and time: " + time.strftime("%c") + '\n')
+    text_file.write("Linux distribution: " + platform.linux_distribution()[0] + ' ' + platform.linux_distribution()[1] + ' ' + platform.linux_distribution()[2] + '\n')
+    text_file.write("Computer: " + os.uname()[1] + '\n')
+    text_file.write("Interface: " + name_interface + '\n')
     if (name_interface[0] == 'w'):
-        text_file.write("Wifi channel : " + str(current_freq) + '\n')
-    text_file.write("Protocol version : " + str(robot_if.GetProtocolVersion()) + '\n')
-    text_file.write("Script duration : " + str(duration) + '\n')
+        text_file.write("Wifi channel: " + str(current_freq) + '\n')
+    text_file.write("Protocol version: " + str(robot_if.GetProtocolVersion()) + '\n')
+    text_file.write("Script duration: " + str(duration) + '\n')
     text_file.close()
 
     if robot_if.IsTimeout():

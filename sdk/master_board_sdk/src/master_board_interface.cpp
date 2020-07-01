@@ -578,7 +578,6 @@ int MasterBoardInterface::GetCmdHistogram(int index)
 int MasterBoardInterface::GetWifiChannel()
 {
   uint16_t wifi_freq = ((ESPNOW_manager *)link_handler_)->get_channel();
-  uint16_t list_channel[14] = {2412, 2417, 2422, 2427, 2432, 2437, 2442, 2447, 2452, 2457, 2462, 2467, 2472, 2484};
   for (int i = 0; i < 14; i++)
   {
     if (wifi_freq == list_channel[i])
