@@ -136,7 +136,7 @@ IF(BUILD_PYTHON_INTERFACE)
 
   PYTHON_BUILD(example example.py)
   PYTHON_BUILD(example listener.py)
-  PYTHON_BUILD(example latency.py)
+  PYTHON_BUILD(example com_analyser.py)
 ENDIF(BUILD_PYTHON_INTERFACE)
 
 

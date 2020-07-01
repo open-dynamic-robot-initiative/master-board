@@ -42,7 +42,9 @@ void wifi_init() {
     ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
     ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
     ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
+    wifi_country_t country = {.cc="JP", .schan=1, .nchan=14, .policy=WIFI_COUNTRY_POLICY_MANUAL};
     ESP_ERROR_CHECK( esp_wifi_start() );
+    ESP_ERROR_CHECK( esp_wifi_set_country(&country) );
     ESP_ERROR_CHECK( esp_wifi_set_channel(CONFIG_WIFI_CHANNEL, WIFI_SECOND_CHAN_NONE) );
     ESP_ERROR_CHECK( esp_wifi_internal_set_fix_rate(ESP_IF_WIFI_STA, true, CONFIG_WIFI_DATARATE) );
 

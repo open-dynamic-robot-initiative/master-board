@@ -32,6 +32,7 @@
 #define CHANNEL_freq_11 2462
 #define CHANNEL_freq_12 2467
 #define CHANNEL_freq_13 2472
+#define CHANNEL_freq_14 2484
 
 #define WLAN_LEN 24
 #define ACTIONFRAME_HEADER_LEN 8
