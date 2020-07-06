@@ -20,8 +20,6 @@
 
 #include "defines.h"
 
-#define useWIFI false
-
 #define ENABLE_DEBUG_PRINTF false
 
 #define SPI_AUTODETECT_MAX_COUNT 50 // number of spi transaction for which the master board will try to detect spi slaves
@@ -43,7 +41,8 @@ long int spi_ok[CONFIG_N_SLAVES] = {0};
 
 int wifi_eth_count = 0; // counter that counts the ms without a message being received from PC
 
-uint16_t session_id = 0;          // session id
+uint16_t session_id = 0; // session id
+uint8_t use_wifi = 0;
 enum State next_state = SETUP;    // this is updated before current_state
 enum State current_state = SETUP; // updated by the 1000 Hz cb
 
@@ -64,6 +63,8 @@ uint16_t command_index_prev = 0;
 struct wifi_eth_packet_sensor wifi_eth_tx_data;
 
 struct wifi_eth_packet_ack wifi_eth_tx_ack;
+
+int wifi_channel = CONFIG_WIFI_CHANNEL;
 
 bool spi_use_a = true;
 
@@ -166,6 +167,12 @@ static void periodic_timer_callback(void *arg)
     {
     case WAITING_FOR_INIT:
         set_all_leds(RGB(0xff * fade_blink, 0, 0)); //Red fade, Waiting for init
+
+        if ((ms_cpt % 100) == 0 && next_state == current_state)
+        {
+            wifi_channel = wifi_channel < 14 ? (wifi_channel + 1) : 1;
+            change_channel(wifi_channel);
+        }
 
         wifi_eth_count = 0; // we allow not receiving messages if waiting for init
         break;
@@ -346,7 +353,7 @@ static void periodic_timer_callback(void *arg)
 
     case SENDING_INIT_ACK:
         /* Send acknowledge packets to PC */
-        if (useWIFI)
+        if (use_wifi)
         {
             wifi_send_data(&wifi_eth_tx_ack, sizeof(struct wifi_eth_packet_ack));
         }
@@ -357,12 +364,15 @@ static void periodic_timer_callback(void *arg)
         break;
 
     case WAITING_FOR_INIT:
+        // nothing to be sent as we are constantly changing of wifi channel
+        break;
+
     case SPI_AUTODETECT:
     case ACTIVE_CONTROL:
     case WIFI_ETH_ERROR:
         /* Send all spi_sensor packets to PC */
         wifi_eth_tx_data.sensor_index++;
-        if (useWIFI)
+        if (use_wifi)
         {
             wifi_send_data(&wifi_eth_tx_data, sizeof(struct wifi_eth_packet_sensor));
         }
@@ -403,7 +413,7 @@ void setup_spi()
     gpio_set_direction(CONFIG_BUTTON_GPIO, GPIO_MODE_INPUT);
 }
 
-void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len)
+void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len, char eth_or_wifi)
 {
     // received an init msg while waiting for one
     if (len == sizeof(struct wifi_eth_packet_init) && (current_state == WAITING_FOR_INIT || current_state == WIFI_ETH_ERROR))
@@ -414,6 +424,25 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len)
         {
             //printf("Wrong protocol version, got %d instead of %d, ignoring init packet\n", packet_recv->protocol_version, PROTOCOL_VERSION);
             return; // ignoring packet
+        }
+
+        if (current_state == WAITING_FOR_INIT)
+        {
+            use_wifi = (eth_or_wifi == 'w');
+
+            // if wifi is used, ethernet is deinitialized (eth stopped and driver uninstalled)
+            // we avoid deinitializing ethernet if it has already been
+            if (next_state == current_state)
+            {
+                if (use_wifi)
+                {
+                    eth_deinit();
+                }
+                else
+                {
+                    wifi_deinit_func();
+                }
+            }
         }
 
         session_id = packet_recv->session_id; // set session id
@@ -474,9 +503,14 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len)
 }
 
 //function that will be called on a link state change
+
 void wifi_eth_link_state_cb(bool new_state)
 {
-    next_state = new_state ? WAITING_FOR_INIT : WIFI_ETH_LINK_DOWN; // transitioning to the corresponding state
+    if (current_state == WAITING_FOR_INIT)
+        return;
+
+    if (!use_wifi)
+        next_state = new_state ? WIFI_ETH_ERROR : WIFI_ETH_LINK_DOWN; // transitioning to the corresponding state
 }
 
 void app_main()
@@ -501,19 +535,14 @@ void app_main()
     printf("initialise IMU\n");
     imu_init();
 
-    if (useWIFI)
-    {
-        wifi_init();
-        wifi_attach_recv_cb(wifi_eth_receive_cb);
-        next_state = WAITING_FOR_INIT; // link is never down in wifi
-    }
-    else
-    {
-        eth_attach_link_state_cb(wifi_eth_link_state_cb);
-        eth_attach_recv_cb(wifi_eth_receive_cb);
-        eth_init();
-        next_state = WIFI_ETH_LINK_DOWN; // link is down just after setup
-    }
+    wifi_init();
+    wifi_attach_recv_cb(wifi_eth_receive_cb);
+
+    eth_attach_link_state_cb(wifi_eth_link_state_cb);
+    eth_attach_recv_cb(wifi_eth_receive_cb);
+    eth_init();
+
+    next_state = WAITING_FOR_INIT;
 
     printf("Setup done\n");
 
