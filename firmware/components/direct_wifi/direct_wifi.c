@@ -32,7 +32,7 @@ static void wifi_send_cb(const uint8_t *mac_addr, esp_now_send_status_t status)
   }
 }
 
-void wifi_attach_recv_cb(void (*cb)(uint8_t src_mac[6], uint8_t *data, int len, bool eth_or_wifi))
+void wifi_attach_recv_cb(void (*cb)(uint8_t src_mac[6], uint8_t *data, int len, char eth_or_wifi))
 {
   wifi_recv_cb = cb;
 }
@@ -85,7 +85,7 @@ void wifi_deinit_func()
   ESP_ERROR_CHECK(esp_wifi_deinit());
 }
 
-void change_channel(uint8_t wifi_channel)
+void wifi_change_channel(uint8_t wifi_channel)
 {
   ESP_ERROR_CHECK(esp_wifi_set_channel(wifi_channel, WIFI_SECOND_CHAN_NONE));
   peer.channel = wifi_channel;

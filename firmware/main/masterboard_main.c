@@ -42,7 +42,11 @@ long int spi_ok[CONFIG_N_SLAVES] = {0};
 int wifi_eth_count = 0; // counter that counts the ms without a message being received from PC
 
 uint16_t session_id = 0; // session id
-uint8_t use_wifi = 0;
+
+uint8_t use_wifi = 0; // true if wifi is used, false if ethernet is used
+
+int wifi_channel = CONFIG_WIFI_CHANNEL;
+
 enum State next_state = SETUP;    // this is updated before current_state
 enum State current_state = SETUP; // updated by the 1000 Hz cb
 
@@ -63,8 +67,6 @@ uint16_t command_index_prev = 0;
 struct wifi_eth_packet_sensor wifi_eth_tx_data;
 
 struct wifi_eth_packet_ack wifi_eth_tx_ack;
-
-int wifi_channel = CONFIG_WIFI_CHANNEL;
 
 bool spi_use_a = true;
 
@@ -168,10 +170,11 @@ static void periodic_timer_callback(void *arg)
     case WAITING_FOR_INIT:
         set_all_leds(RGB(0xff * fade_blink, 0, 0)); //Red fade, Waiting for init
 
+        // Change wifi channel to find the one used by the computer
         if ((ms_cpt % 100) == 0 && next_state == current_state)
         {
             wifi_channel = wifi_channel < 14 ? (wifi_channel + 1) : 1;
-            change_channel(wifi_channel);
+            wifi_change_channel(wifi_channel);
         }
 
         wifi_eth_count = 0; // we allow not receiving messages if waiting for init
@@ -506,9 +509,11 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len, char eth_or
 
 void wifi_eth_link_state_cb(bool new_state)
 {
-    if (current_state == WAITING_FOR_INIT)
+    // In WAITING_FOR_INIT, we don't know if wifi or ethernet is used
+    if (current_state == WAITING_FOR_INIT) 
         return;
 
+    // When wifi is used, ethernet link state doesn't matter
     if (!use_wifi)
         next_state = new_state ? WIFI_ETH_ERROR : WIFI_ETH_LINK_DOWN; // transitioning to the corresponding state
 }

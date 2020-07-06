@@ -124,7 +124,7 @@ void eth_detach_recv_cb()
   eth_recv_cb = NULL;
 }
 
-void eth_attach_recv_cb(void (*cb)(uint8_t src_mac[6], uint8_t *data, int len, bool eth_or_wifi))
+void eth_attach_recv_cb(void (*cb)(uint8_t src_mac[6], uint8_t *data, int len, char eth_or_wifi))
 {
   eth_recv_cb = cb;
 }

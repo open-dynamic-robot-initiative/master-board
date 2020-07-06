@@ -42,9 +42,9 @@ void (*wifi_recv_cb)(uint8_t src_mac[6], uint8_t *data, int len, char eth_or_wif
 void wifi_init();
 void wifi_deinit_func();
 void wifi_send_data(uint8_t *data, int len);
-void wifi_attach_recv_cb(void (*cb)(uint8_t src_mac[6], uint8_t *data, int len, bool eth_or_wifi));
+void wifi_attach_recv_cb(void (*cb)(uint8_t src_mac[6], uint8_t *data, int len, char eth_or_wifi));
 void wifi_detach_recv_cb();
-void change_channel(uint8_t wifi_channel);
+void wifi_change_channel(uint8_t wifi_channel);
 static void wifi_recv_func(uint8_t src_mac[6], uint8_t *data, int len);
 
 #endif
