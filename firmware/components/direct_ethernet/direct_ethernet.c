@@ -84,7 +84,7 @@ static esp_err_t eth_recv_func(esp_eth_handle_t eth_handle, uint8_t *buffer, uin
   }
   else
   {
-    eth_recv_cb(frame->dst_mac, frame->data, frame->data_len, 'e');
+    eth_recv_cb(frame->src_mac, frame->data, frame->data_len, 'e');
   }
   free(buffer);
   return ESP_OK;
