@@ -437,6 +437,8 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len, char eth_or
             // we avoid deinitializing ethernet if it has already been
             if (next_state == current_state)
             {
+                next_state = SPI_AUTODETECT; // state transition before deinit for safety
+
                 if (use_wifi)
                 {
                     eth_deinit();
