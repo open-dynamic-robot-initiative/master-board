@@ -54,7 +54,7 @@ void wifi_init()
   ESP_ERROR_CHECK(ret);
 
   /* Init WiFi */
-  tcpip_adapter_init();
+  //tcpip_adapter_init();
   wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
   cfg.ampdu_tx_enable = 0;
   ESP_ERROR_CHECK(esp_wifi_init(&cfg));
@@ -63,7 +63,7 @@ void wifi_init()
   wifi_country_t country = {.cc = "JP", .schan = 1, .nchan = 14, .policy = WIFI_COUNTRY_POLICY_MANUAL};
   ESP_ERROR_CHECK(esp_wifi_start());
   ESP_ERROR_CHECK(esp_wifi_set_country(&country));
-  ESP_ERROR_CHECK(esp_wifi_set_channel(CONFIG_WIFI_CHANNEL, WIFI_SECOND_CHAN_NONE));
+  ESP_ERROR_CHECK(esp_wifi_set_channel(1, WIFI_SECOND_CHAN_NONE));
   ESP_ERROR_CHECK(esp_wifi_internal_set_fix_rate(ESP_IF_WIFI_STA, true, CONFIG_WIFI_DATARATE));
 
   /* Init ESPNOW */
@@ -71,7 +71,7 @@ void wifi_init()
   ESP_ERROR_CHECK(esp_now_register_recv_cb(wifi_recv_func));
 
   memset(&peer, 0, sizeof(esp_now_peer_info_t));
-  peer.channel = CONFIG_WIFI_CHANNEL;
+  peer.channel = 1;
   peer.ifidx = ESP_IF_WIFI_STA;
   peer.encrypt = false;
   memcpy(peer.peer_addr, s_example_broadcast_mac, ESP_NOW_ETH_ALEN);

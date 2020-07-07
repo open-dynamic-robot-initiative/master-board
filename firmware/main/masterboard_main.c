@@ -45,7 +45,7 @@ uint16_t session_id = 0; // session id
 
 uint8_t use_wifi = 0; // true if wifi is used, false if ethernet is used
 
-int wifi_channel = CONFIG_WIFI_CHANNEL;
+int wifi_channel = 1;
 
 enum State next_state = SETUP;    // this is updated before current_state
 enum State current_state = SETUP; // updated by the 1000 Hz cb
@@ -510,6 +510,7 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len, char eth_or
 void wifi_eth_link_state_cb(bool new_state)
 {
     // In WAITING_FOR_INIT, we don't know if wifi or ethernet is used
+    // so we are ignoring any eth link state changes
     if (current_state == WAITING_FOR_INIT) 
         return;
 
