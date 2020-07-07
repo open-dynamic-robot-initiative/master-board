@@ -8,6 +8,8 @@ State machine description and behaviour
 
 Diagram generated using [Mermaid](https://github.com/mermaid-js/mermaid) Live Editor, click on picture to edit.
 
+During **WAITING_FOR_INIT**, the master board waits for an init message from both ethernet and wifi, checking all channels. This enables an autoselection of the type of communication with the computer.
+
 Please note that **WIFI_ETH_LINK_DOWN** state is accessible from any state except WAITING_FOR_INIT via a callback on the ethernet link down event, but links have not been drawn for the sake of readability.
 
 State machine LED code
