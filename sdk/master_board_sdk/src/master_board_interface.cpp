@@ -492,6 +492,11 @@ int MasterBoardInterface::GetSessionId()
   return session_id;
 }
 
+int MasterBoardInterface::GetProtocolVersion()
+{
+  return PROTOCOL_VERSION;
+}
+
 void MasterBoardInterface::set_motors(Motor input_motors[])
 {
   for (int i = 0; i < (2 * N_SLAVES); i++)
@@ -568,6 +573,17 @@ int MasterBoardInterface::GetCmdHistogram(int index)
     return -1; //prevents user from being out of range
   }
   return histogram_lost_cmd_packets[index];
+}
+
+int MasterBoardInterface::GetWifiChannel()
+{
+  uint16_t wifi_freq = ((ESPNOW_manager *)link_handler_)->get_channel();
+  for (int i = 0; i < 14; i++)
+  {
+    if (wifi_freq == list_channel[i])
+      return i + 1;
+  }
+  return -1;
 }
 
 void MasterBoardInterface::ResetPacketLossStats()

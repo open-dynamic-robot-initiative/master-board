@@ -3,7 +3,7 @@
 uint8_t eth_src_mac[6] = {0};
 uint8_t eth_dst_mac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
-void (*eth_recv_cb)(uint8_t src_mac[6], uint8_t *data, int len) = NULL;
+void (*eth_recv_cb)(uint8_t src_mac[6], uint8_t *data, int len, char eth_or_wifi) = NULL; // eth_or_wifi = 'e' when eth is used, 'w' when wifi is used
 
 void (*eth_link_state_cb)(bool link_state) = NULL;
 
@@ -22,7 +22,7 @@ static void eth_event_handler(void *arg, esp_event_base_t event_base,
   case ETHERNET_EVENT_CONNECTED:
     if (eth_link_state_cb == NULL)
     {
-    ESP_LOGW(ETH_TAG, "Ethernet link Up but no callback function is set");
+      ESP_LOGW(ETH_TAG, "Ethernet link Up but no callback function is set");
     }
     else
     {
@@ -38,13 +38,13 @@ static void eth_event_handler(void *arg, esp_event_base_t event_base,
   case ETHERNET_EVENT_DISCONNECTED:
     if (eth_link_state_cb == NULL)
     {
-    ESP_LOGW(ETH_TAG, "Ethernet link Down but no callback function is set");
+      ESP_LOGW(ETH_TAG, "Ethernet link Down but no callback function is set");
     }
     else
     {
       eth_link_state_cb(false);
     }
-    
+
     ESP_LOGI(ETH_TAG, "Ethernet Link Down");
     break;
   case ETHERNET_EVENT_START:
@@ -84,7 +84,7 @@ static esp_err_t eth_recv_func(esp_eth_handle_t eth_handle, uint8_t *buffer, uin
   }
   else
   {
-    eth_recv_cb(frame->dst_mac, frame->data, frame->data_len);
+    eth_recv_cb(frame->src_mac, frame->data, frame->data_len, 'e');
   }
   free(buffer);
   return ESP_OK;
@@ -124,7 +124,7 @@ void eth_detach_recv_cb()
   eth_recv_cb = NULL;
 }
 
-void eth_attach_recv_cb(void (*cb)(uint8_t src_mac[6], uint8_t *data, int len))
+void eth_attach_recv_cb(void (*cb)(uint8_t src_mac[6], uint8_t *data, int len, char eth_or_wifi))
 {
   eth_recv_cb = cb;
 }
@@ -136,7 +136,7 @@ void eth_detach_link_state_cb()
 
 void eth_attach_link_state_cb(void (*cb)(bool link_state))
 {
-   eth_link_state_cb = cb;
+  eth_link_state_cb = cb;
 }
 
 void eth_init()
@@ -158,4 +158,10 @@ void eth_init()
   printf("Driver installed\n");
   ESP_ERROR_CHECK(esp_eth_start(eth_handle));
   printf("Driver started\n");
+}
+
+void eth_deinit()
+{
+  ESP_ERROR_CHECK(esp_eth_stop(eth_handle));
+  ESP_ERROR_CHECK(esp_eth_driver_uninstall(eth_handle));
 }

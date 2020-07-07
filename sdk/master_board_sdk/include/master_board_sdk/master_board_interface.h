@@ -12,6 +12,8 @@
 
 #define MAX_HIST 20
 
+const uint16_t list_channel[14] = {2412, 2417, 2422, 2427, 2432, 2437, 2442, 2447, 2452, 2457, 2462, 2467, 2472, 2484};
+
 class MasterBoardInterface : public LINK_manager_callback
 {
 public:
@@ -39,6 +41,7 @@ public:
 	bool IsAckMsgReceived();
 
 	int GetSessionId();
+	int GetProtocolVersion();
 
 	uint32_t GetSensorsSent();
 	uint32_t GetSensorsLost();
@@ -48,6 +51,7 @@ public:
 	uint16_t GetCmdPacketIndex();
 	int GetSensorHistogram(int index);
 	int GetCmdHistogram(int index);
+	int GetWifiChannel();
 
 	void ResetPacketLossStats();
 
