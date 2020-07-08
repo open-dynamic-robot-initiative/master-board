@@ -31,12 +31,8 @@ MasterBoardInterface::~MasterBoardInterface()
 
 void MasterBoardInterface::GenerateSessionId()
 {
-  // 0 is the default in the master board, it should not be used
-  do
-  {
-    // number of milliseconds since 01/01/1970 00:00:00, casted in 16 bits
-    session_id = (uint16_t)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-  } while (session_id == 0);
+  // number of milliseconds since 01/01/1970 00:00:00, casted in 16 bits
+  session_id = (uint16_t)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 }
 
 int MasterBoardInterface::Init()
@@ -262,22 +258,14 @@ void MasterBoardInterface::callback(uint8_t src_mac[6], uint8_t *data, int len)
 
   else if ((listener_mode || (init_sent && ack_received)) && len == sizeof(sensor_packet_t))
   {
-    // special cases for listener mode
-    if (listener_mode)
+    // if the interface session id is not set in listener mode
+    if (listener_mode && session_id == -1)
     {
-      // if the interface session id is not set
-      if (session_id == -1)
-        session_id = ((sensor_packet_t *)data)->session_id; // if we launch the interface in listener mode while the masterboard is running
-                                                            // session_id is set to the one of the first sensor packet received
-
-      // if current session id is not 0 and the received session id is 0, the master board has rebooted
-      else if (session_id != 0 && ((sensor_packet_t *)data)->session_id == 0)
-      {
-        session_id = 0;
-        ResetPacketLossStats();
-      }
+      session_id = ((sensor_packet_t *)data)->session_id; // if we launch the interface in listener mode while the masterboard is running
+                                                          // session_id is set to the one of the first sensor packet received
     }
 
+    // ensuring that session id is right
     if (((sensor_packet_t *)data)->session_id != session_id)
     {
       //printf("Wrong session id in sensor msg, got %d instead of %d, ignoring packet\n", ((sensor_packet_t *)data)->session_id, session_id);
