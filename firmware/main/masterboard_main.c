@@ -543,12 +543,14 @@ void app_main()
     printf("initialise IMU\n");
     imu_init();
 
-    wifi_init();
-    wifi_attach_recv_cb(wifi_eth_receive_cb);
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     eth_attach_link_state_cb(wifi_eth_link_state_cb);
     eth_attach_recv_cb(wifi_eth_receive_cb);
     eth_init();
+    
+    wifi_init();
+    wifi_attach_recv_cb(wifi_eth_receive_cb);
 
     next_state = WAITING_FOR_INIT;
 

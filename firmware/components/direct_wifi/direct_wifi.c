@@ -54,7 +54,7 @@ void wifi_init()
   ESP_ERROR_CHECK(ret);
 
   /* Init WiFi */
-  //tcpip_adapter_init();
+  tcpip_adapter_init();
   wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
   cfg.ampdu_tx_enable = 0;
   ESP_ERROR_CHECK(esp_wifi_init(&cfg));

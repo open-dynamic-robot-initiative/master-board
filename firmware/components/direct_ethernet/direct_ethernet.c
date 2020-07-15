@@ -141,7 +141,6 @@ void eth_attach_link_state_cb(void (*cb)(bool link_state))
 
 void eth_init()
 {
-  ESP_ERROR_CHECK(esp_event_loop_create_default());
   ESP_ERROR_CHECK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, NULL));
 
   eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
