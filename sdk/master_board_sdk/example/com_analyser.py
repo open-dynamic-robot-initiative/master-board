@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 from matplotlib.offsetbox import AnchoredText
 import numpy as np
 import platform
+import subprocess
 
 
 def example_script(name_interface):
@@ -131,6 +132,12 @@ def example_script(name_interface):
         
     robot_if.Stop()  # Shut down the interface between the computer and the master board
 
+    if robot_if.IsTimeout():
+        print("Masterboard timeout detected.")
+        print("Either the masterboard has been shut down or there has been a connection issue with the cable/wifi.")
+        print("-- End of example script --")
+        return
+
 
     # creation of the folder where the graphs will be stored
     if not os.path.isdir("../graphs"):
@@ -162,6 +169,7 @@ def example_script(name_interface):
         std = np.std(nonzero)
         print("standard deviation: %f ms" %std)
 
+
         plt.figure("wifi-ethernet latency", figsize=(20,15), dpi=200)
 
         anchored_text = AnchoredText("average latency: %f ms\nstandard deviation: %f ms" %(average, std), loc=2, prop=dict(fontsize='xx-large'))
@@ -185,8 +193,9 @@ def example_script(name_interface):
             ax2.set_ylim(-0.1, 2.1)
 
         if (name_interface[0] == 'w'):
-            current_freq = robot_if.GetWifiChannel()
-            plt.suptitle("Wifi communication latency", fontsize='xx-large')
+            freq = subprocess.check_output("iwlist " + name_interface +" channel | grep Frequency", shell = True)
+            channel = (str(freq).split('(')[1]).split(')')[0]
+            plt.suptitle("Wifi communication latency: " + channel, fontsize='xx-large')
 
         else :
             plt.suptitle("Ethernet communication latency", fontsize='xx-large')
@@ -235,8 +244,7 @@ def example_script(name_interface):
     ax8.set_ylabel("ratio sensor loss (%)", fontsize='xx-large')
 
     if (name_interface[0] == 'w'):
-        current_freq = robot_if.GetWifiChannel()
-        plt.suptitle("Wifi statistics: channel " + str(current_freq), fontsize='xx-large')
+        plt.suptitle("Wifi statistics: " + channel, fontsize='xx-large')
 
     else :
         plt.suptitle("Ethernet statistics", fontsize='xx-large')
@@ -267,14 +275,10 @@ def example_script(name_interface):
     text_file.write("Computer: " + os.uname()[1] + '\n')
     text_file.write("Interface: " + name_interface + '\n')
     if (name_interface[0] == 'w'):
-        text_file.write("Wifi channel: " + str(current_freq) + '\n')
+        text_file.write("Wifi channel: " + channel + '\n')
     text_file.write("Protocol version: " + str(robot_if.GetProtocolVersion()) + '\n')
     text_file.write("Script duration: " + str(duration) + '\n')
     text_file.close()
-
-    if robot_if.IsTimeout():
-        print("Masterboard timeout detected.")
-        print("Either the masterboard has been shut down or there has been a connection issue with the cable/wifi.")
 
     print("The graphs have been stored in 'master_board_sdk/graphs' with a text file containing the system info, in a folder named from the current date and time.")
     print("-- End of example script --")

@@ -57,7 +57,6 @@ boost::python::tuple wrap_adc(MotorDriver const * motDriver)
             .def("GetCmdHistogram", &MasterBoardInterface::GetCmdHistogram)
             .def("GetLastRecvCmdIndex", &MasterBoardInterface::GetLastRecvCmdIndex)
             .def("GetCmdPacketIndex", &MasterBoardInterface::GetCmdPacketIndex)
-            .def("GetWifiChannel", &MasterBoardInterface::GetWifiChannel)
             
             .def("GetSessionId", &MasterBoardInterface::GetSessionId)
             .def("GetProtocolVersion", &MasterBoardInterface::GetProtocolVersion)
