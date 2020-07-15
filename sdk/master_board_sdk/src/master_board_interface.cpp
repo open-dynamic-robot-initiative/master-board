@@ -563,17 +563,6 @@ int MasterBoardInterface::GetCmdHistogram(int index)
   return histogram_lost_cmd_packets[index];
 }
 
-int MasterBoardInterface::GetWifiChannel()
-{
-  uint16_t wifi_freq = ((ESPNOW_manager *)link_handler_)->get_channel();
-  for (int i = 0; i < 14; i++)
-  {
-    if (wifi_freq == list_channel[i])
-      return i + 1;
-  }
-  return -1;
-}
-
 void MasterBoardInterface::ResetPacketLossStats()
 {
   //reset the variables
