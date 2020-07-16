@@ -33,14 +33,14 @@ void config_demux() {
 	gpio_config(&io_conf);
 }
 
-void spi_pre_transfer_callback(spi_transaction_t *trans) {
+void IRAM_ATTR spi_pre_transfer_callback(spi_transaction_t *trans) {
     uint slave_nb = ((spi_trans_info*) trans->user)->demux_nb;
     gpio_set_level(GPIO_DEMUX_A0, slave_nb&0x1);
     gpio_set_level(GPIO_DEMUX_A1, (slave_nb>>1)&0x1);
     gpio_set_level(GPIO_DEMUX_A2, (slave_nb>>2)&0x1);
 }
 
-void spi_post_transfer_callback(spi_transaction_t *trans) {
+void IRAM_ATTR spi_post_transfer_callback(spi_transaction_t *trans) {
     ((spi_trans_info*) trans->user)->is_finished = true;
 }
 
