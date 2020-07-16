@@ -1,6 +1,6 @@
 #include "direct_ethernet.h"
 
-uint8_t eth_src_mac[6] = {0xb4, 0xe6, 0x2d, 0xb5, 0x9f, 0x88};
+uint8_t eth_src_mac[6] = {0};
 uint8_t eth_dst_mac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
 void (*eth_recv_cb)(uint8_t src_mac[6], uint8_t *data, int len, char eth_or_wifi) = NULL; // eth_or_wifi = 'e' when eth is used, 'w' when wifi is used
@@ -37,7 +37,12 @@ static esp_err_t eth_event_handler(void *ctx, system_event_t *event)
     {
       eth_link_state_cb(true);
     }
+
+    esp_eth_get_mac(eth_src_mac);
+
     ESP_LOGI(ETH_TAG, "Ethernet Link Up");
+    ESP_LOGI(ETH_TAG, "Ethernet HW Addr %02x:%02x:%02x:%02x:%02x:%02x",
+             eth_src_mac[0], eth_src_mac[1], eth_src_mac[2], eth_src_mac[3], eth_src_mac[4], eth_src_mac[5]);
     break;
   case SYSTEM_EVENT_ETH_DISCONNECTED:
     if (eth_link_state_cb == NULL)
