@@ -22,13 +22,14 @@ static void eth_gpio_config_rmii(void)
   phy_rmii_smi_configure_pins(PIN_SMI_MDC, PIN_SMI_MDIO);
 }
 
-static esp_err_t eth_event_handler(void *ctx, system_event_t *event)
+static void eth_event_handler(void* arg, esp_event_base_t event_base, 
+                              int32_t event_id, void* event_data)
 {
   tcpip_adapter_ip_info_t ipInfo;
 
-  switch (event->event_id)
+  switch (event_id)
   {
-  case SYSTEM_EVENT_ETH_CONNECTED:
+  case ETHERNET_EVENT_CONNECTED:
     if (eth_link_state_cb == NULL)
     {
       ESP_LOGW(ETH_TAG, "Ethernet link Up but no callback function is set");
@@ -44,7 +45,7 @@ static esp_err_t eth_event_handler(void *ctx, system_event_t *event)
     ESP_LOGI(ETH_TAG, "Ethernet HW Addr %02x:%02x:%02x:%02x:%02x:%02x",
              eth_src_mac[0], eth_src_mac[1], eth_src_mac[2], eth_src_mac[3], eth_src_mac[4], eth_src_mac[5]);
     break;
-  case SYSTEM_EVENT_ETH_DISCONNECTED:
+  case ETHERNET_EVENT_DISCONNECTED:
     if (eth_link_state_cb == NULL)
     {
       ESP_LOGW(ETH_TAG, "Ethernet link Down but no callback function is set");
@@ -55,13 +56,13 @@ static esp_err_t eth_event_handler(void *ctx, system_event_t *event)
     }
     ESP_LOGI(ETH_TAG, "Ethernet Link Down");
     break;
-  case SYSTEM_EVENT_ETH_START:
+  case ETHERNET_EVENT_START:
     ESP_LOGI(ETH_TAG, "Ethernet Started");
     break;
-  case SYSTEM_EVENT_ETH_STOP:
+  case ETHERNET_EVENT_STOP:
     ESP_LOGI(ETH_TAG, "Ethernet Stopped");
     break;
-  case SYSTEM_EVENT_ETH_GOT_IP:
+  case IP_EVENT_ETH_GOT_IP:
     ESP_LOGI(ETH_TAG, "Ethernet got IP");
     ESP_ERROR_CHECK(tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_ETH, &ipInfo));
     ESP_LOGI(ETH_TAG, "TCP/IP initialization finished.");
@@ -71,11 +72,11 @@ static esp_err_t eth_event_handler(void *ctx, system_event_t *event)
     xEventGroupSetBits(udp_event_group, WIFI_CONNECTED_BIT);
     break;
   default:
-    ESP_LOGI(ETH_TAG, "Unhandled Ethernet event (id = %d)", event->event_id);
+    ESP_LOGI(ETH_TAG, "Unhandled Ethernet event (id = %d)", event_id);
     break;
   }
-  return ESP_OK;
 }
+
 
 static esp_err_t eth_recv_func(void *buffer, uint16_t len, void *eb)
 {
@@ -163,7 +164,9 @@ void eth_init()
   ////////////////////////////////////
   //TCP/IP event handling & group (akin to flags and semaphores)
   udp_event_group = xEventGroupCreate();
-  ESP_ERROR_CHECK(esp_event_loop_init(eth_event_handler, NULL));
+  ESP_ERROR_CHECK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, NULL));
+  ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, NULL));
+  
 
   ////////////////////////////////////
   //TCP/IP DRIVER INIT WITH A STATIC IP
