@@ -37,8 +37,8 @@ def example_script(name_interface):
         print("Null duration selected, end of script")
         return
 
-    sent_list = [0.0 for i in range(int(duration*1000))]
-    received_list = [0.0 for i in range(int(duration*1000))]
+    sent_list = [0.0 for i in range(int(duration/dt)+2)]
+    received_list = [0.0 for i in range(int(duration/dt)+2)]
     loop_duration = []
 
     # contrary to c++, in python it is interesting to build arrays
@@ -135,8 +135,9 @@ def example_script(name_interface):
     if robot_if.IsTimeout():
         print("Masterboard timeout detected.")
         print("Either the masterboard has been shut down or there has been a connection issue with the cable/wifi.")
-        print("-- End of example script --")
-        return
+        if cpt == 0:
+            print("-- End of example script --")
+            return
 
 
     # creation of the folder where the graphs will be stored
@@ -163,6 +164,8 @@ def example_script(name_interface):
 
     # computing avg and std for non zero values
     nonzero = [latency[i] for i in np.nonzero(latency)[0]]
+    average = 0
+    std = 0
     if len(nonzero) != 0:
         average = np.mean(nonzero)
         print("average latency: %f ms" %average)
@@ -170,38 +173,38 @@ def example_script(name_interface):
         print("standard deviation: %f ms" %std)
 
 
-        plt.figure("wifi-ethernet latency", figsize=(20,15), dpi=200)
+    plt.figure("wifi-ethernet latency", figsize=(20,15), dpi=200)
 
-        anchored_text = AnchoredText("average latency: %f ms\nstandard deviation: %f ms" %(average, std), loc=2, prop=dict(fontsize='xx-large'))
+    anchored_text = AnchoredText("average latency: %f ms\nstandard deviation: %f ms" %(average, std), loc=2, prop=dict(fontsize='xx-large'))
 
-        if len(latency) > 5000:
-            ax1 = plt.subplot(2, 1, 1)
-        else:
-            ax1 = plt.subplot(1, 1, 1)
-        ax1.plot(latency, '.')
-        ax1.set_xlabel("index", fontsize='xx-large')
-        ax1.set_ylabel("latency (ms)", fontsize='xx-large')
-        ax1.add_artist(anchored_text)
+    if len(latency) > 5000:
+        ax1 = plt.subplot(2, 1, 1)
+    else:
+        ax1 = plt.subplot(1, 1, 1)
+    ax1.plot(latency, '.')
+    ax1.set_xlabel("index", fontsize='xx-large')
+    ax1.set_ylabel("latency (ms)", fontsize='xx-large')
+    ax1.add_artist(anchored_text)
 
-        # plotting zoomed version to see pattern
-        if len(latency) > 5000:
-            ax2 = plt.subplot(2, 1, 2)
-            ax2.plot(latency, '.')
-            ax2.set_xlabel("index", fontsize='xx-large')
-            ax2.set_ylabel("latency (ms)", fontsize='xx-large')
-            ax2.set_xlim(len(latency)/2, len(latency)/2 + 2000)
-            ax2.set_ylim(-0.1, 2.1)
+    # plotting zoomed version to see pattern
+    if len(latency) > 5000:
+        ax2 = plt.subplot(2, 1, 2)
+        ax2.plot(latency, '.')
+        ax2.set_xlabel("index", fontsize='xx-large')
+        ax2.set_ylabel("latency (ms)", fontsize='xx-large')
+        ax2.set_xlim(len(latency)/2, len(latency)/2 + 2000)
+        ax2.set_ylim(-0.1, 2.1)
 
-        if (name_interface[0] == 'w'):
-            freq = subprocess.check_output("iwlist " + name_interface +" channel | grep Frequency", shell = True)
-            channel = (str(freq).split('(')[1]).split(')')[0]
-            plt.suptitle("Wifi communication latency: " + channel, fontsize='xx-large')
+    if (name_interface[0] == 'w'):
+        freq = subprocess.check_output("iwlist " + name_interface +" channel | grep Frequency", shell = True)
+        channel = (str(freq).split('(')[1]).split(')')[0]
+        plt.suptitle("Wifi communication latency: " + channel, fontsize='xx-large')
 
-        else :
-            plt.suptitle("Ethernet communication latency", fontsize='xx-large')
-        
+    else :
+        plt.suptitle("Ethernet communication latency", fontsize='xx-large')
+    
 
-        plt.savefig("../graphs/" + dir_name + '/' + dir_name + "-wifieth-latency.png")
+    plt.savefig("../graphs/" + dir_name + '/' + dir_name + "-wifieth-latency.png")
 
 
     #Plot histograms and graphs
