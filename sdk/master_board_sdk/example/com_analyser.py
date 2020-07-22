@@ -23,7 +23,7 @@ def example_script(name_interface):
     cpt = 0
     dt = 0.001  #  Time step
     state = 0  # State of the system (ready (1) or not (0))
-    duration = 10 # Duration in seconds, init included
+    duration = 30 # Duration in seconds, init included
     
     cmd_lost_list = []
     sensor_lost_list = []
@@ -77,15 +77,25 @@ def example_script(name_interface):
                 # if slave i is connected then motors 2i and 2i+1 are potentially connected
                 motors_spi_connected_indexes.append(2 * i)
                 motors_spi_connected_indexes.append(2 * i + 1)
+    
+    overflow_cmd_cpt = 0
+    first_cmd_index = robot_if.GetCmdPacketIndex()
+    cmd_packet_index = first_cmd_index
+    last_cmd_packet_index = first_cmd_index
 
     while ((not robot_if.IsTimeout())
            and (clock() < duration)):  # Stop after 15 seconds (around 5 seconds are used at the start for calibration)
 
-        if (received_list[robot_if.GetLastRecvCmdIndex()] == 0):
-                received_list[robot_if.GetLastRecvCmdIndex()] = clock()
+        if (robot_if.GetLastRecvCmdIndex() > robot_if.GetCmdPacketIndex()):
+            last_recv_cmd_index = (overflow_cmd_cpt-1) * 65536 + robot_if.GetLastRecvCmdIndex()
+        else:
+            last_recv_cmd_index = overflow_cmd_cpt * 65536 + robot_if.GetLastRecvCmdIndex()
+
+        if (last_recv_cmd_index >= first_cmd_index and received_list[last_recv_cmd_index-first_cmd_index] == 0):
+                received_list[last_recv_cmd_index-first_cmd_index] = clock()
         
         if ((clock() - last) > dt):
-            last = clock()
+            last += dt
             cpt += 1
 
             robot_if.ParseSensorData()  # Read sensor data sent by the masterboard
@@ -124,11 +134,20 @@ def example_script(name_interface):
                 time_list.append(clock())
 
             current_time = clock()
-            sent_list[robot_if.GetCmdPacketIndex()] = current_time
+
+            diff = robot_if.GetCmdPacketIndex() - last_cmd_packet_index
+            if diff < 0:
+                overflow_cmd_cpt += 1
+                diff = 65536 + robot_if.GetCmdPacketIndex() - last_cmd_packet_index
+            cmd_packet_index += diff 
+            last_cmd_packet_index = robot_if.GetCmdPacketIndex()
+
+            robot_if.SendCommand()  # Send the reference currents to the master board
+            
+            sent_list[cmd_packet_index-first_cmd_index] = current_time
             if (prev_time != 0) :
                 loop_duration.append(1000 * (current_time - prev_time))
             prev_time = current_time
-            robot_if.SendCommand()  # Send the reference currents to the master board
         
     robot_if.Stop()  # Shut down the interface between the computer and the master board
 
