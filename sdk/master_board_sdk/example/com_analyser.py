@@ -23,7 +23,7 @@ def example_script(name_interface):
     cpt = 0
     dt = 0.001  #  Time step
     state = 0  # State of the system (ready (1) or not (0))
-    duration = 10 # Duration in seconds, init included
+    duration = 30 # Duration in seconds, init included
     
     cmd_lost_list = []
     sensor_lost_list = []
@@ -37,8 +37,8 @@ def example_script(name_interface):
         print("Null duration selected, end of script")
         return
 
-    sent_list = [0.0 for i in range(int(duration*1000))]
-    received_list = [0.0 for i in range(int(duration*1000))]
+    sent_list = [0.0 for i in range(int(duration/dt)+2)]
+    received_list = [0.0 for i in range(int(duration/dt)+2)]
     loop_duration = []
 
     # contrary to c++, in python it is interesting to build arrays
@@ -77,15 +77,25 @@ def example_script(name_interface):
                 # if slave i is connected then motors 2i and 2i+1 are potentially connected
                 motors_spi_connected_indexes.append(2 * i)
                 motors_spi_connected_indexes.append(2 * i + 1)
+    
+    overflow_cmd_cpt = 0
+    first_cmd_index = robot_if.GetCmdPacketIndex()
+    cmd_packet_index = first_cmd_index
+    last_cmd_packet_index = first_cmd_index
 
     while ((not robot_if.IsTimeout())
            and (clock() < duration)):  # Stop after 15 seconds (around 5 seconds are used at the start for calibration)
 
-        if (received_list[robot_if.GetLastRecvCmdIndex()] == 0):
-                received_list[robot_if.GetLastRecvCmdIndex()] = clock()
+        if (robot_if.GetLastRecvCmdIndex() > robot_if.GetCmdPacketIndex()):
+            last_recv_cmd_index = (overflow_cmd_cpt-1) * 65536 + robot_if.GetLastRecvCmdIndex()
+        else:
+            last_recv_cmd_index = overflow_cmd_cpt * 65536 + robot_if.GetLastRecvCmdIndex()
+
+        if (last_recv_cmd_index >= first_cmd_index and received_list[last_recv_cmd_index-first_cmd_index] == 0):
+                received_list[last_recv_cmd_index-first_cmd_index] = clock()
         
         if ((clock() - last) > dt):
-            last = clock()
+            last += dt
             cpt += 1
 
             robot_if.ParseSensorData()  # Read sensor data sent by the masterboard
@@ -124,19 +134,29 @@ def example_script(name_interface):
                 time_list.append(clock())
 
             current_time = clock()
-            sent_list[robot_if.GetCmdPacketIndex()] = current_time
+
+            diff = robot_if.GetCmdPacketIndex() - last_cmd_packet_index
+            if diff < 0:
+                overflow_cmd_cpt += 1
+                diff = 65536 + robot_if.GetCmdPacketIndex() - last_cmd_packet_index
+            cmd_packet_index += diff 
+            last_cmd_packet_index = robot_if.GetCmdPacketIndex()
+
+            robot_if.SendCommand()  # Send the reference currents to the master board
+            
+            sent_list[cmd_packet_index-first_cmd_index] = current_time
             if (prev_time != 0) :
                 loop_duration.append(1000 * (current_time - prev_time))
             prev_time = current_time
-            robot_if.SendCommand()  # Send the reference currents to the master board
         
     robot_if.Stop()  # Shut down the interface between the computer and the master board
 
     if robot_if.IsTimeout():
         print("Masterboard timeout detected.")
         print("Either the masterboard has been shut down or there has been a connection issue with the cable/wifi.")
-        print("-- End of example script --")
-        return
+        if cpt == 0:
+            print("-- End of example script --")
+            return
 
 
     # creation of the folder where the graphs will be stored
@@ -163,6 +183,8 @@ def example_script(name_interface):
 
     # computing avg and std for non zero values
     nonzero = [latency[i] for i in np.nonzero(latency)[0]]
+    average = 0
+    std = 0
     if len(nonzero) != 0:
         average = np.mean(nonzero)
         print("average latency: %f ms" %average)
@@ -170,38 +192,38 @@ def example_script(name_interface):
         print("standard deviation: %f ms" %std)
 
 
-        plt.figure("wifi-ethernet latency", figsize=(20,15), dpi=200)
+    plt.figure("wifi-ethernet latency", figsize=(20,15), dpi=200)
 
-        anchored_text = AnchoredText("average latency: %f ms\nstandard deviation: %f ms" %(average, std), loc=2, prop=dict(fontsize='xx-large'))
+    anchored_text = AnchoredText("average latency: %f ms\nstandard deviation: %f ms" %(average, std), loc=2, prop=dict(fontsize='xx-large'))
 
-        if len(latency) > 5000:
-            ax1 = plt.subplot(2, 1, 1)
-        else:
-            ax1 = plt.subplot(1, 1, 1)
-        ax1.plot(latency, '.')
-        ax1.set_xlabel("index", fontsize='xx-large')
-        ax1.set_ylabel("latency (ms)", fontsize='xx-large')
-        ax1.add_artist(anchored_text)
+    if len(latency) > 5000:
+        ax1 = plt.subplot(2, 1, 1)
+    else:
+        ax1 = plt.subplot(1, 1, 1)
+    ax1.plot(latency, '.')
+    ax1.set_xlabel("index", fontsize='xx-large')
+    ax1.set_ylabel("latency (ms)", fontsize='xx-large')
+    ax1.add_artist(anchored_text)
 
-        # plotting zoomed version to see pattern
-        if len(latency) > 5000:
-            ax2 = plt.subplot(2, 1, 2)
-            ax2.plot(latency, '.')
-            ax2.set_xlabel("index", fontsize='xx-large')
-            ax2.set_ylabel("latency (ms)", fontsize='xx-large')
-            ax2.set_xlim(len(latency)/2, len(latency)/2 + 2000)
-            ax2.set_ylim(-0.1, 2.1)
+    # plotting zoomed version to see pattern
+    if len(latency) > 5000:
+        ax2 = plt.subplot(2, 1, 2)
+        ax2.plot(latency, '.')
+        ax2.set_xlabel("index", fontsize='xx-large')
+        ax2.set_ylabel("latency (ms)", fontsize='xx-large')
+        ax2.set_xlim(len(latency)/2, len(latency)/2 + 2000)
+        ax2.set_ylim(-0.1, 2.1)
 
-        if (name_interface[0] == 'w'):
-            freq = subprocess.check_output("iwlist " + name_interface +" channel | grep Frequency", shell = True)
-            channel = (str(freq).split('(')[1]).split(')')[0]
-            plt.suptitle("Wifi communication latency: " + channel, fontsize='xx-large')
+    if (name_interface[0] == 'w'):
+        freq = subprocess.check_output("iwlist " + name_interface +" channel | grep Frequency", shell = True)
+        channel = (str(freq).split('(')[1]).split(')')[0]
+        plt.suptitle("Wifi communication latency: " + channel, fontsize='xx-large')
 
-        else :
-            plt.suptitle("Ethernet communication latency", fontsize='xx-large')
-        
+    else :
+        plt.suptitle("Ethernet communication latency", fontsize='xx-large')
+    
 
-        plt.savefig("../graphs/" + dir_name + '/' + dir_name + "-wifieth-latency.png")
+    plt.savefig("../graphs/" + dir_name + '/' + dir_name + "-wifieth-latency.png")
 
 
     #Plot histograms and graphs
