@@ -4,16 +4,7 @@ Install esp-idf
 --------
 The master board is based on a ESP32 module programmed in C++ using the expressif idf SDK https://github.com/espressif/esp-idf
 
-To install the SDK (v4.0) simply follow the instruction form https://docs.espressif.com/projects/esp-idf/en/v4.0/get-started/index.html.
-
-An error occuring during step 3
-(`virtualenv: error: unrecognized arguments: --no-site-packages`)
-has been fixed since. If this occurs to you, run the following commands between step 2 & 3 in your esp-idf installation folder:
-```
-git checkout release/v4.0
-git submodule update --init
-```
-This should fix it.
+To install the SDK (v4.0.1) simply follow the instruction form https://docs.espressif.com/projects/esp-idf/en/v4.0.1/get-started/index.html.
 
 Firmware of the ESP32 can be found here https://github.com/open-dynamic-robot-initiative/master-board.
 
