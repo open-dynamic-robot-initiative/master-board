@@ -529,9 +529,6 @@ void app_main()
     printf("SPI size %u\n", SPI_TOTAL_LEN * 2);
     setup_spi();
 
-    printf("initialise IMU\n");
-    imu_init();
-
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     eth_attach_link_state_cb(wifi_eth_link_state_cb);
@@ -540,6 +537,9 @@ void app_main()
     
     wifi_init();
     wifi_attach_recv_cb(wifi_eth_receive_cb);
+
+    printf("initialise IMU\n");
+    imu_init();
 
     next_state = WAITING_FOR_INIT;
 
