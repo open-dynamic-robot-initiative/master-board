@@ -391,6 +391,7 @@ void setup_spi()
     for (int i = 0; i < CONFIG_N_SLAVES; i++)
     {
         memset(spi_tx_packet_stop[i], 0, SPI_TOTAL_INDEX * 2);
+        SPI_REG_u16(spi_tx_packet_stop[i], SPI_COMMAND_MODE) = SPI_SWAP_DATA_TX(1<<15, 16);
     }
     wifi_eth_tx_data.sensor_index = 0;
     wifi_eth_tx_data.packet_loss = 0;
