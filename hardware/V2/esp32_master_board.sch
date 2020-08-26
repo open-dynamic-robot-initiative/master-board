@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE eagle SYSTEM "eagle.dtd">
-<eagle version="9.5.2">
+<eagle version="9.5.0">
 <drawing>
 <settings>
 <setting alwaysvectorfont="no"/>
@@ -11133,6 +11133,15 @@ Source: &lt;a href="https://datasheets.maximintegrated.com/en/ds/MAX17502.pdf"&g
 <wire x1="1.375" y1="-2.5" x2="-1.375" y2="-2.5" width="0.2" layer="21"/>
 <wire x1="-1.375" y1="-2.5" x2="-1.375" y2="2.5" width="0.2" layer="21"/>
 <circle x="-2.825" y="2.575" radius="0.125" width="0.25" layer="25"/>
+<wire x1="-3.175" y1="3.175" x2="3.175" y2="3.175" width="0.127" layer="25"/>
+<wire x1="3.175" y1="3.175" x2="3.175" y2="-3.175" width="0.127" layer="25"/>
+<wire x1="3.175" y1="-3.175" x2="-3.175" y2="-3.175" width="0.127" layer="25"/>
+<wire x1="-3.175" y1="-3.175" x2="-3.175" y2="3.175" width="0.127" layer="25"/>
+<polygon width="0.127" layer="21">
+<vertex x="1.905" y="-3.175"/>
+<vertex x="3.175" y="-3.175"/>
+<vertex x="3.175" y="-1.905"/>
+</polygon>
 </package>
 </packages>
 <symbols>
