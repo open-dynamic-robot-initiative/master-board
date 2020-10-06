@@ -106,3 +106,14 @@ void ESPNOW_manager::bind_filter() {
 	}
 	fflush(stdout);
 }
+
+void ESPNOW_manager::stop()
+{
+	unset_filter();
+	LINK_manager::stop();
+}
+
+ESPNOW_manager::~ESPNOW_manager()
+{
+	unset_filter();
+}

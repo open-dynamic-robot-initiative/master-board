@@ -1,22 +1,13 @@
-# To run the example with C++ (example.cpp)
+See README.md in sdk folder for instructions on how to run the examples.
 
-* Tune the number of controlled driver boards in `sdk/master_board_sdk/example/example.cpp` and `sdk/master_board_sdk/include/defines.h` (N_SLAVES_CONTROLED variable)
-* Open a terminal in `sdk/master_board_sdk`
-* Run `make`. A `build` and `bin` folder should be generated in `sdk/master_board_sdk` if everything goes well. 
-* Run `cd bin`
-* Check the name of your interface by running `ifconfig` 
-* Run `sudo ./example "name_of_your_interface"` ("enp1s0" for instance)
+Control examples
+---
+**Control** examples are called **example**, they run a simple control script for the test benches.
 
-# To run the example with Python bindings (example.py)
+Listener example
+---
+**Listener** example is called **listener**, it runs a script that detects a running master board and listens to its incoming packets, printing useful stats. It is not able to send commands.
 
-* Edit `sdk/master_board_sdk/CMakeLists.txt` and turn on Python bindings generation `OPTION (BUILD_PYTHON_INTERFACE "Build the python binding" ON)`
-* Tune the number of controlled driver boards in `sdk/master_board_sdk/example/example.cpp`, `sdk/master_board_sdk/example/example.py` and `sdk/master_board_sdk/include/defines.h` (N_SLAVES_CONTROLED variable)
-* Create a `build` folder in `sdk/master_board_sdk/`
-* Open a terminal in `sdk/master_board_sdk/build`
-* Run `cmake ..`
-* Run `make`. A `bindings` folder should be generated in `sdk/master_board_sdk/build` if everything goes well.
-* Open a terminal in `sdk/master_board_sdk/example`
-* Check the name of your interface by running `ifconfig` 
-* Run `sudo python2.7 example.py -i "name_of_your_interface"` ("enp1s0" for instance)
-
-* Symbolic links are in the example folder to make links with the .so files generated in the `build` folder. I think a cleaner way to do that would be to do something in the CMakeList.txt to link those files with the .py file.
+Communication analyser example
+---
+**Communication analyser** example is called **com_analyser**, it runs a script that computes the latency of the wifi/ethernet communication between the computer and the master board, and plots the evolution of packet losses and the command loop duration. The graphs are stored in 'master_board_sdk/graphs' with a text file containing the system info, in a folder named from the current date and time. It sends null torques as command.

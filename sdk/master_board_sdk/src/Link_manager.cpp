@@ -75,10 +75,13 @@ void LINK_manager::stop()
 	if (recv_thd_id)
 	{
 		pthread_cancel(recv_thd_id);
+		pthread_join(recv_thd_id, NULL);
+		recv_thd_id = 0;
 	}
 	if (this->sock_fd > 0)
 	{
 		close(this->sock_fd);
+		this->sock_fd = -1;
 	}
 }
 

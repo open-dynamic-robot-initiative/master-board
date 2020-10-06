@@ -30,13 +30,13 @@ public:
 	{
 		set_interface(interface);
 	}
-	~LINK_manager();
+	virtual ~LINK_manager();
 
 	void set_recv_callback(LINK_manager_callback *);
 	void set_interface(const std::string &interface);
 
 	void start();
-	void stop();
+	virtual void stop();
 	void end();
 
 	int send(uint8_t *payload, int len);

@@ -61,17 +61,33 @@ struct dual_motor_driver_sensor_data_t
 
 struct sensor_packet_t
 {
+	uint16_t session_id;
 	struct dual_motor_driver_sensor_packet_t dual_motor_driver_sensor_packets[N_SLAVES];
 	struct imu_packet_t imu;
 	uint16_t sensor_index;
-	uint16_t last_index;
+	uint16_t packet_loss;
+	uint16_t last_cmd_index;
 } __attribute__((packed));
 
 struct command_packet_t
 {
 	//uint16_t command[N_SLAVES][UD_LENGTH];
+	uint16_t session_id;
 	struct dual_motor_driver_command_packet_t dual_motor_driver_command_packets[N_SLAVES];
-	uint16_t sensor_index;
+	uint16_t command_index;
+} __attribute__((packed));
+
+struct init_packet_t
+{
+	uint16_t protocol_version; // used to ensure both the interface and the firmware use the same protocol
+	uint16_t session_id;
+} __attribute__((packed));
+
+struct ack_packet_t
+{
+	uint16_t session_id;
+	uint8_t spi_connected; // least significant bit: SPI0
+						   // most significant bit: SPI7
 } __attribute__((packed));
 
 #endif

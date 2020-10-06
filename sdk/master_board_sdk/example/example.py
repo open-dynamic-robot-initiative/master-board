@@ -12,7 +12,7 @@ import libmaster_board_sdk_pywrap as mbs
 def example_script(name_interface):
 
     N_SLAVES = 6  #  Maximum number of controled drivers
-    N_SLAVES_CONTROLED = 1  # Current number of controled drivers
+    N_SLAVES_CONTROLED = 6  # Current number of controled drivers
 
     cpt = 0  # Iteration counter
     dt = 0.001  #  Time step
@@ -24,6 +24,10 @@ def example_script(name_interface):
     amplitude = math.pi  # Amplitude of the sine wave
     init_pos = [0.0 for i in range(N_SLAVES * 2)]  # List that will store the initial position of motors
     state = 0  # State of the system (ready (1) or not (0))
+
+    # contrary to c++, in python it is interesting to build arrays
+    # with connected motors indexes so we can simply go through them in main loop
+    motors_spi_connected_indexes = [] # indexes of the motors on each connected slaves
 
     print("-- Start of example script --")
 
@@ -41,6 +45,22 @@ def example_script(name_interface):
 
     last = clock()
 
+    while (not robot_if.IsTimeout() and not robot_if.IsAckMsgReceived()):
+        if ((clock() - last) > dt):
+            last = clock()
+            robot_if.SendInit()
+
+    if robot_if.IsTimeout():
+        print("Timeout while waiting for ack.")
+    else:
+
+        # fill the connected motors indexes array
+        for i in range(N_SLAVES_CONTROLED):
+            if robot_if.GetDriver(i).IsConnected():
+                # if slave i is connected then motors 2i and 2i+1 are potentially connected
+                motors_spi_connected_indexes.append(2 * i)
+                motors_spi_connected_indexes.append(2 * i + 1)
+
     while ((not robot_if.IsTimeout())
            and (clock() < 20)):  # Stop after 15 seconds (around 5 seconds are used at the start for calibration)
 
@@ -52,13 +72,23 @@ def example_script(name_interface):
 
             if (state == 0):  #  If the system is not ready
                 state = 1
-                for i in range(N_SLAVES_CONTROLED * 2):  # Check if all motors are enabled and ready
+
+                # for all motors on a connected slave
+                for i in motors_spi_connected_indexes:  # Check if all motors are enabled and ready
                     if not (robot_if.GetMotor(i).IsEnabled() and robot_if.GetMotor(i).IsReady()):
                         state = 0
                     init_pos[i] = robot_if.GetMotor(i).GetPosition()
                     t = 0
+
             else:  # If the system is ready
-                for i in range(N_SLAVES_CONTROLED * 2):
+
+                # for all motors on a connected slave
+                for i in motors_spi_connected_indexes:
+
+                    if i % 2 == 0 and robot_if.GetDriver(i // 2).GetErrorCode() == 0xf:
+                        #print("Transaction with SPI{} failed".format(i // 2))
+                        continue #user should decide what to do in that case, here we ignore that motor
+
                     if robot_if.GetMotor(i).IsEnabled():
                         ref = init_pos[i] + amplitude * math.sin(2.0 * math.pi * freq * t)  # Sine wave pattern
                         v_ref = 2.0 * math.pi * freq * amplitude * math.cos(2.0 * math.pi * freq * t)
@@ -79,6 +109,7 @@ def example_script(name_interface):
                 robot_if.PrintADC()
                 robot_if.PrintMotors()
                 robot_if.PrintMotorDrivers()
+                robot_if.PrintStats()
                 sys.stdout.flush()  # for Python 2, use print( .... , flush=True) for Python 3
 
             robot_if.SendCommand()  # Send the reference currents to the master board

@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#define PROTOCOL_VERSION 3
+
 /* Position of the values in the command packet */
 #define UD_COMMAND_MODE 0
 #define UD_COMMAND_POS_1 1
