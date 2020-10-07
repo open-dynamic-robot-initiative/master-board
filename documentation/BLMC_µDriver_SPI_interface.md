@@ -124,5 +124,5 @@ Iq | 16bits | A | -32 | 31,9990234375 | 2^(-10) | This can be use as a feed-forw
 I_sat | 8 bits | A | 0 | 31,875 | 2^(-3) | Current saturation, useful when using Kp>0 or Kd>0
 Coil resistance | 16bits | Ohm | 0 | 1,9999694824 | 2^(-15) | Useful to estimated coil temperature from U/I (Not implemented yet)
 ADC | 16bits | V | 0 | 3.99993896484 | 2^(-14) | |
-Kp | 16bits | A/rot | 0 | 127.998046875 | 2^(-9) | Setting Kp=Kd=0 allow to do direct current control |
-Kd | 16bits | A/k rpm | 0 | 127.998046875 | 2^(-9) | Setting Kp=Kd=0 allow to do direct current control |
+Kp | 16bits | A/rot | 0 | 31.99951171875 | 2^(-11) | Setting Kp=Kd=0 allow to do direct current control |
+Kd | 16bits | A/k rpm | 0 | 63.9990234375 | 2^(-10) | Setting Kp=Kd=0 allow to do direct current control |
