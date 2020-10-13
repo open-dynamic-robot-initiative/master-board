@@ -2,14 +2,13 @@
 # Copyright (c) 2019 CNRS
 #
 
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.1)
 
 # ----------------------------------------------------
 # --- CXX FLAGS --------------------------------------
 # ----------------------------------------------------
 
 ADD_DEFINITIONS(-pthread)
-SET(CMAKE_CXX_STANDARD 11)
 SET(CXX_DISABLE_WERROR True)
 SET(CMAKE_VERBOSE_MAKEFILE True)
 
@@ -25,6 +24,7 @@ INCLUDE(cmake/ide.cmake)
 
 COMPUTE_PROJECT_ARGS(PROJECT_ARGS LANGUAGES CXX)
 PROJECT(${PROJECT_NAME} ${PROJECT_ARGS})
+CHECK_MINIMAL_CXX_STANDARD(11 ENFORCE)
 
 # --- OPTIONS ----------------------------------------
 OPTION (BUILD_PYTHON_INTERFACE "Build the python binding" OFF)
@@ -38,19 +38,11 @@ ENDMACRO(TAG_LIBRARY_VERSION)
 # ----------------------------------------------------
 
 # Set component to fetch from boost
-SET(BOOST_REQUIRED_COMPONENTS "")
-SET(BOOST_OPTIONAL_COMPONENTS "")
 # Get the python interface for the bindings
 IF(BUILD_PYTHON_INTERFACE)
-  SET(BOOST_REQUIRED_COMPONENTS ${BOOST_REQUIRED_COMPONENTS} python)
   FINDPYTHON()
-  INCLUDE_DIRECTORIES(SYSTEM ${PYTHON_INCLUDE_DIRS})
+  SEARCH_FOR_BOOST_PYTHON(REQUIRED)
 ENDIF(BUILD_PYTHON_INTERFACE)
-# Search for the boost libraries
-SET(BOOST_COMPONENTS ${BOOST_REQUIRED_COMPONENTS} ${BOOST_OPTIONAL_COMPONENTS} ${BOOST_BUILD_COMPONENTS})
-SEARCH_FOR_BOOST()
-# Path to boost headers
-INCLUDE_DIRECTORIES(SYSTEM ${Boost_INCLUDE_DIRS})
 
 # ----------------------------------------------------
 # --- INCLUDE ----------------------------------------
