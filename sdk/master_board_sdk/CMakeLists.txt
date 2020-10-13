@@ -17,6 +17,11 @@ SET(PROJECT_NAME master-board-sdk)
 SET(PROJECT_DESCRIPTION "This project contains the sdk for the communication between a computer and the master-board")
 SET(PROJECT_URL https://github.com/open-dynamic-robot-initiative/master-board)
 
+# --- OPTIONS ----------------------------------------
+OPTION(BUILD_PYTHON_INTERFACE "Build the python binding" OFF)
+OPTION(PYTHON_STANDARD_LAYOUT "Enable standard Python package layout" ON)
+OPTION(PYTHON_DEB_LAYOUT "Enable Debian-style Python package layout" ON)
+
 INCLUDE(cmake/base.cmake)
 INCLUDE(cmake/boost.cmake)
 INCLUDE(cmake/python.cmake)
@@ -25,9 +30,6 @@ INCLUDE(cmake/ide.cmake)
 COMPUTE_PROJECT_ARGS(PROJECT_ARGS LANGUAGES CXX)
 PROJECT(${PROJECT_NAME} ${PROJECT_ARGS})
 CHECK_MINIMAL_CXX_STANDARD(11 ENFORCE)
-
-# --- OPTIONS ----------------------------------------
-OPTION (BUILD_PYTHON_INTERFACE "Build the python binding" OFF)
 
 MACRO(TAG_LIBRARY_VERSION target)
   SET_TARGET_PROPERTIES(${target} PROPERTIES SOVERSION ${PROJECT_VERSION})
@@ -93,6 +95,7 @@ IF(BUILD_PYTHON_INTERFACE)
   ADD_HEADER_GROUP(${PYWRAP}_HEADERS)
   ADD_SOURCE_GROUP(${PYWRAP}_SOURCES)
 
+  TARGET_INCLUDE_DIRECTORIES(${PYWRAP} SYSTEM PRIVATE ${PYTHON_INCLUDE_DIR})
   TARGET_LINK_LIBRARIES(${PYWRAP} ${PROJECT_NAME})
   TARGET_LINK_BOOST_PYTHON(${PYWRAP})
 
