@@ -11,5 +11,7 @@
   
     <buildtool_depend>cmake</buildtool_depend>
 
+    <depend>Boost</depend>
+
     <export></export>
 </package>
