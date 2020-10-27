@@ -50,8 +50,6 @@ ENDIF(BUILD_PYTHON_INTERFACE)
 # ----------------------------------------------------
 # --- INCLUDE ----------------------------------------
 # ----------------------------------------------------
-INCLUDE_DIRECTORIES(include)
-
 
 # --- MAIN LIBRARY -------------------------------------------------------------
 SET(MASTER_BOARD_SRC
@@ -67,10 +65,14 @@ ADD_LIBRARY(${PROJECT_NAME} SHARED
   ${MASTER_BOARD_SRC}
 )
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} pthread)
+target_include_directories(
+  ${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+                         $<INSTALL_INTERFACE:include>)
 install(
   TARGETS ${PROJECT_NAME}
   EXPORT ${TARGETS_EXPORT_NAME}
   DESTINATION lib)
+install(DIRECTORY include/ DESTINATION include)
 
 # --- BINDINGS -----------------------------------------------------------------
 
@@ -141,9 +143,12 @@ ENDIF(BUILD_PYTHON_INTERFACE)
 
 
 # --- CHECK EXAMPLES -----------------------------------------------------------
-ADD_EXECUTABLE(master-board-example example/example.cpp)
-TARGET_LINK_LIBRARIES(master-board-example ${PROJECT_NAME})
-INSTALL(TARGETS master-board-example DESTINATION bin)
+ADD_EXECUTABLE(master_board_example example/example.cpp)
+TARGET_LINK_LIBRARIES(master_board_example ${PROJECT_NAME})
+target_include_directories(
+    master_board_example PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+                         $<INSTALL_INTERFACE:include>)
+INSTALL(TARGETS master_board_example DESTINATION bin)
 
 ADD_EXECUTABLE(master-board-example-pd example/example_pd.cpp)
 TARGET_LINK_LIBRARIES(master-board-example-pd ${PROJECT_NAME})
