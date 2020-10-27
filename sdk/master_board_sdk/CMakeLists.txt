@@ -13,7 +13,7 @@ SET(CXX_DISABLE_WERROR True)
 SET(CMAKE_VERBOSE_MAKEFILE True)
 
 # These variables have to be defined before running SETUP_PROJECT
-SET(PROJECT_NAME master-board-sdk)
+SET(PROJECT_NAME master_board_sdk)
 SET(PROJECT_DESCRIPTION "This project contains the sdk for the communication between a computer and the master-board")
 SET(PROJECT_URL https://github.com/open-dynamic-robot-initiative/master-board)
 set(PROJECT_USE_CMAKE_EXPORT TRUE)
