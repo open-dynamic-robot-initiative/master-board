@@ -12,6 +12,12 @@
 
 int main(int argc, char **argv)
 {
+    if(argc != 2)
+    {
+        throw std::runtime_error("Please provide the interface name "
+                                 "(i.e. using 'ifconfig' on linux");
+    }
+
 	int cpt = 0;
 	double dt = 0.001;
 	double t = 0;
@@ -25,7 +31,6 @@ int main(int argc, char **argv)
 
 	nice(-20); //give the process a high priority
 	printf("-- Main --\n");
-	//assert(argc > 1);
 	MasterBoardInterface robot_if(argv[1]);
 	robot_if.Init();
 	//Initialisation, send the init commands
@@ -105,7 +110,7 @@ int main(int argc, char **argv)
 							cur = iq_sat;
 						if (cur < -iq_sat)
 							cur = -iq_sat;
-						robot_if.motors[i].SetCurrentReference(cur);
+						robot_if.motors[i].SetCurrentReference(static_cast<float>(cur));
 					}
 				}
 				break;

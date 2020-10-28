@@ -17,6 +17,7 @@ SET(PROJECT_NAME master_board_sdk)
 SET(PROJECT_DESCRIPTION "This project contains the sdk for the communication between a computer and the master-board")
 SET(PROJECT_URL https://github.com/open-dynamic-robot-initiative/master-board)
 set(PROJECT_USE_CMAKE_EXPORT TRUE)
+SET(PROJECT_VERSION_COMPUTATION_METHODS ROS_PACKAGE_XML_FILE)
 
 # --- OPTIONS ----------------------------------------
 OPTION(BUILD_PYTHON_INTERFACE "Build the python binding" OFF)
