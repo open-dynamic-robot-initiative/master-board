@@ -21,9 +21,9 @@ The Master Board need to be connected to a host computer via the PROG connector,
 
 To put the ESP32 in a flash mode, a special circuit is needed to lower the G0 pin from the RTS and DTR lines and generate a reset. To avoid using a dedicated hardware, we can use an ESP dev board containing this circuit and the USB to SERIAL adapter, where the orginal ESP module have been removed:
 
-![Wiring of the esp32](../images/master_board_esp32_prog_wire.jpg)
+<img alt="Wiring of the esp32" src="../images/master_board_esp32_prog_wire.jpg" width="500px">
 
-![Wiring esp32 to master-board](../images/master_board_esp32_prog_2.jpg)
+<img alt="Wiring esp32 to master-board" src="../images/master_board_esp32_prog_2.jpg" width="500px">
 
 
 On a freshly assembled board, we first need to burn a configuration fuse  because of a conflict with a boot pin. To do so, use the [espefuse.py script](https://github.com/espressif/esptool): (the fuse burning process is irreversible, be sure to only execute the following command)
