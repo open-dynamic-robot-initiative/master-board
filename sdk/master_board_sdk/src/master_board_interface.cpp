@@ -188,16 +188,16 @@ int MasterBoardInterface::SendCommand()
     }
     mode |= UD_COMMAND_MODE_TIMEOUT & motor_drivers[i].timeout;
     command_packet.dual_motor_driver_command_packets[i].mode = mode;
-    command_packet.dual_motor_driver_command_packets[i].position_ref[0] = FLOAT_TO_D16QN(motor_drivers[i].motor1->position_ref / (2. * M_PI), UD_QN_POS) - motor_drivers[i].motor1->position_offset;
-    command_packet.dual_motor_driver_command_packets[i].position_ref[1] = FLOAT_TO_D16QN(motor_drivers[i].motor2->position_ref / (2. * M_PI), UD_QN_POS) - motor_drivers[i].motor2->position_offset;
+    command_packet.dual_motor_driver_command_packets[i].position_ref[0] = FLOAT_TO_D32QN((motor_drivers[i].motor1->position_ref - motor_drivers[i].motor1->position_offset)/ (2. * M_PI) , UD_QN_POS) ;
+    command_packet.dual_motor_driver_command_packets[i].position_ref[1] = FLOAT_TO_D32QN((motor_drivers[i].motor2->position_ref - motor_drivers[i].motor2->position_offset)/ (2. * M_PI) , UD_QN_POS) ;
     command_packet.dual_motor_driver_command_packets[i].velocity_ref[0] = FLOAT_TO_D16QN(motor_drivers[i].motor1->velocity_ref * 60. / (2. * M_PI * 1000.), UD_QN_VEL);
     command_packet.dual_motor_driver_command_packets[i].velocity_ref[1] = FLOAT_TO_D16QN(motor_drivers[i].motor2->velocity_ref * 60. / (2. * M_PI * 1000.), UD_QN_VEL);
     command_packet.dual_motor_driver_command_packets[i].current_ref[0] = FLOAT_TO_D16QN(motor_drivers[i].motor1->current_ref, UD_QN_IQ);
     command_packet.dual_motor_driver_command_packets[i].current_ref[1] = FLOAT_TO_D16QN(motor_drivers[i].motor2->current_ref, UD_QN_IQ);
-    command_packet.dual_motor_driver_command_packets[i].kp[0] = FLOAT_TO_D16QN(2. * M_PI * motor_drivers[i].motor1->kp, UD_QN_ISAT);
-    command_packet.dual_motor_driver_command_packets[i].kp[1] = FLOAT_TO_D16QN(2. * M_PI * motor_drivers[i].motor2->kp, UD_QN_ISAT);
-    command_packet.dual_motor_driver_command_packets[i].kd[0] = FLOAT_TO_D16QN(2. * M_PI * 1000. / 60. * motor_drivers[i].motor1->kd, UD_QN_ISAT);
-    command_packet.dual_motor_driver_command_packets[i].kd[1] = FLOAT_TO_D16QN(2. * M_PI * 1000. / 60. * motor_drivers[i].motor2->kd, UD_QN_ISAT);
+    command_packet.dual_motor_driver_command_packets[i].kp[0] = FLOAT_TO_D16QN(2. * M_PI * motor_drivers[i].motor1->kp, UD_QN_KP);
+    command_packet.dual_motor_driver_command_packets[i].kp[1] = FLOAT_TO_D16QN(2. * M_PI * motor_drivers[i].motor2->kp, UD_QN_KP);
+    command_packet.dual_motor_driver_command_packets[i].kd[0] = FLOAT_TO_D16QN(((2. * M_PI * 1000.)/60.0) * motor_drivers[i].motor1->kd, UD_QN_KD);
+    command_packet.dual_motor_driver_command_packets[i].kd[1] = FLOAT_TO_D16QN(((2. * M_PI * 1000.)/60.0) * motor_drivers[i].motor2->kd, UD_QN_KD);
   }
 
   // Current time point

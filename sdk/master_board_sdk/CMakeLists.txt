@@ -2,14 +2,13 @@
 # Copyright (c) 2019 CNRS
 #
 
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.1)
 
 # ----------------------------------------------------
 # --- CXX FLAGS --------------------------------------
 # ----------------------------------------------------
 
 ADD_DEFINITIONS(-pthread)
-SET(CMAKE_CXX_STANDARD 11)
 SET(CXX_DISABLE_WERROR True)
 SET(CMAKE_VERBOSE_MAKEFILE True)
 
@@ -18,6 +17,11 @@ SET(PROJECT_NAME master-board-sdk)
 SET(PROJECT_DESCRIPTION "This project contains the sdk for the communication between a computer and the master-board")
 SET(PROJECT_URL https://github.com/open-dynamic-robot-initiative/master-board)
 
+# --- OPTIONS ----------------------------------------
+OPTION(BUILD_PYTHON_INTERFACE "Build the python binding" OFF)
+OPTION(PYTHON_STANDARD_LAYOUT "Enable standard Python package layout" ON)
+OPTION(PYTHON_DEB_LAYOUT "Enable Debian-style Python package layout" ON)
+
 INCLUDE(cmake/base.cmake)
 INCLUDE(cmake/boost.cmake)
 INCLUDE(cmake/python.cmake)
@@ -25,9 +29,7 @@ INCLUDE(cmake/ide.cmake)
 
 COMPUTE_PROJECT_ARGS(PROJECT_ARGS LANGUAGES CXX)
 PROJECT(${PROJECT_NAME} ${PROJECT_ARGS})
-
-# --- OPTIONS ----------------------------------------
-OPTION (BUILD_PYTHON_INTERFACE "Build the python binding" OFF)
+CHECK_MINIMAL_CXX_STANDARD(11 ENFORCE)
 
 MACRO(TAG_LIBRARY_VERSION target)
   SET_TARGET_PROPERTIES(${target} PROPERTIES SOVERSION ${PROJECT_VERSION})
@@ -38,19 +40,11 @@ ENDMACRO(TAG_LIBRARY_VERSION)
 # ----------------------------------------------------
 
 # Set component to fetch from boost
-SET(BOOST_REQUIRED_COMPONENTS "")
-SET(BOOST_OPTIONAL_COMPONENTS "")
 # Get the python interface for the bindings
 IF(BUILD_PYTHON_INTERFACE)
-  SET(BOOST_REQUIRED_COMPONENTS ${BOOST_REQUIRED_COMPONENTS} python)
   FINDPYTHON()
-  INCLUDE_DIRECTORIES(SYSTEM ${PYTHON_INCLUDE_DIRS})
+  SEARCH_FOR_BOOST_PYTHON(REQUIRED)
 ENDIF(BUILD_PYTHON_INTERFACE)
-# Search for the boost libraries
-SET(BOOST_COMPONENTS ${BOOST_REQUIRED_COMPONENTS} ${BOOST_OPTIONAL_COMPONENTS} ${BOOST_BUILD_COMPONENTS})
-SEARCH_FOR_BOOST()
-# Path to boost headers
-INCLUDE_DIRECTORIES(SYSTEM ${Boost_INCLUDE_DIRS})
 
 # ----------------------------------------------------
 # --- INCLUDE ----------------------------------------
@@ -101,8 +95,10 @@ IF(BUILD_PYTHON_INTERFACE)
   ADD_HEADER_GROUP(${PYWRAP}_HEADERS)
   ADD_SOURCE_GROUP(${PYWRAP}_SOURCES)
 
+  TARGET_INCLUDE_DIRECTORIES(${PYWRAP} SYSTEM PRIVATE ${PYTHON_INCLUDE_DIR})
   TARGET_LINK_LIBRARIES(${PYWRAP} ${PROJECT_NAME})
   TARGET_LINK_BOOST_PYTHON(${PYWRAP})
+  SET_TARGET_PROPERTIES(${PYWRAP} PROPERTIES INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 
   INSTALL(TARGETS ${PYWRAP} DESTINATION ${${PYWRAP}_INSTALL_DIR})
   # --- PACKAGING --- #
