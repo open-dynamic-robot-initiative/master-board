@@ -141,6 +141,10 @@ ADD_EXECUTABLE(master-board-example example/example.cpp)
 TARGET_LINK_LIBRARIES(master-board-example ${PROJECT_NAME})
 INSTALL(TARGETS master-board-example DESTINATION bin)
 
+ADD_EXECUTABLE(master-board-example-pd example/example_pd.cpp)
+TARGET_LINK_LIBRARIES(master-board-example-pd ${PROJECT_NAME})
+INSTALL(TARGETS master-board-example-pd DESTINATION bin)
+
 # --- PACKAGING ----------------------------------------------------------------
 PKG_CONFIG_APPEND_LIBS (${PROJECT_NAME})
 PKG_CONFIG_APPEND_BOOST_LIBS(${BOOST_REQUIRED_COMPONENTS})
