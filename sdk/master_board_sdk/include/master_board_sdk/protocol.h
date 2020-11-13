@@ -42,8 +42,8 @@
 #define UD_QN_ISAT 3
 #define UD_QN_CR   15
 #define UD_QN_ADC  16
-#define UD_QN_KP   16
-#define UD_QN_KD   16
+#define UD_QN_KP   11
+#define UD_QN_KD   10
 
 #define IMU_QN_ACC 11
 #define IMU_QN_GYR 11

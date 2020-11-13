@@ -13,8 +13,8 @@ public:
 	void SetMotors(Motor *motor1, Motor *motor2);
 	void Print();
 	void EnablePositionRolloverError();
-  	void DisablePositionRolloverError();
-  	void SetTimeout(uint8_t time);
+  void DisablePositionRolloverError();
+  void SetTimeout(uint8_t time);
 
 	bool IsConnected();
 	bool IsEnabled();
@@ -41,7 +41,7 @@ public:
 	uint8_t timeout;
 
 	// Set functions for Python binding with Boost
-  	void set_motor1(Motor* mot) { this->motor1 = mot; };
+  void set_motor1(Motor* mot) { this->motor1 = mot; };
 	void set_motor2(Motor* mot) { this->motor2 = mot; };
 	void set_is_connected(bool val) { this->is_connected = val; };
 	void set_is_enabled(bool val) { this->is_enabled = val; };
@@ -52,7 +52,7 @@ public:
 	void set_adc(float adc_val []); // See definition in .cpp
 
 	// Get functions for Python binding with Boost
-  	Motor* get_motor1() { return (this->motor1); };
+  Motor* get_motor1() { return (this->motor1); };
 	Motor* get_motor2() { return (this->motor2); };
 	bool get_is_connected() { return this->is_connected; };
 	bool get_is_enabled() { return this->is_enabled; };
