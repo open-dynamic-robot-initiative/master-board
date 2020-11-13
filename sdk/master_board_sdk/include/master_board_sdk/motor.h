@@ -42,6 +42,7 @@ public:
   float position_ref;  // [rad]
   float velocity_ref;  // [rad/s]
   float current_ref;   // [A]
+  float current_sat;   // [A]
   float kp;            // [A/rad]
   float kd;            // [As/rad]
 
@@ -64,6 +65,7 @@ public:
   void set_position_ref(float val) { this->position_ref = val; };
   void set_velocity_ref(float val) { this->velocity_ref = val; };
   void set_current_ref(float val) { this->current_ref = val; };
+  void set_current_sat(float val) { this->current_sat = val; };
   void set_kp(float val) { this->kp = val; };
   void set_kd(float val) { this->kd = val; };
   void set_enable(bool val) { this->enable = val; };
@@ -83,6 +85,7 @@ public:
   float get_position_ref() { return this->position_ref; };
   float get_velocity_ref() { return this->velocity_ref; };
   float get_current_ref() { return this->current_ref; };
+  float get_current_sat() { return this->current_sat; };
   float get_kp() { return this->kp; };
   float get_kd() { return this->kd; };
   bool get_enable() { return this->enable; };

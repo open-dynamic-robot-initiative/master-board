@@ -129,11 +129,11 @@
 
 #define FLOAT_TO_uD32QN(a,n)      ((uint32_t) ((a) * (1<<(n))))
 #define FLOAT_TO_uD16QN(a,n)      ((uint16_t) ((a) * (1<<(n))))
-#define FLOAT_TO_uD8QN (a,n)      ((uint8_t)  ((a) * (1<<(n))))
+#define FLOAT_TO_uD8QN(a,n)       ((uint8_t)  ((a) * (1<<(n))))
 
 #define FLOAT_TO_D32QN(a,n)       ((int32_t) ((a) * (1<<(n))))
 #define FLOAT_TO_D16QN(a,n)       ((int16_t) ((a) * (1<<(n))))
-#define FLOAT_TO_D8QN (a,n)       ((int8_t)  ((a) * (1<<(n))))
+#define FLOAT_TO_D8QN(a,n)        ((int8_t)  ((a) * (1<<(n))))
 
 
 #endif
