@@ -12,12 +12,18 @@
 
 int main(int argc, char **argv)
 {
+    if(argc != 2)
+    {
+        throw std::runtime_error("Please provide the interface name "
+                                 "(i.e. using 'ifconfig' on linux");
+    }
+
 	int cpt = 0;
 	double dt = 0.001;
 	double t = 0;
-	double kp = 5.;
-	double kd = 0.1;
-	double iq_sat = 4.0;
+	float kp = 5.;
+	float kd = static_cast<float>(0.1);
+	float iq_sat = 4.0;
 	double freq = 0.5;
 	double amplitude = M_PI;
 	double init_pos[N_SLAVES * 2] = {0};
@@ -25,7 +31,6 @@ int main(int argc, char **argv)
 
 	nice(-20); //give the process a high priority
 	printf("-- Main --\n");
-	//assert(argc > 1);
 	MasterBoardInterface robot_if(argv[1]);
 	robot_if.Init();
 	//Initialisation, send the init commands
@@ -89,7 +94,7 @@ int main(int argc, char **argv)
 
 					// Use the current state as target for the PD controller.
 					robot_if.motors[i].SetCurrentReference(0.);
-					robot_if.motors[i].SetPositionReference(init_pos[i]);
+					robot_if.motors[i].SetPositionReference(static_cast<float>(init_pos[i]));
 					robot_if.motors[i].SetVelocityReference(0.);
 
 					t = 0;	//to start sin at 0
@@ -113,8 +118,8 @@ int main(int argc, char **argv)
 
 					if (robot_if.motors[i].IsEnabled())
 					{
-						double ref = init_pos[i] + amplitude * sin(2 * M_PI * freq * t);
-						double v_ref = 2. * M_PI * freq * amplitude * cos(2 * M_PI * freq * t);
+						float ref = static_cast<float>(init_pos[i] + amplitude * sin(2 * M_PI * freq * t));
+						float v_ref = static_cast<float>(2. * M_PI * freq * amplitude * cos(2 * M_PI * freq * t));
 
 						robot_if.motors[i].SetCurrentReference(0.);
 						robot_if.motors[i].SetPositionReference(ref);
