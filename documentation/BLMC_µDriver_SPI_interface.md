@@ -121,7 +121,7 @@ Data | | Unit | Min | Max | Resolution (LSB) | Comment
 Position | 32bits | turn | -128 | 127,999999940395 | 2^(-24) | Rollout can happen on position
 Velocity | 16bits | k rpm | -16 | 15,9995117188 | 2^(-11) | |
 Iq | 16bits | A | -32 | 31,9990234375 | 2^(-10) | This can be use as a feed-forward term for PD controller as well as current control
-I_sat | 8 bits | A | 0 | 31,875 | 2^(-3) | Current saturation, useful when using Kp>0 or Kd>0
+I_sat | 8 bits | A | 0 | 31,875 | 2^(-3) | Current saturation. Value of zero disables saturation check. Value of bigger than zero applies current saturation after the PD+ controller.
 Coil resistance | 16bits | Ohm | 0 | 1,9999694824 | 2^(-15) | Useful to estimated coil temperature from U/I (Not implemented yet)
 ADC | 16bits | V | 0 | 3.99993896484 | 2^(-14) | |
 Kp | 16bits | A/rot | 0 | 31.99951171875 | 2^(-11) | Setting Kp=Kd=0 allow to do direct current control |
