@@ -110,7 +110,7 @@ int main(int argc, char **argv)
 							cur = iq_sat;
 						if (cur < -iq_sat)
 							cur = -iq_sat;
-						robot_if.motors[i].SetCurrentReference(static_cast<float>(cur));
+						robot_if.motors[i].SetCurrentReference(cur);
 					}
 				}
 				break;
