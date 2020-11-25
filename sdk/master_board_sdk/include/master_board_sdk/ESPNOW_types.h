@@ -80,7 +80,7 @@ struct IEEE80211_vendorspecific {
 		this->version = 0x01;
 	}
 
-	void set_length(int payload_length) {this->length = payload_length + 5;}
+	void set_length(int payload_length) {this->length = static_cast<uint8_t>(payload_length + 5);}
 } __attribute__((__packed__));
 
 

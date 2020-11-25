@@ -23,7 +23,7 @@ void ESPNOW_packet::set_dst_mac(uint8_t dst_mac[6]) {
 
 
 int ESPNOW_packet::toBytes(uint8_t *bytes, int max_len) {	
-	int correct_len = sizeof(ESPNOW_data) + this->data.wlan.actionframe.content.length - 0xff;
+	int correct_len = static_cast<int>(sizeof(ESPNOW_data)) + this->data.wlan.actionframe.content.length - 0xff;
 	
 	assert(correct_len <= max_len); 
 
