@@ -292,8 +292,8 @@ void MasterBoardInterface::callback(uint8_t src_mac[6], uint8_t *data, int len)
       last_cmd_packet_loss = packet_recv->packet_loss;
     }
 
-    //Sensor_loss
-    if (packet_recv->sensor_index - last_sensor_index - 1 != 0)
+    //Sensor_loss. Ignore case where packet_recv->sensor_index is overflowing.
+    if (packet_recv->sensor_index - last_sensor_index - 1 > 0)
     {
       if ((packet_recv->sensor_index - last_sensor_index - 2) >= MAX_HIST)
       {
