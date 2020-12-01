@@ -89,8 +89,8 @@
 /* sensor packet -> status -> ERROR : values */
 //! \brief No error
 #define UD_SENSOR_STATUS_ERROR_NO_ERROR 0
-//! \brief Encoder error too high
-#define UD_SENSOR_STATUS_ERROR_ENCODER 1
+//! \brief Encoder 1 error too high
+#define UD_SENSOR_STATUS_ERROR_ENCODER1 1
 //! \brief Timeout for receiving current references exceeded
 #define UD_SENSOR_STATUS_ERROR_SPI_RECV_TIMEOUT 2
 //! \brief Motor temperature reached critical value
@@ -100,6 +100,8 @@
 #define UD_SENSOR_STATUS_ERROR_POSCONV 4
 //! \brief Position Rollover occured
 #define UD_SENSOR_STATUS_ERROR_POS_ROLLOVER 5
+//! \brief Encoder 2 error too high
+#define UD_SENSOR_STATUS_ERROR_ENCODER2 6
 //! \brief Some other error
 #define UD_SENSOR_STATUS_ERROR_OTHER 7
 //! \brief UD packets length in word (16 bits)
