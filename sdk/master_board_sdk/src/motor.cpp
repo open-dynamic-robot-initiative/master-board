@@ -65,6 +65,21 @@ void Motor::SetCurrentReference(double ref)
   current_ref = ref;
 }
 
+void Motor::SetKp(double val)
+{
+  kp = val;
+}
+
+void Motor::SetKd(double val)
+{
+  kd = val;
+}
+
+void Motor::SetSaturationCurrent(double val)
+{
+  current_sat = val;
+}
+
 bool Motor::IsReady()
 {
   return is_ready;
