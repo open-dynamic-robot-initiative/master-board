@@ -19,6 +19,14 @@ Wireless closed loop control at 1kHz demo (click to see video):
 IMU, ethernet closed loop cntrol at 1kHz demo (click to see video):
 [![Alt text](https://img.youtube.com/vi/TaonDmPJcGE/0.jpg)](https://www.youtube.com/watch?v=TaonDmPJcGE)
 
+## LED status
+**Red fade:** Waiting for init<br>
+**Magenta fade:** SPI Autodetect<br>
+**Blue fade:** waiting for first commmand<br>
+**Green fade:** Active control<br>
+**Yellow blink:** ethernet link down state awaiting for link up<br>
+**Red blink:** error state (communication with PC), awaiting for new init msg<br>
+**White blink:** state machine error (should never happen)<br>
 
 Documentation
 -------------
