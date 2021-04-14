@@ -28,6 +28,7 @@ int main(int argc, char **argv)
 	double amplitude = M_PI;
 	double init_pos[N_SLAVES * 2] = {0};
 	int state = 0;
+	int error_counters[N_SLAVES] = {0};
 
 	nice(-20); //give the process a high priority
 	printf("-- Main --\n");
@@ -115,6 +116,16 @@ int main(int argc, char **argv)
 				}
 				break;
 			}
+
+			// Check if an error happened and increase the counter.
+			for (int i = 0; i < N_SLAVES; i++)
+			{
+				if (robot_if.motor_drivers[i].error_code != 0)
+				{
+					error_counters[i] += 1;
+				}
+			}
+
 			if (cpt % 100 == 0)
 			{
 				printf("\33[H\33[2J"); //clear screen
@@ -122,10 +133,17 @@ int main(int argc, char **argv)
 				robot_if.PrintADC();
 				robot_if.PrintMotors();
 				robot_if.PrintMotorDrivers();
-				robot_if.PrintStats();
-				fflush(stdout);
-				 
 
+				printf("Motor driver errors: ");
+				for (int i = 0; i < N_SLAVES; i++)
+				{
+					printf("%3d | ", error_counters[i]);
+				}
+				printf("\n\n");
+
+				robot_if.PrintStats();
+
+				fflush(stdout);
 			}
 			robot_if.SendCommand(); //This will send the command packet
 		}
