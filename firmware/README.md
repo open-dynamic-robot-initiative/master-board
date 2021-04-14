@@ -4,7 +4,9 @@ Install esp-idf
 --------
 The master board is based on a ESP32 module programmed in C++ using the expressif idf SDK https://github.com/espressif/esp-idf
 
-To install the SDK simply follow the instruction form https://docs.espressif.com/projects/esp-idf/en/stable/get-started/.
+To install the SDK follow the instruction form https://docs.espressif.com/projects/esp-idf/en/stable/get-started/.
+
+**Note** : Using **Python2**, you need to install packages at specific versions before running the installation: `pip install python-socketio==1.5.0 Flask-SocketIO==2.9`
 
 Please checkout the github issue about the esp-idf version: https://github.com/open-dynamic-robot-initiative/master-board/issues/3.
 i.e. checkout this commit:
