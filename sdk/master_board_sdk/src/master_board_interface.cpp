@@ -374,6 +374,16 @@ void MasterBoardInterface::ParseSensorData()
     motor_drivers[i].motor2->is_ready = sensor_packet.dual_motor_driver_sensor_packets[i].status & UD_SENSOR_STATUS_M2R;
     motor_drivers[i].motor2->has_index_been_detected = sensor_packet.dual_motor_driver_sensor_packets[i].status & UD_SENSOR_STATUS_IDX2D;
     motor_drivers[i].motor2->index_toggle_bit = sensor_packet.dual_motor_driver_sensor_packets[i].status & UD_SENSOR_STATUS_IDX2T;
+
+    // The motors report a small non-zero velocity though the velocity is zero. Check for this small
+    // velocity and set the velocity to zero.
+    // See also: https://github.com/open-dynamic-robot-initiative/master-board/issues/92#
+    if (abs(motor_drivers[i].motor1->velocity) < 0.052) {
+      motor_drivers[i].motor1->velocity = 0.;
+    }
+    if (abs(motor_drivers[i].motor2->velocity) < 0.052) {
+      motor_drivers[i].motor2->velocity = 0.;
+    }
   }
   /*Stat on Packet loss*/
 
