@@ -357,6 +357,16 @@ void MasterBoardInterface::ParseSensorData()
     motor_drivers[i].adc[0] = D16QN_TO_FLOAT(sensor_packet.dual_motor_driver_sensor_packets[i].adc[0], UD_QN_ADC);
     motor_drivers[i].adc[1] = D16QN_TO_FLOAT(sensor_packet.dual_motor_driver_sensor_packets[i].adc[1], UD_QN_ADC);
 
+    // The motor cards report a small non-zero velocity though the velocity is
+    // zero. Check for this small velocity and set the velocity to zero.
+    // See also: https://github.com/open-dynamic-robot-initiative/master-board/issues/92
+    for (int j = 0; j < 2; j++) {
+      int16_t &velocity = sensor_packet.dual_motor_driver_sensor_packets[i].velocity[j];
+      if (velocity == 1 || velocity == -1) {
+        velocity = 0;
+      }
+    }
+
     //motor 1
     motor_drivers[i].motor1->position = motor_drivers[i].motor1->position_offset + static_cast<float>(2. * M_PI) * D32QN_TO_FLOAT(sensor_packet.dual_motor_driver_sensor_packets[i].position[0], UD_QN_POS);
     motor_drivers[i].motor1->velocity = static_cast<float>(2. * M_PI * 1000. / 60.) * D32QN_TO_FLOAT(sensor_packet.dual_motor_driver_sensor_packets[i].velocity[0], UD_QN_VEL);
@@ -374,16 +384,6 @@ void MasterBoardInterface::ParseSensorData()
     motor_drivers[i].motor2->is_ready = sensor_packet.dual_motor_driver_sensor_packets[i].status & UD_SENSOR_STATUS_M2R;
     motor_drivers[i].motor2->has_index_been_detected = sensor_packet.dual_motor_driver_sensor_packets[i].status & UD_SENSOR_STATUS_IDX2D;
     motor_drivers[i].motor2->index_toggle_bit = sensor_packet.dual_motor_driver_sensor_packets[i].status & UD_SENSOR_STATUS_IDX2T;
-
-    // The motors report a small non-zero velocity though the velocity is zero. Check for this small
-    // velocity and set the velocity to zero.
-    // See also: https://github.com/open-dynamic-robot-initiative/master-board/issues/92#
-    if (abs(motor_drivers[i].motor1->velocity) < 0.052) {
-      motor_drivers[i].motor1->velocity = 0.;
-    }
-    if (abs(motor_drivers[i].motor2->velocity) < 0.052) {
-      motor_drivers[i].motor2->velocity = 0.;
-    }
   }
   /*Stat on Packet loss*/
 
