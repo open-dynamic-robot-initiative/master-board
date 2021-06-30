@@ -357,6 +357,16 @@ void MasterBoardInterface::ParseSensorData()
     motor_drivers[i].adc[0] = D16QN_TO_FLOAT(sensor_packet.dual_motor_driver_sensor_packets[i].adc[0], UD_QN_ADC);
     motor_drivers[i].adc[1] = D16QN_TO_FLOAT(sensor_packet.dual_motor_driver_sensor_packets[i].adc[1], UD_QN_ADC);
 
+    // The motor cards report a small non-zero velocity though the velocity is
+    // zero. Check for this small velocity and set the velocity to zero.
+    // See also: https://github.com/open-dynamic-robot-initiative/master-board/issues/92
+    for (int j = 0; j < 2; j++) {
+      int16_t &velocity = sensor_packet.dual_motor_driver_sensor_packets[i].velocity[j];
+      if (velocity == 1 || velocity == -1) {
+        velocity = 0;
+      }
+    }
+
     //motor 1
     motor_drivers[i].motor1->position = motor_drivers[i].motor1->position_offset + static_cast<float>(2. * M_PI) * D32QN_TO_FLOAT(sensor_packet.dual_motor_driver_sensor_packets[i].position[0], UD_QN_POS);
     motor_drivers[i].motor1->velocity = static_cast<float>(2. * M_PI * 1000. / 60.) * D32QN_TO_FLOAT(sensor_packet.dual_motor_driver_sensor_packets[i].velocity[0], UD_QN_VEL);
