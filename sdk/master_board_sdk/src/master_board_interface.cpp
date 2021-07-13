@@ -361,9 +361,10 @@ void MasterBoardInterface::ParseSensorData()
     // zero. Check for this small velocity and set the velocity to zero.
     // See also: https://github.com/open-dynamic-robot-initiative/master-board/issues/92
     for (int j = 0; j < 2; j++) {
-      int16_t &velocity = sensor_packet.dual_motor_driver_sensor_packets[i].velocity[j];
-      if (velocity == 1 || velocity == -1) {
-        velocity = 0;
+      if (sensor_packet.dual_motor_driver_sensor_packets[i].velocity[j] == 1 ||
+          sensor_packet.dual_motor_driver_sensor_packets[i].velocity[j] == -1)
+      {
+        sensor_packet.dual_motor_driver_sensor_packets[i].velocity[j] = 0;
       }
     }
 
