@@ -344,6 +344,12 @@ void MasterBoardInterface::ParseSensorData()
     imu_data.linear_acceleration[i] = D16QN_TO_FLOAT(sensor_packet.imu.linear_acceleration[i], IMU_QN_ACC);
   }
 
+  /*Read Power Board data*/
+  powerboard_data.current_bus = sensor_packet.powerboard.vshunt * 5e-6 / 4e-3; 
+  powerboard_data.voltage_bus = sensor_packet.powerboard.vbus * 3.125e-3;
+  powerboard_data.energy_bus = sensor_packet.powerboard.energy * 3.125e-3 * 5e-6 / 4e-3 ;
+  
+  
   //Read Motor Driver Data
   for (int i = 0; i < N_SLAVES; i++)
   {
@@ -396,6 +402,14 @@ void MasterBoardInterface::PrintIMU()
          imu_data.linear_acceleration[2]);
 }
 
+void MasterBoardInterface::PrintPowerBoard()
+{
+  printf("            | Bus Voltage | Bus Current  |  Bus Energy | \n");
+  printf("Power board |  %6.3f V   |   %6.3f A   |  %6.1f J |\n\n",
+         powerboard_data.voltage_bus,
+         powerboard_data.current_bus,
+         powerboard_data.energy_bus);
+}
 void MasterBoardInterface::PrintADC()
 {
   bool printed = 0;

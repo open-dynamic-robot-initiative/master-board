@@ -3,8 +3,12 @@
 
 #include <stdint.h>
 
-#define PROTOCOL_VERSION 3
+#define PROTOCOL_VERSION 4
 
+union floatbytes{
+    float f;
+    uint8_t b[4];
+};
 struct sensor_data {
 	uint16_t status;
 	uint16_t timestamp;
@@ -32,6 +36,12 @@ struct imu_data {
 	int16_t linear_acceleration[3];
 } __attribute__((packed));
 
+struct powerboard_data {
+    uint16_t vbus;
+    int16_t vshunt;
+    float energy;
+} __attribute__((packed));
+
 struct wifi_eth_packet_init {
 	uint16_t protocol_version; // used to ensure both the interface and the firmware use the same protocol
 	uint16_t session_id;
@@ -53,6 +63,7 @@ struct wifi_eth_packet_sensor {
 	uint16_t session_id;
     struct sensor_data sensor[CONFIG_N_SLAVES];
     struct imu_data imu;
+    struct powerboard_data powerboard;
     uint16_t sensor_index;
     uint16_t packet_loss;
 	uint16_t last_cmd_index;

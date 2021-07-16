@@ -42,6 +42,19 @@ struct imu_data_t
 	float linear_acceleration[3];
 } __attribute__((packed));
 
+struct powerboard_packet_t
+{
+    uint16_t vbus;
+    int16_t vshunt;
+    float energy;
+} __attribute__((packed));
+
+struct powerboard_data_t {
+    float current_bus;
+    float voltage_bus;
+    float energy_bus;
+} __attribute__((packed));
+
 struct dual_motor_driver_sensor_data_t
 {
 	uint16_t status;
@@ -64,6 +77,7 @@ struct sensor_packet_t
 	uint16_t session_id;
 	struct dual_motor_driver_sensor_packet_t dual_motor_driver_sensor_packets[N_SLAVES];
 	struct imu_packet_t imu;
+    struct powerboard_packet_t powerboard;
 	uint16_t sensor_index;
 	uint16_t packet_loss;
 	uint16_t last_cmd_index;
