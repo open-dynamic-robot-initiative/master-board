@@ -82,3 +82,7 @@ To run an executable named EXECUTABLE_NAME without root permissions, run :
 ```
 sudo setcap cap_net_admin,cap_net_raw+ep EXECUTABLE_NAME
 ```
+remember to reset the capabilities on python if you use it other you can [get into trouble](https://answers.ros.org/question/366380/ubuntu1804ros2-dashing-failed-to-load-entry-point-issue/):
+```
+sudo setcap -r /usr/bin/python3.6
+```

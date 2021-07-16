@@ -1,5 +1,5 @@
 # master-board
-Hardware and Firmware of the Solo Quadruped Master Board. 
+Hardware and Firmware of the Solo Quadruped Master Board.
 
 This board centralises all the sensor and actuator data and provides wired and wireless connection to a realtime computer.
 
@@ -19,6 +19,14 @@ Wireless closed loop control at 1kHz demo (click to see video):
 IMU, ethernet closed loop cntrol at 1kHz demo (click to see video):
 [![Alt text](https://img.youtube.com/vi/TaonDmPJcGE/0.jpg)](https://www.youtube.com/watch?v=TaonDmPJcGE)
 
+## LED status
+**Red fade:** Waiting for init<br>
+**Magenta fade:** SPI Autodetect<br>
+**Blue fade:** waiting for first commmand<br>
+**Green fade:** Active control<br>
+**Yellow blink:** ethernet link down state awaiting for link up<br>
+**Red blink:** error state (communication with PC), awaiting for new init msg<br>
+**White blink:** state machine error (should never happen)<br>
 
 Documentation
 -------------
@@ -26,7 +34,7 @@ Here are some helpful links to the documentation :
 
 [How to flash the Master Board (install esp-idf and flash the firmware)](firmware/README.md)
 
-[SDK : How to prepare your interface and run the example](sdk/master_board_sdk/README.md ) 
+[SDK : How to prepare your interface and run the example](sdk/master_board_sdk/README.md )
 
 [Master Board State Machine Description](documentation/masterboard_state_machine.md)
 
@@ -35,6 +43,8 @@ Here are some helpful links to the documentation :
 [Description of the BLMC µDriver SPI interface](documentation/BLMC_%C2%B5Driver_SPI_interface.md)
 
 [Wiring the MasterBoard](documentation/masterboard_wiring.md)
+
+[Master Board Ordering and Preparation](documentation/masterboard_ordering_soldering.md)
 
 Authors
 --------

@@ -45,24 +45,39 @@ void Motor::Disable()
   enable=false;
 }
 
-void Motor::SetPositionOffset(float offset)
+void Motor::SetPositionOffset(double offset)
 {
   position_offset = offset;
 }
 
-void Motor::SetPositionReference(float ref)
+void Motor::SetPositionReference(double ref)
 {
   position_ref = ref;
 }
 
-void Motor::SetVelocityReference(float ref)
+void Motor::SetVelocityReference(double ref)
 {
   velocity_ref = ref;
 }
 
-void Motor::SetCurrentReference(float ref)
+void Motor::SetCurrentReference(double ref)
 {
   current_ref = ref;
+}
+
+void Motor::SetKp(double val)
+{
+  kp = val;
+}
+
+void Motor::SetKd(double val)
+{
+  kd = val;
+}
+
+void Motor::SetSaturationCurrent(double val)
+{
+  current_sat = val;
 }
 
 bool Motor::IsReady()
@@ -85,22 +100,22 @@ bool Motor::GetIndexToggleBit()
   return index_toggle_bit;
 }
 
-float Motor::GetPosition()
+double Motor::GetPosition()
 {
   return position;
 }
 
-float Motor::GetPositionOffset()
+double Motor::GetPositionOffset()
 {
   return position_offset;
 }
 
-float Motor::GetVelocity()
+double Motor::GetVelocity()
 {
   return velocity;
 }
 
-float Motor::GetCurrent()
+double Motor::GetCurrent()
 {
   return current;
 }

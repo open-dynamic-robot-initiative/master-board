@@ -88,7 +88,7 @@ int MasterBoardInterface::Stop()
   return 0;
 }
 
-void MasterBoardInterface::KeyboardStop(int signum)
+void MasterBoardInterface::KeyboardStop(int /*signum*/)
 {
   printf("Keyboard Interrupt\n");
   instance->Stop();
@@ -111,7 +111,7 @@ int MasterBoardInterface::SendInit()
   }
 
   init_packet.protocol_version = PROTOCOL_VERSION;
-  init_packet.session_id = session_id;
+  init_packet.session_id = static_cast<uint16_t>(session_id);
 
   // Current time point
   std::chrono::high_resolution_clock::time_point t_send_packet = std::chrono::high_resolution_clock::now();
@@ -156,7 +156,7 @@ int MasterBoardInterface::SendCommand()
     return -1; // Return -1 since the command has not been sent.
   }
 
-  command_packet.session_id = session_id;
+  command_packet.session_id = static_cast<uint16_t>(session_id);
 
   //construct the command packet
   for (int i = 0; i < N_SLAVES; i++)
@@ -186,7 +186,7 @@ int MasterBoardInterface::SendCommand()
     {
       mode |= UD_COMMAND_MODE_EI2OC;
     }
-    mode |= UD_COMMAND_MODE_TIMEOUT & motor_drivers[i].timeout;
+    mode |= static_cast<uint16_t>(UD_COMMAND_MODE_TIMEOUT & motor_drivers[i].timeout);
     command_packet.dual_motor_driver_command_packets[i].mode = mode;
     command_packet.dual_motor_driver_command_packets[i].position_ref[0] = FLOAT_TO_D32QN((motor_drivers[i].motor1->position_ref - motor_drivers[i].motor1->position_offset)/ (2. * M_PI) , UD_QN_POS) ;
     command_packet.dual_motor_driver_command_packets[i].position_ref[1] = FLOAT_TO_D32QN((motor_drivers[i].motor2->position_ref - motor_drivers[i].motor2->position_offset)/ (2. * M_PI) , UD_QN_POS) ;
@@ -198,6 +198,8 @@ int MasterBoardInterface::SendCommand()
     command_packet.dual_motor_driver_command_packets[i].kp[1] = FLOAT_TO_D16QN(2. * M_PI * motor_drivers[i].motor2->kp, UD_QN_KP);
     command_packet.dual_motor_driver_command_packets[i].kd[0] = FLOAT_TO_D16QN(((2. * M_PI * 1000.)/60.0) * motor_drivers[i].motor1->kd, UD_QN_KD);
     command_packet.dual_motor_driver_command_packets[i].kd[1] = FLOAT_TO_D16QN(((2. * M_PI * 1000.)/60.0) * motor_drivers[i].motor2->kd, UD_QN_KD);
+    command_packet.dual_motor_driver_command_packets[i].i_sat[0] = FLOAT_TO_uD8QN(motor_drivers[i].motor1->current_sat, UD_QN_ISAT);
+    command_packet.dual_motor_driver_command_packets[i].i_sat[1] = FLOAT_TO_uD8QN(motor_drivers[i].motor2->current_sat, UD_QN_ISAT);
   }
 
   // Current time point
@@ -221,7 +223,7 @@ int MasterBoardInterface::SendCommand()
   return 0; // Return 0 since the command has been sent.
 }
 
-void MasterBoardInterface::callback(uint8_t src_mac[6], uint8_t *data, int len)
+void MasterBoardInterface::callback(uint8_t /*src_mac*/[6], uint8_t *data, int len)
 {
   if ((listener_mode || (init_sent && !ack_received)) && len == sizeof(ack_packet_t))
   {
@@ -286,12 +288,12 @@ void MasterBoardInterface::callback(uint8_t src_mac[6], uint8_t *data, int len)
     if (!first_sensor_received)
     {
       first_sensor_received = true;
-      last_sensor_index = packet_recv->sensor_index - 1; //initialisation of last_sensor_index at first reception
+      last_sensor_index = static_cast<uint16_t>(packet_recv->sensor_index - 1); //initialisation of last_sensor_index at first reception
       last_cmd_packet_loss = packet_recv->packet_loss;
     }
 
-    //Sensor_loss
-    if (packet_recv->sensor_index - last_sensor_index - 1 != 0)
+    //Sensor_loss. Ignore case where packet_recv->sensor_index is overflowing.
+    if (packet_recv->sensor_index - last_sensor_index - 1 > 0)
     {
       if ((packet_recv->sensor_index - last_sensor_index - 2) >= MAX_HIST)
       {
@@ -338,7 +340,7 @@ void MasterBoardInterface::ParseSensorData()
   /*Read IMU data*/
   for (int i = 0; i < 3; i++)
   {
-    imu_data.accelerometer[i] = 9.80665 * D16QN_TO_FLOAT(sensor_packet.imu.accelerometer[i], IMU_QN_ACC);
+    imu_data.accelerometer[i] = static_cast<float>(9.80665) * D16QN_TO_FLOAT(sensor_packet.imu.accelerometer[i], IMU_QN_ACC);
     imu_data.gyroscope[i] = D16QN_TO_FLOAT(sensor_packet.imu.gyroscope[i], IMU_QN_GYR);
     imu_data.attitude[i] = D16QN_TO_FLOAT(sensor_packet.imu.attitude[i], IMU_QN_EF);
     imu_data.linear_acceleration[i] = D16QN_TO_FLOAT(sensor_packet.imu.linear_acceleration[i], IMU_QN_ACC);
@@ -361,9 +363,20 @@ void MasterBoardInterface::ParseSensorData()
     motor_drivers[i].adc[0] = D16QN_TO_FLOAT(sensor_packet.dual_motor_driver_sensor_packets[i].adc[0], UD_QN_ADC);
     motor_drivers[i].adc[1] = D16QN_TO_FLOAT(sensor_packet.dual_motor_driver_sensor_packets[i].adc[1], UD_QN_ADC);
 
+    // The motor cards report a small non-zero velocity though the velocity is
+    // zero. Check for this small velocity and set the velocity to zero.
+    // See also: https://github.com/open-dynamic-robot-initiative/master-board/issues/92
+    for (int j = 0; j < 2; j++) {
+      if (sensor_packet.dual_motor_driver_sensor_packets[i].velocity[j] == 1 ||
+          sensor_packet.dual_motor_driver_sensor_packets[i].velocity[j] == -1)
+      {
+        sensor_packet.dual_motor_driver_sensor_packets[i].velocity[j] = 0;
+      }
+    }
+
     //motor 1
-    motor_drivers[i].motor1->position = motor_drivers[i].motor1->position_offset + 2. * M_PI * D32QN_TO_FLOAT(sensor_packet.dual_motor_driver_sensor_packets[i].position[0], UD_QN_POS);
-    motor_drivers[i].motor1->velocity = 2. * M_PI * 1000. / 60. * D32QN_TO_FLOAT(sensor_packet.dual_motor_driver_sensor_packets[i].velocity[0], UD_QN_VEL);
+    motor_drivers[i].motor1->position = motor_drivers[i].motor1->position_offset + static_cast<float>(2. * M_PI) * D32QN_TO_FLOAT(sensor_packet.dual_motor_driver_sensor_packets[i].position[0], UD_QN_POS);
+    motor_drivers[i].motor1->velocity = static_cast<float>(2. * M_PI * 1000. / 60.) * D32QN_TO_FLOAT(sensor_packet.dual_motor_driver_sensor_packets[i].velocity[0], UD_QN_VEL);
     motor_drivers[i].motor1->current = D32QN_TO_FLOAT(sensor_packet.dual_motor_driver_sensor_packets[i].current[0], UD_QN_IQ);
     motor_drivers[i].motor1->is_enabled = sensor_packet.dual_motor_driver_sensor_packets[i].status & UD_SENSOR_STATUS_M1E;
     motor_drivers[i].motor1->is_ready = sensor_packet.dual_motor_driver_sensor_packets[i].status & UD_SENSOR_STATUS_M1R;
@@ -371,8 +384,8 @@ void MasterBoardInterface::ParseSensorData()
     motor_drivers[i].motor1->index_toggle_bit = sensor_packet.dual_motor_driver_sensor_packets[i].status & UD_SENSOR_STATUS_IDX1T;
 
     //motor 2
-    motor_drivers[i].motor2->position = motor_drivers[i].motor2->position_offset + 2. * M_PI * D32QN_TO_FLOAT(sensor_packet.dual_motor_driver_sensor_packets[i].position[1], UD_QN_POS);
-    motor_drivers[i].motor2->velocity = 2. * M_PI * 1000. / 60. * D32QN_TO_FLOAT(sensor_packet.dual_motor_driver_sensor_packets[i].velocity[1], UD_QN_VEL);
+    motor_drivers[i].motor2->position = motor_drivers[i].motor2->position_offset + static_cast<float>(2. * M_PI) * D32QN_TO_FLOAT(sensor_packet.dual_motor_driver_sensor_packets[i].position[1], UD_QN_POS);
+    motor_drivers[i].motor2->velocity = static_cast<float>(2. * M_PI * 1000. / 60.) * D32QN_TO_FLOAT(sensor_packet.dual_motor_driver_sensor_packets[i].velocity[1], UD_QN_VEL);
     motor_drivers[i].motor2->current = D32QN_TO_FLOAT(sensor_packet.dual_motor_driver_sensor_packets[i].current[1], UD_QN_IQ);
     motor_drivers[i].motor2->is_enabled = sensor_packet.dual_motor_driver_sensor_packets[i].status & UD_SENSOR_STATUS_M2E;
     motor_drivers[i].motor2->is_ready = sensor_packet.dual_motor_driver_sensor_packets[i].status & UD_SENSOR_STATUS_M2R;

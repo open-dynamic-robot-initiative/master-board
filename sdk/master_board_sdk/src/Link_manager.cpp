@@ -115,7 +115,7 @@ void *LINK_manager::sock_recv_thread(void *p_arg)
 
 	while (1)
 	{
-		raw_bytes_len = recvfrom(params->sock_fd, raw_bytes, LEN_RAWBYTES_MAX, MSG_TRUNC, NULL, 0);
+		raw_bytes_len = static_cast<int>(recvfrom(params->sock_fd, raw_bytes, LEN_RAWBYTES_MAX, MSG_TRUNC, NULL, 0));
 
 		if (raw_bytes_len < 0)
 		{
@@ -148,7 +148,7 @@ int LINK_manager::send(uint8_t *payload, int len)
 
 	int raw_len = mypacket->toBytes(raw_bytes, LEN_RAWBYTES_MAX);
 
-	return sendto(this->sock_fd, raw_bytes, raw_len, 0, NULL, 0);
+	return static_cast<int>(sendto(this->sock_fd, raw_bytes, raw_len, 0, NULL, 0));
 }
 
 int LINK_manager::send()
@@ -157,5 +157,5 @@ int LINK_manager::send()
 
 	int raw_len = mypacket->toBytes(raw_bytes, LEN_RAWBYTES_MAX);
 
-	return sendto(this->sock_fd, raw_bytes, raw_len, 0, NULL, 0);
+	return static_cast<int>(sendto(this->sock_fd, raw_bytes, raw_len, 0, NULL, 0));
 }

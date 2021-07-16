@@ -28,7 +28,6 @@ int main(int argc, char **argv)
 	double amplitude = M_PI;
 	double init_pos[N_SLAVES * 2] = {0};
 	int state = 0;
-	int error_counters[N_SLAVES] = {0};
 
 	nice(-20); //give the process a high priority
 	printf("-- Main --\n");
@@ -41,6 +40,17 @@ int main(int argc, char **argv)
 		robot_if.motor_drivers[i].motor2->SetCurrentReference(0);
 		robot_if.motor_drivers[i].motor1->Enable();
 		robot_if.motor_drivers[i].motor2->Enable();
+		
+		// Set the gains for the PD controller running on the cards.
+		robot_if.motor_drivers[i].motor1->set_kp(kp);
+		robot_if.motor_drivers[i].motor2->set_kp(kp);
+		robot_if.motor_drivers[i].motor1->set_kd(kd);
+		robot_if.motor_drivers[i].motor2->set_kd(kd);
+
+		// Set the maximum current controlled by the card.
+		robot_if.motor_drivers[i].motor1->set_current_sat(iq_sat);
+		robot_if.motor_drivers[i].motor2->set_current_sat(iq_sat);
+		
 		robot_if.motor_drivers[i].EnablePositionRolloverError();
 		robot_if.motor_drivers[i].SetTimeout(5);
 		robot_if.motor_drivers[i].Enable();
@@ -81,6 +91,12 @@ int main(int argc, char **argv)
 						state = 0;
 					}
 					init_pos[i] = robot_if.motors[i].GetPosition(); //initial position
+
+					// Use the current state as target for the PD controller.
+					robot_if.motors[i].SetCurrentReference(0.);
+					robot_if.motors[i].SetPositionReference(init_pos[i]);
+					robot_if.motors[i].SetVelocityReference(0.);
+
 					t = 0;	//to start sin at 0
 				}
 				break;
@@ -91,7 +107,7 @@ int main(int argc, char **argv)
 					if (i % 2 == 0)
 					{
 						if (!robot_if.motor_drivers[i / 2].is_connected) continue; // ignoring the motors of a disconnected slave
-
+ 
 						// making sure that the transaction with the corresponding µdriver board succeeded
 						if (robot_if.motor_drivers[i / 2].error_code == 0xf)
 						{
@@ -104,28 +120,14 @@ int main(int argc, char **argv)
 					{
 						double ref = init_pos[i] + amplitude * sin(2 * M_PI * freq * t);
 						double v_ref = 2. * M_PI * freq * amplitude * cos(2 * M_PI * freq * t);
-						double p_err = ref - robot_if.motors[i].GetPosition();
-						double v_err = v_ref - robot_if.motors[i].GetVelocity();
-						double cur = kp * p_err + kd * v_err;
-						if (cur > iq_sat)
-							cur = iq_sat;
-						if (cur < -iq_sat)
-							cur = -iq_sat;
-						robot_if.motors[i].SetCurrentReference(cur);
+
+						robot_if.motors[i].SetCurrentReference(0.);
+						robot_if.motors[i].SetPositionReference(ref);
+						robot_if.motors[i].SetVelocityReference(v_ref);
 					}
 				}
 				break;
 			}
-
-			// Check if an error happened and increase the counter.
-			for (int i = 0; i < N_SLAVES; i++)
-			{
-				if (robot_if.motor_drivers[i].error_code != 0)
-				{
-					error_counters[i] += 1;
-				}
-			}
-
 			if (cpt % 100 == 0)
 			{
 				printf("\33[H\33[2J"); //clear screen
@@ -133,17 +135,10 @@ int main(int argc, char **argv)
 				robot_if.PrintADC();
 				robot_if.PrintMotors();
 				robot_if.PrintMotorDrivers();
-
-				printf("Motor driver errors: ");
-				for (int i = 0; i < N_SLAVES; i++)
-				{
-					printf("%3d | ", error_counters[i]);
-				}
-				printf("\n\n");
-
 				robot_if.PrintStats();
-
 				fflush(stdout);
+				 
+
 			}
 			robot_if.SendCommand(); //This will send the command packet
 		}
