@@ -83,3 +83,24 @@ uint32_t CRC_compute(uint8_t *bytes, int len) {
 bool CRC_check(uint8_t *bytes, int len) {
     return (CRC_compute(bytes, len) == 0);
 }
+
+
+uint16_t crc16_ccitt(uint8_t * data, int len)
+{
+    uint16_t crc = 0xFFFF;
+    for (unsigned int i = 0; i < len; ++i) {
+        uint16_t dbyte = data[i];
+        crc ^= dbyte << 8;
+        for (uint8_t j = 0; j < 8; ++j) {
+            uint16_t mix = crc & 0x8000;
+            crc = (crc << 1);
+            if (mix)
+                crc = crc ^ 0x1021;
+        }
+    }
+    return crc;
+}
+
+bool crc16_ccitt_check(uint8_t * data, int len){
+    return (crc16_ccitt(data, len) == 0);
+}
