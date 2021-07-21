@@ -76,6 +76,7 @@ int MasterBoardInterface::Init()
   {
     return -1;
   }
+  ParseSensorData();
   signal(SIGINT, KeyboardStop);
   return 0;
 }
