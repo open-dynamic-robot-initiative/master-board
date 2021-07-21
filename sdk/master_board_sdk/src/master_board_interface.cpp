@@ -76,7 +76,7 @@ int MasterBoardInterface::Init()
   {
     return -1;
   }
-  ParseSensorData();
+  ParseSensorData(); // Parse sensor data to initialize the variables of the masterboard interface
   signal(SIGINT, KeyboardStop);
   return 0;
 }
