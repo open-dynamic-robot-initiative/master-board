@@ -134,6 +134,9 @@ public:
 	float imu_data_gyroscope(int i) { return (this->imu_data.gyroscope[i]); };
 	float imu_data_attitude(int i) { return (this->imu_data.attitude[i]); };
 	float imu_data_linear_acceleration(int i) { return (this->imu_data.linear_acceleration[i]); };
+	float powerboard_current() { return powerboard_data.current_bus; };
+	float powerboard_voltage() { return powerboard_data.voltage_bus; };
+	float powerboard_energy() { return powerboard_data.energy_bus; };
 
 };
 
