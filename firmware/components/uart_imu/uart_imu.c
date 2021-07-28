@@ -247,32 +247,34 @@ int imu_init()
   const char cmd5[8] = {0x75, 0x65, 0x01, 0x02, 0x02, 0x06, 0xE5, 0xCB};
   const char cmd6[13] = {0x75, 0x65, 0x0C, 0x07, 0x07, 0x40, 0x01, 0x00, 0x0E, 0x10, 0x00, 0x53, 0x9D}; // 921600 bauds
 
-  printf("sending new baud rate setting to the IMU \n");
-  vTaskDelay(30);
   uart_write_bytes(UART_NUM, cmd0, sizeof(cmd0));
-  vTaskDelay(10);
+
+  printf("sending new baud rate setting to the IMU \n");
   uart_write_bytes(UART_NUM, cmd6, sizeof(cmd6));
-  vTaskDelay(1);
+
+  // The ACK package is send at the old baud rate. The IMU switches to the
+  // new baud rate after 250 ms. Waiting for that period of time to make sure
+  // following messages are processed correctly.
+  vTaskDelay(250);
+
+  // Setup the uart handler.
   uart_flush_input(UART_NUM);
   uart_set_baudrate(UART_NUM, 921600);
   uart_set_rx_timeout(UART_NUM, 5); //timeout in symbols
+
   // release the pre registered UART handler/subroutine
   uart_isr_free(UART_NUM);
   // register new UART subroutine
   uart_isr_register(UART_NUM, uart_intr_handle, NULL, ESP_INTR_FLAG_IRAM, &handle_console);
-  // enable RX interrupt
-  vTaskDelay(10);
+
   printf("Done\n");
   uart_write_bytes(UART_NUM, cmd1, sizeof(cmd1));
-  //vTaskDelay(10);
   uart_write_bytes(UART_NUM, cmd2, sizeof(cmd2));
-  //vTaskDelay(10);
   uart_write_bytes(UART_NUM, cmd3, sizeof(cmd3));
-  //vTaskDelay(10);
   uart_write_bytes(UART_NUM, cmd4, sizeof(cmd4));
-  //vTaskDelay(10);
   uart_write_bytes(UART_NUM, cmd5, sizeof(cmd5));
-  //vTaskDelay(10);
+
+  // enable RX interrupt
   uart_enable_rx_intr(UART_NUM);
 
   while (0) //for debug
