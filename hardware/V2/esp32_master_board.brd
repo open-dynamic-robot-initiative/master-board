@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE eagle SYSTEM "eagle.dtd">
-<eagle version="9.5.0">
+<eagle version="9.6.2">
 <drawing>
 <settings>
-<setting alwaysvectorfont="yes"/>
+<setting alwaysvectorfont="no"/>
 <setting verticaltext="up"/>
 </settings>
 <grid distance="6.25" unitdist="mil" unit="mm" style="lines" multiple="1" display="yes" altdistance="5" altunitdist="mil" altunit="mil"/>
@@ -3334,7 +3334,7 @@ design rules under a new name.</description>
 <attribute name="VALUE" x="28.2575" y="15.39875" size="1.27" layer="27" rot="R270"/>
 </element>
 <element name="C2" library="resistor" library_urn="urn:adsk.eagle:library:348" package="C0402" package3d_urn="urn:adsk.eagle:package:23626/2" value="470p" x="35.2425" y="5.23875" smashed="yes">
-<attribute name="MANUFACTURER_PART_NUMBER" value="0101ZC471KAT2A" x="35.2425" y="5.23875" size="1.778" layer="27" display="off"/>
+<attribute name="MANUFACTURER_PART_NUMBER" value="CL05C471JB5NNNC" x="35.2425" y="5.23875" size="1.778" layer="27" display="off"/>
 <attribute name="NAME" x="36.5125" y="4.92125" size="0.6096" layer="25"/>
 </element>
 <element name="C3" library="resistor" library_urn="urn:adsk.eagle:library:348" package="C0402" package3d_urn="urn:adsk.eagle:package:23626/2" value="1u LOW ESR" x="35.2425" y="6.35" smashed="yes">
@@ -3410,7 +3410,7 @@ design rules under a new name.</description>
 <attribute name="NAME" x="40.64" y="11.7475" size="0.6096" layer="25"/>
 </element>
 <element name="R17" library="resistor" library_urn="urn:adsk.eagle:library:348" package="R0402" package3d_urn="urn:adsk.eagle:package:26058/2" value="1.5k" x="55.72125" y="20.16125" smashed="yes">
-<attribute name="MANUFACTURER_PART_NUMBER" value="CPL-RES-0603-1.5K-0.1W" x="55.72125" y="20.16125" size="1.778" layer="27" display="off"/>
+<attribute name="MANUFACTURER_PART_NUMBER" value="ERJ2GEJ152X" x="55.72125" y="20.16125" size="1.778" layer="27" display="off"/>
 <attribute name="NAME" x="57.62625" y="19.84375" size="0.6096" layer="25"/>
 </element>
 <element name="IC1" library="SamacSys_Parts" package="SOP65P640X120-16N" value="SN74HC138PW" x="28.8925" y="20.955" smashed="yes" rot="R180">

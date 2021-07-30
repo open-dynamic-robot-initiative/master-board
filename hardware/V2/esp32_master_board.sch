@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE eagle SYSTEM "eagle.dtd">
-<eagle version="9.5.0">
+<eagle version="9.6.2">
 <drawing>
 <settings>
 <setting alwaysvectorfont="no"/>
@@ -15697,7 +15697,7 @@ Source: AVX .. aphvc.pdf</description>
 </part>
 <part name="P+2" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="VCC" device=""/>
 <part name="C2" library="resistor" library_urn="urn:adsk.eagle:library:348" deviceset="C-EU" device="C0402" package3d_urn="urn:adsk.eagle:package:23626/2" value="470p">
-<attribute name="MANUFACTURER_PART_NUMBER" value="0101ZC471KAT2A"/>
+<attribute name="MANUFACTURER_PART_NUMBER" value="CL05C471JB5NNNC"/>
 </part>
 <part name="C3" library="resistor" library_urn="urn:adsk.eagle:library:348" deviceset="C-EU" device="C0402" package3d_urn="urn:adsk.eagle:package:23626/2" value="1u LOW ESR">
 <attribute name="MANUFACTURER_PART_NUMBER" value="CPL-CAP-X5R-0402-1UF-6.3V"/>
@@ -15783,7 +15783,7 @@ Source: AVX .. aphvc.pdf</description>
 </part>
 <part name="P+4" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="VCC" device=""/>
 <part name="R17" library="resistor" library_urn="urn:adsk.eagle:library:348" deviceset="R-EU_" device="R0402" package3d_urn="urn:adsk.eagle:package:26058/2" value="1.5k">
-<attribute name="MANUFACTURER_PART_NUMBER" value="CPL-RES-0603-1.5K-0.1W"/>
+<attribute name="MANUFACTURER_PART_NUMBER" value="ERJ2GEJ152X"/>
 </part>
 <part name="P+6" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="VCC" device=""/>
 <part name="IC1" library="SamacSys_Parts" deviceset="SN74HC138PW" device=""/>
