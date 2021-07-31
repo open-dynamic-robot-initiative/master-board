@@ -37,13 +37,13 @@ The interface on the PC needs to support monitor mode and injection. ASUS PCE-AC
 Data packet
 -----------
 
-### Current protocol version: **3**
+### Current protocol version: **4**
 
 Both WiFi and Ethernet use the same data packet format.
 
-There are four types of packets. Packets coming from the computer containing command data are called **Command** packets, and packets coming from the master board containing sensor data are called **Sensor** packets. On top of these two, an initialization packet called **Init** packet is used to put the master board in its control mode and bond it to an interface running on the computer. The master board will respond to an initialization packet with an acknowledgement packet called **Ack** packet. 
+There are five types of packets. Packets coming from the computer containing command data are called **Command** packets, and packets coming from the master board containing sensor data are called **Sensor** packets. On top of these two, an initialization packet called **Init** packet is used to put the master board in its control mode and bond it to an interface running on the computer. The master board will respond to an initialization packet with an acknowledgement packet called **Ack** packet. Last but not least the **Feedforward** package is used to speciy a feedforward position based torque profile used for anticogging.
 
-All packets contain a number called **Session ID** identifyng the link between the master board and a specific instance of the interface. This is used to prevent multiple programs from controlling the robot at once. The **Init** packet is used to set it up.  
+All packets contain a number called **Session ID** identifyng the link between the master board and a specific instance of the interface. This is used to prevent multiple programs from controlling the robot at once. The **Init** packet is used to set it up.
 **Session Id** of **0** is reserved for when the masterboard boots up and should not be used otherwise.
 
 ### Init packet (4 Bytes)
@@ -55,7 +55,7 @@ The **Protocol version** field is used to ensure both the interface and the mast
 
 ### Ack packet (3 Bytes)
 Session ID | SPI connected
---- | --- 
+--- | ---
 2 bytes | 1 byte
 
 The **SPI connected** field contains an 8 bit integer, each bit of which tells whether or not the corresponding SPI slave is connected (Least significant bit: SPI0, most significant bit: SPI7).
@@ -66,7 +66,7 @@ Both **Command** and **Sensor** packets encapsulate 6 BLMC µDriver SPI interfac
 Session ID | µDriver0 | µDriver1 | µDriver2 | µDriver3 | µDriver4 | µDriver5 | IMU | Sensor Index | Packet Loss | Last Command Index
 --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | ---
 2 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 24 Bytes | 2 Bytes | 2 Bytes | 2 Bytes
- 
+
 **µDriverX** corresponds to a BLMC µDriver SPI interface sensor packet without the CRC and index fields.
 
 **IMU** is composed of Accelerometer, Gyroscope, AHRS, and estimation of Linear Acceleration (without gravity) data:
@@ -77,10 +77,10 @@ AccX | AccY | AccZ | GyrX | GyrY | GyrZ | AHRS Roll | AHRS Pitch | AHRS Yaw | Li
 
 IMU data representation:
 
-Data | | Unit | Min | Max | Resolution (LSB) 
---- | --- | --- | --- | --- | --- 
-Acc | 16bits | g | -16 | 15,9995117188 | 2^(-11)	
-Gyr | 16bits | rad/s | -16 | 15,9995117188 | 2^(-11)	
+Data | | Unit | Min | Max | Resolution (LSB)
+--- | --- | --- | --- | --- | ---
+Acc | 16bits | g | -16 | 15,9995117188 | 2^(-11)
+Gyr | 16bits | rad/s | -16 | 15,9995117188 | 2^(-11)
 AHRS R-P-Y | 16bits | rad | -4 | 3,9998779297 | 2^(-13)
 
 **Sensor Index** is a packet index to track packet loss.
@@ -91,9 +91,19 @@ AHRS R-P-Y | 16bits | rad | -4 | 3,9998779297 | 2^(-13)
 
 ### Command packet (172 Bytes)
 Session ID | µDriver0 | µDriver1 | µDriver2 | µDriver3 | µDriver4 | µDriver5 | Command Index
---- | --- | --- | --- | --- | --- | --- | --- 
+--- | --- | --- | --- | --- | --- | --- | ---
 2 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 2 Bytes
 
 **µDriverX** corresponds to a BLMC µDriver SPI interface command packet without the CRC and index fields.
 
 **Command Index** is a packet index to track packet loss.
+
+### Feedforward packet (724 Bytes)
+
+Session ID | Motor number | Feedforward profile
+--- | --- | ---
+2 Bytes | 2 Bytes | 720 bytes
+
+Motor number references the motor on the micro drivers. Least significant bit: motor0.
+
+The feedfoward profile discretizes the range of [-0.1, 0.1] Nm using 256 values linearly.
