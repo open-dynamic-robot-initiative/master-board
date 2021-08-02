@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define PROTOCOL_VERSION 3
+#define PROTOCOL_VERSION 4
 
 /* Position of the values in the command packet */
 #define UD_COMMAND_MODE 0
@@ -106,6 +106,9 @@
 #define UD_SENSOR_STATUS_ERROR_OTHER 7
 //! \brief UD packets length in word (16 bits)
 #define UD_LENGTH 14
+
+//! \brief Number of steps used to specify the feedforward profile.
+#define N_FEEDFORWARD_STEPS 720
 
 /* To properly handle SPI type conversion */
 #define SUB_REG_u16(p_packet, pos) (*((uint16_t *) ((p_packet) + (pos))))

@@ -24,9 +24,10 @@ public:
 	void SetMasterboardTimeoutMS(uint8_t); //Set the Master board timeout in ms
 	int SendInit();
 	int SendCommand();										 //Send the command packet to the master board
+	int SendFeedforwardProfile(uint16_t motor_number, uint8_t profile[N_FEEDFORWARD_STEPS]) // Send the feedforward profile for a motor to the master board.
 
 	void ParseSensorData();								 //Parse and convert the latest received sensor data. User need to call this before reading any field.
-	
+
 	void PrintIMU();											 //Print IMU data on stdout. Usefull for debug.
 	void PrintADC();											 //Print ACD data on stdout. Usefull for debug.
 	void PrintMotors();										 //Print motors data on stdout. Usefull for debug.
@@ -66,13 +67,14 @@ private:
 	struct sensor_packet_t sensor_packet;
 	struct dual_motor_driver_sensor_data_t dual_motor_driver_sensor_data[N_SLAVES];
 	struct imu_data_t imu_data;
+	struct feedforward_packet_t feedforward_packet;
 
 	bool first_sensor_received = false;
 
 	// PACKET LOSS STATS
 	//SENSOR PACKETS
   	uint16_t nb_sensors_recv = 0;
-	uint16_t last_sensor_index = 0; 
+	uint16_t last_sensor_index = 0;
 	uint32_t nb_sensors_sent = 0;
 	uint32_t nb_sensors_lost = 0;
 	uint16_t last_recv_cmd_index = 0;

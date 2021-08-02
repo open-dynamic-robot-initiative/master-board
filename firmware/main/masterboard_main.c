@@ -28,6 +28,9 @@
 
 #define TEST_BIT(field, bit) (((field) & (1 << (bit))) >> (bit))
 
+//! \brief Number of steps used to specify the feedforward profile.
+#define N_FEEDFORWARD_STEPS 720
+
 long int spi_count = 0;
 
 bool spi_autodetect = false;
@@ -61,6 +64,9 @@ static uint16_t spi_rx_packet[CONFIG_N_SLAVES][SPI_TOTAL_LEN + 1]; // +1 prevent
 static uint16_t spi_tx_packet_a[CONFIG_N_SLAVES][SPI_TOTAL_LEN];
 static uint16_t spi_tx_packet_b[CONFIG_N_SLAVES][SPI_TOTAL_LEN];
 static uint16_t spi_tx_packet_stop[CONFIG_N_SLAVES][SPI_TOTAL_LEN];
+
+static uint8_t feedforward_profiles[2 * CONFIG_N_SLAVES][N_FEEDFORWARD_STEPS];
+static bool use_feedforward_profiles[2 * CONFIG_N_SLAVES] = {false};
 
 uint16_t command_index_prev = 0;
 
@@ -477,8 +483,20 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len, char eth_or
             SPI_REG_32(to_fill[i], SPI_COMMAND_POS_2) = SPI_SWAP_DATA_TX(packet_recv->command[i].position[1], 32);
             SPI_REG_16(to_fill[i], SPI_COMMAND_VEL_1) = SPI_SWAP_DATA_TX(packet_recv->command[i].velocity[0], 16);
             SPI_REG_16(to_fill[i], SPI_COMMAND_VEL_2) = SPI_SWAP_DATA_TX(packet_recv->command[i].velocity[1], 16);
-            SPI_REG_16(to_fill[i], SPI_COMMAND_IQ_1) = SPI_SWAP_DATA_TX(packet_recv->command[i].current[0], 16);
-            SPI_REG_16(to_fill[i], SPI_COMMAND_IQ_2) = SPI_SWAP_DATA_TX(packet_recv->command[i].current[1], 16);
+
+            int16_t current0 = packet_recv->command[i].current[0];
+            int16_t current1 = packet_recv->command[i].current[1;
+            if (use_feedforward_profiles[2 * i + 0]) {
+                float feedforward = -0.1 + 0.2 * float(feedforward_profiles[i * 2 + 0])/255.;
+                current0 += FLOAT_TO_D16QN(feedforward, UD_QN_IQ);
+            }
+            if (use_feedforward_profiles[2 * i + 1]) {
+                float feedforward = -0.1 + 0.2 * float(feedforward_profiles[i * 2 + 1])/255.;
+                current1 += FLOAT_TO_D16QN(feedforward, UD_QN_IQ);
+            }
+
+            SPI_REG_16(to_fill[i], SPI_COMMAND_IQ_1) = SPI_SWAP_DATA_TX(current0, 16);
+            SPI_REG_16(to_fill[i], SPI_COMMAND_IQ_2) = SPI_SWAP_DATA_TX(current1, 16);
             SPI_REG_u16(to_fill[i], SPI_COMMAND_KP_1) = SPI_SWAP_DATA_TX(packet_recv->command[i].kp[0], 16);
             SPI_REG_u16(to_fill[i], SPI_COMMAND_KP_2) = SPI_SWAP_DATA_TX(packet_recv->command[i].kp[1], 16);
             SPI_REG_u16(to_fill[i], SPI_COMMAND_KD_1) = SPI_SWAP_DATA_TX(packet_recv->command[i].kd[0], 16);
@@ -495,6 +513,20 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len, char eth_or
         // reset count for communication timeout
         wifi_eth_count = 0;
     }
+    // Recieve a feedforward torque profile message.
+    else if (len == sizeof(struct wifi_eth_feedforward_packet_t) && (current_state == ACTIVE_CONTROL))
+    {
+        struct wifi_eth_feedforward_packet_t *packet_recv = (struct wifi_eth_feedforward_packet_t *)data;
+
+        if (packet_recv->session_id != session_id)
+        {
+            //printf("Wrong session id, got %d instead of %d, ignoring packet\n", packet_recv->session_id, session_id);
+            return; // ignoring packet
+        }
+
+        use_feedforward_profiles[packet_recv->motor_number] = true;
+        feedforward_profiles[packet_recv->motor_number] = packet_recv->feedforward_profile;
+    }
 }
 
 //function that will be called on a link state change
@@ -503,7 +535,7 @@ void wifi_eth_link_state_cb(bool new_state)
 {
     // In WAITING_FOR_INIT, we don't know if wifi or ethernet is used
     // so we are ignoring any eth link state changes
-    if (current_state == WAITING_FOR_INIT) 
+    if (current_state == WAITING_FOR_INIT)
         return;
 
     // When wifi is used, ethernet link state doesn't matter
@@ -535,7 +567,7 @@ void app_main()
     eth_attach_link_state_cb(wifi_eth_link_state_cb);
     eth_attach_recv_cb(wifi_eth_receive_cb);
     eth_init();
-    
+
     wifi_init();
     wifi_attach_recv_cb(wifi_eth_receive_cb);
 

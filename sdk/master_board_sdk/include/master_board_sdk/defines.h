@@ -77,10 +77,11 @@ struct command_packet_t
 	uint16_t command_index;
 } __attribute__((packed));
 
-struct init_packet_t
+struct feedforward_packet_t
 {
-	uint16_t protocol_version; // used to ensure both the interface and the firmware use the same protocol
 	uint16_t session_id;
+    uint16_t motor_number;
+    uint8_t feedforward_profile[N_FEEDFORWARD_STEPS];
 } __attribute__((packed));
 
 struct ack_packet_t

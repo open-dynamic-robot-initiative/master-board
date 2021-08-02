@@ -224,6 +224,28 @@ int MasterBoardInterface::SendCommand()
   return 0; // Return 0 since the command has been sent.
 }
 
+int MasterBoardInterface::SendFeedforwardProfile(uint16_t motor_number, uint8_t profile[N_FEEDFORWARD_STEPS])
+{
+  if (listener_mode)
+    return -1; // we don't allow sending commands in listener mode
+
+  // If the MasterBoardInterface has been shutdown due to a timeout we don't
+  // want to send another command before the user manually reset the timeout
+  // state
+  if (timeout)
+  {
+    return -1; // Return -1 since the command has not been sent.
+  }
+
+  feedforward_packet.session_id = static_cast<uint16_t>(session_id);
+  feedforward_packet.motor_number = motor_number;
+  feedforward_packet.feedforward_profile = profile;
+
+  link_handler_->send(
+      (uint8_t *)&feedforward_packet, sizeof(struct feedforward_packet_t));
+  return 0; // Return 0 since the command has been sent.
+}
+
 void MasterBoardInterface::callback(uint8_t /*src_mac*/[6], uint8_t *data, int len)
 {
   if ((listener_mode || (init_sent && !ack_received)) && len == sizeof(ack_packet_t))

@@ -3,7 +3,9 @@
 
 #include <stdint.h>
 
-#define PROTOCOL_VERSION 3
+#define PROTOCOL_VERSION 4
+
+#define UD_QN_IQ   10
 
 struct sensor_data {
 	uint16_t status;
@@ -30,6 +32,13 @@ struct imu_data {
 	int16_t gyroscope[3];
 	int16_t attitude[3];
 	int16_t linear_acceleration[3];
+} __attribute__((packed));
+
+struct wifi_eth_feedforward_packet_t
+{
+    uint16_t session_id;
+    uint16_t motor_number;
+    uint8_t feedforward_profile[N_FEEDFORWARD_STEPS];
 } __attribute__((packed));
 
 struct wifi_eth_packet_init {
