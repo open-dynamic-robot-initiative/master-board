@@ -181,8 +181,8 @@ class BenchmarkData(object):
         if len(nonzero) != 0:
             average = np.mean(nonzero)
             std = np.std(nonzero)
-            self.metadata["latency_statistics"]["average"] = average
-            self.metadata["latency_statistics"]["standard_deviation"] = std
+            self.metadata["latency_statistics"]["average"] = float(average)
+            self.metadata["latency_statistics"]["standard_deviation"] = float(std)
             print("latency average latency: %f ms" % average)
             print("latency standard deviation: %f ms" % std)
 
@@ -218,7 +218,7 @@ class BenchmarkData(object):
             )
         else:
             plt.suptitle("Ethernet communication latency", fontsize="xx-large")
-        plt.savefig(str(self.data_folder / "wifi_eth_latency.png"))
+        plt.savefig(str(self._data_folder / "wifi_eth_latency.png"))
 
     def _dump_histograms_and_graphs(self):
         # Plot histograms and graphs
@@ -264,7 +264,7 @@ class BenchmarkData(object):
 
         else:
             plt.suptitle("Ethernet statistics", fontsize="xx-large")
-        plt.savefig(str(self.data_folder / "wifi_eth_stats.png"))
+        plt.savefig(str(self._data_folder / "wifi_eth_stats.png"))
 
     def _dump_loop_duration(self):
         """plotting the evolution of command loop duration"""
@@ -282,7 +282,7 @@ class BenchmarkData(object):
         ax9.set_ylabel("loop duration (ms)", fontsize="xx-large")
         ax9.add_artist(anchored_text)
         plt.suptitle("Command loop duration", fontsize="xx-large")
-        plt.savefig(str(self.data_folder / "command_loop_duration.png"))
+        plt.savefig(str(self._data_folder / "command_loop_duration.png"))
 
 
 def communication_benchmark(name_interface):
@@ -386,8 +386,8 @@ def communication_benchmark(name_interface):
             # once every 100 iterations of the main loop
             if cpt % 100 == 0:
                 print(chr(27) + "[2J")
-                # To read IMU data in Python use robot_if.imu_data_accelerometer(i), robot_if.imu_data_gyroscope(i)
-                # or robot_if.imu_data_attitude(i) with i = 0, 1 or 2
+                robot_if.PrintMotors()
+				robot_if.PrintMotorDrivers()
                 robot_if.PrintStats()
                 sys.stdout.flush()  # for Python 2, use print( .... , flush=True) for Python 3
 

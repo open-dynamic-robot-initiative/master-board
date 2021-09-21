@@ -42,6 +42,7 @@ IF(BUILD_PYTHON_INTERFACE)
   FINDPYTHON()
   SEARCH_FOR_BOOST_PYTHON(REQUIRED)
 ENDIF(BUILD_PYTHON_INTERFACE)
+find_package(Boost REQUIRED COMPONENTS filesystem)
 
 # ----------------------------------------------------
 # --- INCLUDE ----------------------------------------
@@ -103,6 +104,17 @@ IF(BUILD_PYTHON_INTERFACE)
   PYTHON_BUILD(example com_analyser.py)
 ENDIF(BUILD_PYTHON_INTERFACE)
 
+# --- Benchmark ----------------------------------------------------------------
+ADD_EXECUTABLE(${PROJECT_NAME}_benchmark_communication benchmark/communication_benchmark.cpp)
+TARGET_LINK_LIBRARIES(${PROJECT_NAME}_benchmark_communication ${PROJECT_NAME} Boost::filesystem)
+INSTALL(TARGETS ${PROJECT_NAME}_benchmark_communication DESTINATION bin)
+# Install the python script for the plotting
+INSTALL(
+    FILES benchmark/communication_benchmark_plotter.py
+    RENAME ${PROJECT_NAME}_benchmark_communication_plotter
+    PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
+    DESTINATION bin
+)
 
 # --- CHECK EXAMPLES -----------------------------------------------------------
 ADD_EXECUTABLE(master_board_example example/example.cpp)

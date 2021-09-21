@@ -139,7 +139,7 @@ void *LINK_manager::sock_recv_thread(void *p_arg)
 
 int LINK_manager::send(uint8_t *payload, int len)
 {
-	uint8_t raw_bytes[LEN_RAWBYTES_MAX];
+	uint8_t raw_bytes[LEN_RAWBYTES_MAX] = {0};
 
 	//Not the most fastest way to do this :
 	//	copy the payload in the packet array and then copy it back into the buffer...
@@ -153,7 +153,7 @@ int LINK_manager::send(uint8_t *payload, int len)
 
 int LINK_manager::send()
 {
-	uint8_t raw_bytes[LEN_RAWBYTES_MAX];
+	uint8_t raw_bytes[LEN_RAWBYTES_MAX] = {0};
 
 	int raw_len = mypacket->toBytes(raw_bytes, LEN_RAWBYTES_MAX);
 
