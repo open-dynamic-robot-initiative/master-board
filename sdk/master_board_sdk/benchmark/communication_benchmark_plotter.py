@@ -37,6 +37,9 @@ def main(path_to_data_folder_in):
     cmd_ratio_list = data["cmd_ratio_list"].to_list()
     sensor_ratio_list = data["sensor_ratio_list"].to_list()
     loop_duration_s = data["loop_duration_s"].to_list()
+    ctrl_loop_duration_s = data["ctrl_loop_duration_s"].to_list()
+    last_rcv_index = data["last_rcv_index"].to_list()
+    cmd_index = data["cmd_index"].to_list()
     #
     latency = pandas.read_csv(path_to_data_folder / "latency.dat", delimiter=" ")[
         "latency"
@@ -123,7 +126,25 @@ def main(path_to_data_folder_in):
 
     #########
 
-    print("Plotting the evolution of command loop duration.")
+    print("Plotting the evolution of ctrl loop duration.")
+    plt.figure("Ctrl loop duration", figsize=(20, 15), dpi=200)
+    anchored_text = AnchoredText(
+        "average duration: %f ms\nstandard deviation: %f ms"
+        % (np.mean(ctrl_loop_duration_s), np.std(ctrl_loop_duration_s)),
+        loc=2,
+        prop=dict(fontsize="xx-large"),
+    )
+    ax9 = plt.subplot(1, 1, 1)
+    ax9.plot(ctrl_loop_duration_s, ".")
+    ax9.set_xlabel("iteration", fontsize="xx-large")
+    ax9.set_ylabel("loop duration (ms)", fontsize="xx-large")
+    ax9.add_artist(anchored_text)
+    plt.suptitle("Command loop duration", fontsize="xx-large")
+    plt.savefig(path_to_data_folder / "ctrl_command_loop_duration.png")
+
+    #########
+
+    print("Plotting the evolution of full loop duration.")
     plt.figure("Loop duration", figsize=(20, 15), dpi=200)
     anchored_text = AnchoredText(
         "average duration: %f ms\nstandard deviation: %f ms"
@@ -138,6 +159,21 @@ def main(path_to_data_folder_in):
     ax9.add_artist(anchored_text)
     plt.suptitle("Command loop duration", fontsize="xx-large")
     plt.savefig(path_to_data_folder / "command_loop_duration.png")
+
+    #########
+
+    print("Command indexes.")
+    plt.figure("Command indexes", figsize=(20, 15), dpi=200)
+    plt.suptitle("Last received command index", fontsize="xx-large")
+    ax = plt.subplot(2, 1, 1)
+    ax.plot(cmd_index, "-")
+    ax.set_xlabel("iteration", fontsize="xx-large")
+    ax.set_ylabel("Command index", fontsize="xx-large")
+    ax = plt.subplot(2, 1, 2)
+    ax.plot(last_rcv_index, "-")
+    ax.set_xlabel("iteration", fontsize="xx-large")
+    ax.set_ylabel("Last received command index", fontsize="xx-large")
+    plt.savefig(path_to_data_folder / "command_index.png")
 
 
 if __name__ == "__main__":

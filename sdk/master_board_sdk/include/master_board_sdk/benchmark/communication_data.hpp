@@ -38,16 +38,21 @@ public:
                     const double& dt,
                     const std::string& network_interface,
                     const int& protocol_version,
-                    const double experiment_duration)
+                    const double& experiment_duration,
+                    const double& distance,
+                    const std::string& wifi_card_name)
     {
         // Data storage.
         time_list_.resize(size, 0.0);
+        last_rcv_index_.resize(size, 0);
+        cmd_index_.resize(size, 0);
         cmd_lost_list_.resize(size, 0);
         sensor_lost_list_.resize(size, 0);
         cmd_ratio_list_.resize(size, 0.0);
         sensor_ratio_list_.resize(size, 0.0);
         latency_.clear();
         loop_duration_s_.resize(size, 0.0);
+        ctrl_loop_duration_s_.resize(size, 0.0);
 
         // Histograms
         histogram_sensor_.resize(20, 0);
@@ -60,6 +65,8 @@ public:
         control_period_ = dt;
         network_interface_ = network_interface;
         experiment_duration_ = experiment_duration;
+        distance_ = distance;
+        wifi_card_name_ = wifi_card_name;
         if (network_interface_.at(0) == 'w')
         {
             wifi_channel_ = execute_bash_command(
@@ -115,12 +122,21 @@ public:
                << "sensor_lost_list "
                << "cmd_ratio_list "
                << "sensor_ratio_list "
-               << "loop_duration_s\n";
+               << "loop_duration_s "
+               << "ctrl_loop_duration_s "
+               << "last_rcv_index "
+               << "cmd_index " << std::endl;
         for (std::size_t i = 0; i < time_list_.size(); ++i)
         {
-            myfile << time_list_[i] << " " << cmd_lost_list_[i] << " "
-                   << sensor_lost_list_[i] << " " << cmd_ratio_list_[i] << " "
-                   << sensor_ratio_list_[i] << " " << loop_duration_s_[i]
+            myfile << time_list_[i] << " "             //
+                   << cmd_lost_list_[i] << " "         //
+                   << sensor_lost_list_[i] << " "      //
+                   << cmd_ratio_list_[i] << " "        //
+                   << sensor_ratio_list_[i] << " "     //
+                   << loop_duration_s_[i] << " "       //
+                   << ctrl_loop_duration_s_[i] << " "  //
+                   << last_rcv_index_[i] << " "        //
+                   << cmd_index_[i] << " "             //
                    << std::endl;
         }
         myfile.close();
@@ -152,10 +168,12 @@ public:
                << "    wifi_channel: " << wifi_channel_ << std::endl
                << "    experiment_duration: " << experiment_duration_
                << std::endl
+               << "    distance: " << distance_ << std::endl
                << "latency_statistics:" << std::endl
                << "    average: " << latence_average_ << std::endl
                << "    standard_deviation: " << latence_stdev_ << std::endl
                << "system:" << std::endl
+               << "    wifi_card_name: " << wifi_card_name_ << std::endl
                << "    distribution_: " << distribution_ << std::endl
                << "    date_time: " << date_ << std::endl
                << "    protocole_version: '3'" << std::endl;
@@ -181,6 +199,8 @@ public:
     std::vector<int> histogram_cmd_;
 
     // Data
+    std::vector<int> last_rcv_index_;
+    std::vector<int> cmd_index_;
     std::vector<int> cmd_lost_list_;
     std::vector<int> sensor_lost_list_;
     std::vector<double> time_list_;
@@ -188,6 +208,7 @@ public:
     std::vector<double> sensor_ratio_list_;
     std::deque<double> latency_;
     std::vector<double> loop_duration_s_;
+    std::vector<double> ctrl_loop_duration_s_;
 
     // data_folder
     std::string data_folder_;
@@ -203,6 +224,8 @@ public:
     double latence_stdev_;
 
     // metadata system
+    std::string wifi_card_name_;
+    double distance_;
     std::string distribution_;
     int protocol_version_;
     std::string date_;
