@@ -168,13 +168,7 @@ void* communication_benchmark(void* arg)
             // once every 100 iterations of the main loop
             if (cpt_print % 100 == 0)
             {
-                // printf("Collect data\n");
-                // printf("\33[H\33[2J");  // clear screen
-                // robot_if.PrintStats();
-                // robot_if.PrintMotors();
-                // robot_if.PrintMotorDrivers();
-                // printf("####### stop\n");
-                // fflush(stdout);
+                robot_if.PrintStats();
                 printf("%f > %f\n",
                        (current_time - start_time),
                        thread_settings->duration_s);
@@ -218,21 +212,18 @@ void* communication_benchmark(void* arg)
             "or there has been a connection issue with the cable/wifi."
             " --\n");
     }
-    else
+    benchmark_data.latency_ = latency_estimator.get_latency_measurement();
+    // Plot histograms and graphs
+    for (int i = 0;
+            i < static_cast<int>(benchmark_data.histogram_sensor_.size());
+            ++i)
     {
-        benchmark_data.latency_ = latency_estimator.get_latency_measurement();
-        // Plot histograms and graphs
-        for (int i = 0;
-             i < static_cast<int>(benchmark_data.histogram_sensor_.size());
-             ++i)
-        {
-            benchmark_data.histogram_sensor_[i] =
-                robot_if.GetSensorHistogram(i);
-            benchmark_data.histogram_cmd_[i] = robot_if.GetCmdHistogram(i);
-        }
-        printf("-- Dump the collected data --\n");
-        benchmark_data.dump_data();
+        benchmark_data.histogram_sensor_[i] =
+            robot_if.GetSensorHistogram(i);
+        benchmark_data.histogram_cmd_[i] = robot_if.GetCmdHistogram(i);
     }
+    printf("-- Dump the collected data --\n");
+    benchmark_data.dump_data();
     return nullptr;
 }
 
