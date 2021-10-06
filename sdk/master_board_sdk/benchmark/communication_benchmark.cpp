@@ -166,7 +166,7 @@ void* communication_benchmark(void* arg)
             }
             // Display system state and communication status,
             // once every 100 iterations of the main loop
-            if (cpt_print % 100 == 0)
+            if (cpt_print % 1000 == 0)
             {
                 robot_if.PrintStats();
                 printf("%f > %f\n",
