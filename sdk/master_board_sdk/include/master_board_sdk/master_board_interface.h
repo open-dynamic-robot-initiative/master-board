@@ -15,7 +15,10 @@
 class MasterBoardInterface : public LINK_manager_callback
 {
 public:
-	MasterBoardInterface(const std::string &if_name, bool listener_mode = false);
+	MasterBoardInterface(
+        const std::string &if_name,
+        bool listener_mode = false,
+        std::chrono::milliseconds timeout_before_shutdown_control = std::chrono::milliseconds(50));
 	MasterBoardInterface(const MasterBoardInterface&);
 	~MasterBoardInterface();
 	int Init();

@@ -4,7 +4,11 @@
 
 MasterBoardInterface *MasterBoardInterface::instance = NULL;
 
-MasterBoardInterface::MasterBoardInterface(const std::string &if_name, bool listener_mode)
+MasterBoardInterface::MasterBoardInterface(
+        const std::string &if_name,
+        bool listener_mode,
+        std::chrono::milliseconds timeout_before_shutdown_control):
+    t_before_shutdown_control(timeout_before_shutdown_control)
 {
   uint8_t my_mac[6] = {0xa0, 0x1d, 0x48, 0x12, 0xa0, 0xc5}; //take it as an argument?
   uint8_t dest_mac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
@@ -20,7 +24,7 @@ MasterBoardInterface::MasterBoardInterface(const std::string &if_name, bool list
   }
   instance = this;
 }
-MasterBoardInterface::MasterBoardInterface(const MasterBoardInterface &to_be_copied) : MasterBoardInterface::MasterBoardInterface(to_be_copied.if_name_, to_be_copied.listener_mode)
+MasterBoardInterface::MasterBoardInterface(const MasterBoardInterface &to_be_copied) : MasterBoardInterface::MasterBoardInterface(to_be_copied.if_name_, to_be_copied.listener_mode, to_be_copied.t_before_shutdown_control)
 {
 }
 
