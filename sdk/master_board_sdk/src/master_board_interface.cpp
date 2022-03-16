@@ -348,11 +348,11 @@ void MasterBoardInterface::ParseSensorData()
   }
 
   /*Read Power Board data*/
-  powerboard_data.current_bus = sensor_packet.powerboard.vshunt * 5e-6 / 4e-3; 
-  powerboard_data.voltage_bus = sensor_packet.powerboard.vbus * 3.125e-3;
-  powerboard_data.energy_bus = sensor_packet.powerboard.energy * 3.125e-3 * 5e-6 / 4e-3 ;
-  
-  
+  powerboard_data.current_bus = sensor_packet.powerboard.vshunt * 5e-6f / 4e-3f;
+  powerboard_data.voltage_bus = sensor_packet.powerboard.vbus * 3.125e-3f;
+  powerboard_data.energy_bus = sensor_packet.powerboard.energy * 3.125e-3f * 5e-6f / 4e-3f ;
+
+
   //Read Motor Driver Data
   for (int i = 0; i < N_SLAVES; i++)
   {

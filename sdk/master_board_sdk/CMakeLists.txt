@@ -91,7 +91,7 @@ IF(BUILD_PYTHON_INTERFACE)
   SET_TARGET_PROPERTIES(${PYWRAP} PROPERTIES
     INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
   INSTALL(TARGETS ${PYWRAP} DESTINATION ${${PYWRAP}_INSTALL_DIR})
-  
+
   # --- Allow to do: make python --- #
   ADD_CUSTOM_TARGET(python)
   SET_TARGET_PROPERTIES(python PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD True)
@@ -107,8 +107,12 @@ ENDIF(BUILD_PYTHON_INTERFACE)
 # --- CHECK EXAMPLES -----------------------------------------------------------
 ADD_EXECUTABLE(master_board_example example/example.cpp)
 TARGET_LINK_LIBRARIES(master_board_example ${PROJECT_NAME})
+SET_TARGET_PROPERTIES(master_board_example PROPERTIES
+  INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 INSTALL(TARGETS master_board_example DESTINATION bin)
 
 ADD_EXECUTABLE(master_board_example_pd example/example_pd.cpp)
 TARGET_LINK_LIBRARIES(master_board_example_pd ${PROJECT_NAME})
+SET_TARGET_PROPERTIES(master_board_example_pd PROPERTIES
+  INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 INSTALL(TARGETS master_board_example_pd DESTINATION bin)
