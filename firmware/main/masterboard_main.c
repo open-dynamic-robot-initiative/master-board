@@ -56,19 +56,18 @@ struct led_state ws_led;
 
 static uint16_t spi_index_trans = 0;
 
-static uint16_t spi_rx_packet[CONFIG_N_SLAVES][SPI_TOTAL_LEN + 1]; // +1 prevents any overflow
-
-static uint16_t spi_tx_packet_a[CONFIG_N_SLAVES][SPI_TOTAL_LEN];
-static uint16_t spi_tx_packet_b[CONFIG_N_SLAVES][SPI_TOTAL_LEN];
-static uint16_t spi_tx_packet_stop[CONFIG_N_SLAVES][SPI_TOTAL_LEN];
+static uint16_t spi_rx_packet[CONFIG_N_SLAVES][SPI_TOTAL_LEN + 1]; // +1 prevents any overflow //TODO understand why we need this?
+static uint16_t spi_tx_packet[CONFIG_N_SLAVES][SPI_TOTAL_LEN];
 
 uint16_t command_index_prev = 0;
 
 struct wifi_eth_packet_sensor wifi_eth_tx_data;
-
 struct wifi_eth_packet_ack wifi_eth_tx_ack;
 
-bool spi_use_a = true;
+struct wifi_eth_packet_command wifi_eth_rx_cmd_reader_buffer;
+QueueHandle_t wifi_eth_rx_cmd_mailbox;
+
+bool send_zero_cmd = true; //If true, all cmd packet sent to udrivers ar set to 0.
 
 void print_spi_connected()
 {
@@ -157,12 +156,7 @@ static void periodic_timer_callback(void *arg)
     /* Prepare spi transactions */
     bool spi_done[CONFIG_N_SLAVES] = {0}; // used to keep track of which spi transactions are done
     spi_index_trans++;
-
-    /* Choose spi packets to send*/
-    uint16_t(*p_tx)[SPI_TOTAL_LEN];
-
-    p_tx = spi_tx_packet_stop; // default command is stop
-
+    send_zero_cmd = true;
     spi_count++;
 
     switch (current_state)
@@ -211,7 +205,12 @@ static void periodic_timer_callback(void *arg)
         }
         else
         {
-            p_tx = spi_use_a ? spi_tx_packet_a : spi_tx_packet_b;
+            send_zero_cmd = false;
+            // Read command message in a RTOS mailbox for thread safe comunication */
+            if (!xQueuePeek(wifi_eth_rx_cmd_mailbox, &wifi_eth_rx_cmd_reader_buffer, 0))
+            {
+                send_zero_cmd = true; //mailbox is empty -> we never got a command packet
+            }
         }
 
         wifi_eth_count++;
@@ -253,22 +252,52 @@ static void periodic_timer_callback(void *arg)
         }
         //print_imu();
         printf("\nlast CMD packet:\n");
-        print_packet(p_tx[2], SPI_TOTAL_LEN * 2);
+        print_packet(spi_tx_packet[2], SPI_TOTAL_LEN * 2);
     }
 
-    /* Complete and send each packet */
 
-    // Fills the outgoing spi packet
+    /* Prepare the outgoing spi TX packet */
     for (int i = 0; i < CONFIG_N_SLAVES; i++)
     {
+        //printf("%d\n",send_zero_cmd);
         if (!TEST_BIT(spi_connected, i) && !spi_autodetect)
             continue; // ignoring this slave if it is not connected
 
-        SPI_REG_u16(p_tx[i], SPI_TOTAL_INDEX) = SPI_SWAP_DATA_TX(spi_index_trans, 16);
-        SPI_REG_u32(p_tx[i], SPI_TOTAL_CRC) = SPI_SWAP_DATA_TX(packet_compute_CRC(p_tx[i]), 32);
+        if (!send_zero_cmd)
+        {
+            SPI_REG_u16(spi_tx_packet[i], SPI_COMMAND_MODE) = SPI_SWAP_DATA_TX(wifi_eth_rx_cmd_reader_buffer.command[i].mode, 16);
+            SPI_REG_32(spi_tx_packet[i], SPI_COMMAND_POS_1) = SPI_SWAP_DATA_TX(wifi_eth_rx_cmd_reader_buffer.command[i].position[0], 32);
+            SPI_REG_32(spi_tx_packet[i], SPI_COMMAND_POS_2) = SPI_SWAP_DATA_TX(wifi_eth_rx_cmd_reader_buffer.command[i].position[1], 32);
+            SPI_REG_16(spi_tx_packet[i], SPI_COMMAND_VEL_1) = SPI_SWAP_DATA_TX(wifi_eth_rx_cmd_reader_buffer.command[i].velocity[0], 16);
+            SPI_REG_16(spi_tx_packet[i], SPI_COMMAND_VEL_2) = SPI_SWAP_DATA_TX(wifi_eth_rx_cmd_reader_buffer.command[i].velocity[1], 16);
+            SPI_REG_16(spi_tx_packet[i], SPI_COMMAND_IQ_1) = SPI_SWAP_DATA_TX(wifi_eth_rx_cmd_reader_buffer.command[i].current[0], 16);
+            SPI_REG_16(spi_tx_packet[i], SPI_COMMAND_IQ_2) = SPI_SWAP_DATA_TX(wifi_eth_rx_cmd_reader_buffer.command[i].current[1], 16);
+            SPI_REG_u16(spi_tx_packet[i], SPI_COMMAND_KP_1) = SPI_SWAP_DATA_TX(wifi_eth_rx_cmd_reader_buffer.command[i].kp[0], 16);
+            SPI_REG_u16(spi_tx_packet[i], SPI_COMMAND_KP_2) = SPI_SWAP_DATA_TX(wifi_eth_rx_cmd_reader_buffer.command[i].kp[1], 16);
+            SPI_REG_u16(spi_tx_packet[i], SPI_COMMAND_KD_1) = SPI_SWAP_DATA_TX(wifi_eth_rx_cmd_reader_buffer.command[i].kd[0], 16);
+            SPI_REG_u16(spi_tx_packet[i], SPI_COMMAND_KD_2) = SPI_SWAP_DATA_TX(wifi_eth_rx_cmd_reader_buffer.command[i].kd[1], 16);
+            SPI_REG_u16(spi_tx_packet[i], SPI_COMMAND_ISAT_12) = SPI_SWAP_DATA_TX(wifi_eth_rx_cmd_reader_buffer.command[i].isat, 16);
+        }
+        else
+        {
+            SPI_REG_u16(spi_tx_packet[i], SPI_COMMAND_MODE) = SPI_SWAP_DATA_TX(1<<15, 16); //In case of zero commands, keep the system enabled
+            SPI_REG_32(spi_tx_packet[i], SPI_COMMAND_POS_1) = 0;
+            SPI_REG_32(spi_tx_packet[i], SPI_COMMAND_POS_2) = 0;
+            SPI_REG_16(spi_tx_packet[i], SPI_COMMAND_VEL_1) = 0;
+            SPI_REG_16(spi_tx_packet[i], SPI_COMMAND_VEL_2) = 0;
+            SPI_REG_16(spi_tx_packet[i], SPI_COMMAND_IQ_1) = 0;
+            SPI_REG_16(spi_tx_packet[i], SPI_COMMAND_IQ_2) = 0;
+            SPI_REG_u16(spi_tx_packet[i], SPI_COMMAND_KP_1) = 0;
+            SPI_REG_u16(spi_tx_packet[i], SPI_COMMAND_KP_2) = 0;
+            SPI_REG_u16(spi_tx_packet[i], SPI_COMMAND_KD_1) = 0;
+            SPI_REG_u16(spi_tx_packet[i], SPI_COMMAND_KD_2) = 0;
+            SPI_REG_u16(spi_tx_packet[i], SPI_COMMAND_ISAT_12) = 0;
+        }
+        SPI_REG_u16(spi_tx_packet[i], SPI_TOTAL_INDEX) = SPI_SWAP_DATA_TX(spi_index_trans, 16);
+        SPI_REG_u32(spi_tx_packet[i], SPI_TOTAL_CRC) = SPI_SWAP_DATA_TX(packet_compute_CRC(spi_tx_packet[i]), 32);
     }
 
-    /* Send every trans the needed number of times */
+    /* Perform every transaction the needed number of times */
     for (int spi_try = 0; spi_try < spi_n_attempt; spi_try++)
     {
         for (int i = 0; i < CONFIG_N_SLAVES; i++)
@@ -279,7 +308,7 @@ static void periodic_timer_callback(void *arg)
             if (spi_done[i])
                 continue; // ignoring this slave if the transaction has already been done
 
-            spi_send(i, (uint8_t *)p_tx[i], (uint8_t *)spi_rx_packet[i], SPI_TOTAL_LEN * 2);
+            spi_send(i, (uint8_t *)spi_tx_packet[i], (uint8_t *)spi_rx_packet[i], SPI_TOTAL_LEN * 2);
 
             //if (ms_cpt % 500 == 0) printf("%d %d\n", spi_try, i);
 
@@ -319,8 +348,8 @@ static void periodic_timer_callback(void *arg)
                 wifi_eth_tx_data.sensor[i].status = 0xf; // specifying that the transaction failed in the sensor packet
             }
         }
+
         //Slave 7 is always the power board
-        
         uint8_t tx_spi_powerboard[12]={0xaa,0xbb,0xcc,0xdd,0xee,0xff,0xaa,0xbb,0xcc,0xdd,0xee,0xff}; //Fake packet, cmd to the power board are not yet implemented
         uint8_t rx_spi_powerboard[12]={0};
         spi_send(7, tx_spi_powerboard,rx_spi_powerboard, 12);
@@ -334,7 +363,6 @@ static void periodic_timer_callback(void *arg)
             fb.b[1] = rx_spi_powerboard[8];
             fb.b[0] = rx_spi_powerboard[9];
             wifi_eth_tx_data.powerboard.energy = fb.f;
-            
         }
     }
 
@@ -379,7 +407,7 @@ static void periodic_timer_callback(void *arg)
     case SPI_AUTODETECT:
     case ACTIVE_CONTROL:
     case WIFI_ETH_ERROR:
-        /* Send all spi_sensor packets to PC */
+        /* Send sensors packet to PC */
         wifi_eth_tx_data.sensor_index++;
         if (use_wifi)
         {
@@ -404,12 +432,6 @@ static void periodic_timer_callback(void *arg)
 void setup_spi()
 {
     spi_init();
-
-    for (int i = 0; i < CONFIG_N_SLAVES; i++)
-    {
-        memset(spi_tx_packet_stop[i], 0, SPI_TOTAL_INDEX * 2);
-        SPI_REG_u16(spi_tx_packet_stop[i], SPI_COMMAND_MODE) = SPI_SWAP_DATA_TX(1<<15, 16);
-    }
     wifi_eth_tx_data.sensor_index = 0;
     wifi_eth_tx_data.packet_loss = 0;
 
@@ -481,28 +503,8 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len, char eth_or
             command_index_prev = packet_recv->command_index - 1;
         }
 
-        /* Prepare SPI packets */
-        uint16_t(*to_fill)[SPI_TOTAL_LEN] = spi_use_a ? spi_tx_packet_b : spi_tx_packet_a;
-
-        for (int i = 0; i < CONFIG_N_SLAVES; i++)
-        {
-            if (!TEST_BIT(spi_connected, i) && !spi_autodetect)
-                continue; // ignoring this slave if it is not connected
-
-            SPI_REG_u16(to_fill[i], SPI_COMMAND_MODE) = SPI_SWAP_DATA_TX(packet_recv->command[i].mode, 16);
-            SPI_REG_32(to_fill[i], SPI_COMMAND_POS_1) = SPI_SWAP_DATA_TX(packet_recv->command[i].position[0], 32);
-            SPI_REG_32(to_fill[i], SPI_COMMAND_POS_2) = SPI_SWAP_DATA_TX(packet_recv->command[i].position[1], 32);
-            SPI_REG_16(to_fill[i], SPI_COMMAND_VEL_1) = SPI_SWAP_DATA_TX(packet_recv->command[i].velocity[0], 16);
-            SPI_REG_16(to_fill[i], SPI_COMMAND_VEL_2) = SPI_SWAP_DATA_TX(packet_recv->command[i].velocity[1], 16);
-            SPI_REG_16(to_fill[i], SPI_COMMAND_IQ_1) = SPI_SWAP_DATA_TX(packet_recv->command[i].current[0], 16);
-            SPI_REG_16(to_fill[i], SPI_COMMAND_IQ_2) = SPI_SWAP_DATA_TX(packet_recv->command[i].current[1], 16);
-            SPI_REG_u16(to_fill[i], SPI_COMMAND_KP_1) = SPI_SWAP_DATA_TX(packet_recv->command[i].kp[0], 16);
-            SPI_REG_u16(to_fill[i], SPI_COMMAND_KP_2) = SPI_SWAP_DATA_TX(packet_recv->command[i].kp[1], 16);
-            SPI_REG_u16(to_fill[i], SPI_COMMAND_KD_1) = SPI_SWAP_DATA_TX(packet_recv->command[i].kd[0], 16);
-            SPI_REG_u16(to_fill[i], SPI_COMMAND_KD_2) = SPI_SWAP_DATA_TX(packet_recv->command[i].kd[1], 16);
-            SPI_REG_u16(to_fill[i], SPI_COMMAND_ISAT_12) = SPI_SWAP_DATA_TX(packet_recv->command[i].isat, 16);
-        }
-        spi_use_a = !spi_use_a;
+        /* Write command message in a RTOS mailbox for thread safe comunication */
+        xQueueOverwrite( wifi_eth_rx_cmd_mailbox, packet_recv );
 
         /* Compute data for next wifi_eth_sensor packet */
         wifi_eth_tx_data.packet_loss += ((struct wifi_eth_packet_command *)data)->command_index - command_index_prev - 1;
@@ -515,7 +517,6 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len, char eth_or
 }
 
 //function that will be called on a link state change
-
 void wifi_eth_link_state_cb(bool new_state)
 {
     // In WAITING_FOR_INIT, we don't know if wifi or ethernet is used
@@ -530,9 +531,10 @@ void wifi_eth_link_state_cb(bool new_state)
 
 void app_main()
 {
+
     uart_set_baudrate(UART_NUM_0, 2000000);
     nvs_flash_init();
-
+    wifi_eth_rx_cmd_mailbox = xQueueCreate( 1, sizeof(struct wifi_eth_packet_command));
     ws2812_control_init(); //init the LEDs
     set_all_leds(0x0f0f0f);
 
