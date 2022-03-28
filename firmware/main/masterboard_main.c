@@ -17,7 +17,6 @@
 #include "quad_crc.h"
 #include "uart_imu.h"
 #include "ws2812_led_control.h"
-
 #include "defines.h"
 
 #define ENABLE_DEBUG_PRINTF false
@@ -307,9 +306,8 @@ static void periodic_timer_callback(void *arg)
 
             if (spi_done[i])
                 continue; // ignoring this slave if the transaction has already been done
-
+            
             spi_send(i, (uint8_t *)spi_tx_packet[i], (uint8_t *)spi_rx_packet[i], SPI_TOTAL_LEN * 2);
-
             //if (ms_cpt % 500 == 0) printf("%d %d\n", spi_try, i);
 
             // checking if data is correct
@@ -343,6 +341,7 @@ static void periodic_timer_callback(void *arg)
 
             else
             {
+                //printf("%d\n",ms_cpt);
                 // zeroing sensor data in packet, except the status field
                 memset(&(wifi_eth_tx_data.sensor[i]), 0, sizeof(struct sensor_data));
                 wifi_eth_tx_data.sensor[i].status = 0xf; // specifying that the transaction failed in the sensor packet
