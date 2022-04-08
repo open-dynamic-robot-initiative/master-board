@@ -514,13 +514,11 @@ void wifi_eth_link_state_cb(bool new_state)
 
 void app_main()
 {
-
     uart_set_baudrate(UART_NUM_0, 2000000);
     nvs_flash_init();
     wifi_eth_rx_cmd_mailbox = xQueueCreate( 1, sizeof(struct wifi_eth_packet_command));
     ws2812_control_init(); //init the LEDs
     set_all_leds(0x0f0f0f);
-
     ws2812_write_leds(ws_led);
 
     //printf("The core is : %d\n",xPortGetCoreID());
@@ -528,8 +526,8 @@ void app_main()
     printf("ETH/WIFI command size %u\n", sizeof(struct wifi_eth_packet_command));
     printf("ETH/WIFI ack size %u\n", sizeof(struct wifi_eth_packet_ack));
     printf("ETH/WIFI sensor size %u\n", sizeof(struct wifi_eth_packet_sensor));
-
     printf("SPI size %u\n", SPI_TOTAL_LEN * 2);
+
     setup_spi();
 
     ESP_ERROR_CHECK(esp_event_loop_create_default());
@@ -550,7 +548,7 @@ void app_main()
 
     while (1)
     {
-        vTaskDelay(1);
+        vTaskDelay(10);
         ws2812_write_leds(ws_led);
     }
 }
