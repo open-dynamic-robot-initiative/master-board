@@ -348,22 +348,25 @@ static void periodic_timer_callback(void *arg)
             }
         }
 
-        //Slave 7 is always the power board
-        uint8_t tx_spi_powerboard[12]={0xaa,0xbb,0xcc,0xdd,0xee,0xff,0xaa,0xbb,0xcc,0xdd,0xee,0xff}; //Fake packet, cmd to the power board are not yet implemented
-        uint8_t rx_spi_powerboard[12]={0};
-        spi_send(7, tx_spi_powerboard,rx_spi_powerboard, 12);
-        if (crc16_ccitt_check(rx_spi_powerboard,12)) //Packet valid?
-        {
-            wifi_eth_tx_data.powerboard.vbus = (rx_spi_powerboard[2]<<8) | rx_spi_powerboard[3];
-            wifi_eth_tx_data.powerboard.vshunt = (rx_spi_powerboard[4]<<8) | rx_spi_powerboard[5];
-            union floatbytes fb;
-            fb.b[3] = rx_spi_powerboard[6];
-            fb.b[2] = rx_spi_powerboard[7];
-            fb.b[1] = rx_spi_powerboard[8];
-            fb.b[0] = rx_spi_powerboard[9];
-            wifi_eth_tx_data.powerboard.energy = fb.f;
-        }
     }
+
+    //Slave 7 is always the power board
+    uint8_t tx_spi_powerboard[12]={0xaa,0xbb,0xcc,0xdd,0xee,0xff,0xaa,0xbb,0xcc,0xdd,0xee,0xff}; //Fake packet, cmd to the power board are not yet implemented
+    uint8_t rx_spi_powerboard[12]={0};
+    spi_send(7, tx_spi_powerboard,rx_spi_powerboard, 12);
+    if (crc16_ccitt_check(rx_spi_powerboard,12)) //Packet valid?
+    {
+        wifi_eth_tx_data.powerboard.vbus = (rx_spi_powerboard[2]<<8) | rx_spi_powerboard[3];
+        wifi_eth_tx_data.powerboard.vshunt = (rx_spi_powerboard[4]<<8) | rx_spi_powerboard[5];
+        union floatbytes fb;
+        fb.b[3] = rx_spi_powerboard[6];
+        fb.b[2] = rx_spi_powerboard[7];
+        fb.b[1] = rx_spi_powerboard[8];
+        fb.b[0] = rx_spi_powerboard[9];
+        wifi_eth_tx_data.powerboard.energy = fb.f;
+    }
+
+
 
     /* Get IMU latest data*/
     parse_IMU_data();
