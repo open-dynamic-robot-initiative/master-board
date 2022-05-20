@@ -112,3 +112,14 @@ INSTALL(TARGETS master_board_example DESTINATION bin)
 ADD_EXECUTABLE(master_board_example_pd example/example_pd.cpp)
 TARGET_LINK_LIBRARIES(master_board_example_pd ${PROJECT_NAME})
 INSTALL(TARGETS master_board_example_pd DESTINATION bin)
+
+ADD_EXECUTABLE(
+  master_board_example_imu_data_collection
+  example/example_imu_data_collection.cpp
+)
+TARGET_LINK_LIBRARIES(
+  master_board_example_imu_data_collection ${PROJECT_NAME}
+)
+INSTALL(
+  TARGETS master_board_example_imu_data_collection DESTINATION bin
+)
