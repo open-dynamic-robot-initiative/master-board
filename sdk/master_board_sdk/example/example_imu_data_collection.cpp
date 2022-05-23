@@ -21,6 +21,7 @@ int main(int argc, char **argv)
 	}
 
 	int cpt = 0;
+	double dt = 0.001;
 	imu_data_t imu_logs[LOG_STEPS];
 
 	nice(-20); //give the process a high priority
@@ -49,7 +50,7 @@ int main(int argc, char **argv)
 			last = std::chrono::system_clock::now(); //last+dt would be better
 			robot_if.ParseSensorData(); // This will read the last incomming packet and update all sensor fields.
 			
-			imu_logs[cpt % LOG_STEPS] = robot_if.imu_data;
+			imu_logs[cpt % LOG_STEPS] = robot_if.get_imu_data();
 			
 			if (cpt % 100 == 0)
 			{
