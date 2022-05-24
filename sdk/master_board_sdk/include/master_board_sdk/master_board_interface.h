@@ -132,6 +132,7 @@ public:
 	float imu_data_gyroscope(int i) { return (this->imu_data.gyroscope[i]); };
 	float imu_data_attitude(int i) { return (this->imu_data.attitude[i]); };
 	float imu_data_linear_acceleration(int i) { return (this->imu_data.linear_acceleration[i]); };
+	imu_data_t get_imu_data() const { return imu_data; }
 
 };
 

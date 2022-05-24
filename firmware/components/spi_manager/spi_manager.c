@@ -1,6 +1,11 @@
+#include <stdio.h>
+#include <stdint.h>
+#include <unistd.h>
+
 #include "driver/spi_master.h"
 #include "soc/gpio_struct.h"
 #include "driver/gpio.h"
+
 #include "spi_manager.h"
 #include <string.h>
 
@@ -34,10 +39,12 @@ void config_demux() {
 }
 
 void IRAM_ATTR spi_pre_transfer_callback(spi_transaction_t *trans) {
+    /*
     uint slave_nb = ((spi_trans_info*) trans->user)->demux_nb;
     gpio_set_level(GPIO_DEMUX_A0, slave_nb&0x1);
     gpio_set_level(GPIO_DEMUX_A1, (slave_nb>>1)&0x1);
     gpio_set_level(GPIO_DEMUX_A2, (slave_nb>>2)&0x1);
+    */
 }
 
 void IRAM_ATTR spi_post_transfer_callback(spi_transaction_t *trans) {
@@ -59,7 +66,7 @@ void spi_init() {
     spi_device_interface_config_t devcfg={
         .clock_speed_hz=SPI_MASTER_FREQ_80M / CONFIG_SPI_DATARATE_FACTOR, //Clock out
         .mode=0,                                  //SPI mode 0
-        .spics_io_num=GPIO_DEMUX_OE,              //CS pin
+        .spics_io_num=-1,              //CS pin
         .queue_size=10,                           //We want to be able to queue 10 transactions at a time
         .pre_cb=spi_pre_transfer_callback,        //Specify pre-transfer callback to handle D/C line
         .post_cb=spi_post_transfer_callback,      //Specify pre-transfer callback to handle D/C line
@@ -71,6 +78,15 @@ void spi_init() {
 }
 
 bool spi_send(int slave, uint8_t *tx_data, uint8_t *rx_data, int len) {
+    //Select the CS with DEMUX
+    gpio_set_level(GPIO_DEMUX_A0, slave&0x1);
+    gpio_set_level(GPIO_DEMUX_A1, (slave>>1)&0x1);
+    gpio_set_level(GPIO_DEMUX_A2, (slave>>2)&0x1);
+
+    //Low CS
+    gpio_set_level(GPIO_DEMUX_OE, 0);
+    usleep(1);
+    
 	spi_transaction_t trans;
     memset(&trans, 0, sizeof(trans));
 
@@ -85,6 +101,7 @@ bool spi_send(int slave, uint8_t *tx_data, uint8_t *rx_data, int len) {
 	trans.length=8*len;
 	
 	esp_err_t err = spi_device_polling_transmit(spi, &trans);
-	
+	//High CS
+    gpio_set_level(GPIO_DEMUX_OE, 1);
 	return err == ESP_OK;
 }
