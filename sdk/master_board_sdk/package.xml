@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
     <name>master_board_sdk</name>
-    <version>1.0.0</version>
+    <version>1.0.5</version>
     <description>
         This project contains the sdk for the communication between a computer
         and the master-board
