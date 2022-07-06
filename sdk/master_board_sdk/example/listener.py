@@ -4,7 +4,10 @@ import argparse
 import math
 import os
 import sys
-from time import clock
+try:
+  from time import clock
+except(ImportError):
+  from time import process_time as clock
 
 import libmaster_board_sdk_pywrap as mbs
 
