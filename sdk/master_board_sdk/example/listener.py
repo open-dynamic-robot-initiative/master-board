@@ -4,7 +4,7 @@ import argparse
 import math
 import os
 import sys
-from time import clock
+from time import perf_counter
 
 import libmaster_board_sdk_pywrap as mbs
 
@@ -21,12 +21,12 @@ def listener_script(name_interface):
     robot_if = mbs.MasterBoardInterface(name_interface, True)
     robot_if.Init()  # Initialization of the interface between the computer and the master board
 
-    last = clock()
+    last = perf_counter()
 
     while (True):
 
-        if ((clock() - last) > dt):
-            last = clock()
+        if ((perf_counter() - last) > dt):
+            last = perf_counter()
             cpt += 1
             t += dt
             robot_if.ParseSensorData()  # Read sensor data sent by the masterboard
