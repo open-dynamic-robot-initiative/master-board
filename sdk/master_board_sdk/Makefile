@@ -13,6 +13,10 @@ default: all
 	mkdir -p build
 	$(CC) $(CFLAGS) $(INCLUDES) -o build/$@ -c $^
 
+%.o: tests/%.cpp
+	mkdir -p build
+	$(CC) $(CFLAGS) $(INCLUDES) $(shell pkg-config --cflags catch2) -std=c++17 -o build/$@ -c $^
+
 app: example.o ESPNOW_manager.o ESPNOW_types.o Link_manager.o ETHERNET_types.o master_board_interface.o motor.o motor_driver.o
 	mkdir -p bin
 	$(CC) $(CFLAGS) -o bin/example $(addprefix build/,$^) -pthread
@@ -20,6 +24,10 @@ app: example.o ESPNOW_manager.o ESPNOW_types.o Link_manager.o ETHERNET_types.o m
 app_pd: example_pd.o ESPNOW_manager.o ESPNOW_types.o Link_manager.o ETHERNET_types.o master_board_interface.o motor.o motor_driver.o
 	mkdir -p bin
 	$(CC) $(CFLAGS) -o bin/example_pd $(addprefix build/,$^) -pthread
+
+tests: test_protocol.o
+	mkdir -p bin
+	$(CC) $(CFLAGS) -o bin/tests $(addprefix build/,$^) $(shell pkg-config --libs catch2) -lCatch2Main -pthread
 
 all: clear clean app app_pd
 
