@@ -25,9 +25,12 @@ app_pd: example_pd.o ESPNOW_manager.o ESPNOW_types.o Link_manager.o ETHERNET_typ
 	mkdir -p bin
 	$(CC) $(CFLAGS) -o bin/example_pd $(addprefix build/,$^) -pthread
 
-tests: test_protocol.o
+sdk_tests: test_protocol.o
 	mkdir -p bin
-	$(CC) $(CFLAGS) -o bin/tests $(addprefix build/,$^) $(shell pkg-config --libs catch2) -lCatch2Main -pthread
+	$(CC) $(CFLAGS) -o bin/sdk_tests $(addprefix build/,$^) $(shell pkg-config --libs catch2) -lCatch2Main -pthread
+
+test : sdk_tests
+	bin/sdk_tests
 
 all: clear clean app app_pd
 
