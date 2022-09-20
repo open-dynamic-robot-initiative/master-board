@@ -15,6 +15,7 @@ default: all
 
 %.o: tests/%.cpp
 	mkdir -p build
+	pkg-config --atleast-version=3.1 catch2
 	$(CC) $(CFLAGS) $(INCLUDES) $(shell pkg-config --cflags catch2) -std=c++17 -o build/$@ -c $^
 
 app: example.o ESPNOW_manager.o ESPNOW_types.o Link_manager.o ETHERNET_types.o master_board_interface.o motor.o motor_driver.o
