@@ -104,6 +104,8 @@
 #define UD_SENSOR_STATUS_ERROR_ENCODER2 6
 //! \brief Some other error
 #define UD_SENSOR_STATUS_ERROR_OTHER 7
+//! \brief CRC error in the SPI transaction
+#define UD_SENSOR_STATUS_CRC_ERROR 15
 //! \brief UD packets length in word (16 bits)
 #define UD_LENGTH 14
 
