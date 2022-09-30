@@ -91,7 +91,7 @@ IF(BUILD_PYTHON_INTERFACE)
   SET_TARGET_PROPERTIES(${PYWRAP} PROPERTIES
     INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
   INSTALL(TARGETS ${PYWRAP} DESTINATION ${${PYWRAP}_INSTALL_DIR})
-  
+
   # --- Allow to do: make python --- #
   ADD_CUSTOM_TARGET(python)
   SET_TARGET_PROPERTIES(python PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD True)
@@ -123,3 +123,17 @@ TARGET_LINK_LIBRARIES(
 INSTALL(
   TARGETS master_board_example_imu_data_collection DESTINATION bin
 )
+
+# --- UNIT TESTS -----------------------------------------------------------
+if(BUILD_TESTING)
+  find_package(Catch2 3.1 QUIET)
+  if(NOT Catch2_FOUND)
+    Include(FetchContent)
+    FetchContent_Declare(Catch2
+      GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+      GIT_TAG v3.1.0)
+    FetchContent_MakeAvailable(Catch2)
+  endif()
+  add_unit_test(test_protocol tests/test_protocol.cpp)
+  target_link_libraries(test_protocol PRIVATE Catch2::Catch2WithMain)
+endif()
