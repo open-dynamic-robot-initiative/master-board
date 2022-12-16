@@ -1,6 +1,7 @@
 #ifndef LINK_MANAGER_H
 #define LINK_MANAGER_H
 
+#include <string>
 #include <thread>
 
 #include "master_board_sdk/Link_types.h"

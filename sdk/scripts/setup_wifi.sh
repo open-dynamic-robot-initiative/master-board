@@ -1,8 +1,8 @@
 #!/bin/bash
 set -x #echo on
 
-sudo ifconfig $1 down
+sudo ip link set down $1
 sudo iwconfig $1 mode monitor
-sudo ifconfig $1 up
+sudo ip link set up $1
 sudo iwconfig $1 channel $2
 

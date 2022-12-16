@@ -137,6 +137,7 @@ public:
 	float powerboard_current() { return powerboard_data.current_bus; };
 	float powerboard_voltage() { return powerboard_data.voltage_bus; };
 	float powerboard_energy() { return powerboard_data.energy_bus; };
+	imu_data_t get_imu_data() const { return imu_data; }
 
 };
 
