@@ -228,20 +228,37 @@ void MasterBoardInterface::callback(uint8_t /*src_mac*/[6], uint8_t *data, int l
 {
   if ((listener_mode || (init_sent && !ack_received)) && len == sizeof(ack_packet_t))
   {
+    const ack_packet_t *p_ack_packet = (ack_packet_t *)data;
     if (listener_mode)
     {
       // ack packets are used to set up the session id in listener mode
-      session_id = ((ack_packet_t *)data)->session_id;
+      session_id = p_ack_packet->session_id;
     }
     else
     {
       // ensuring that session id is right if in normal mode
-      if (((ack_packet_t *)data)->session_id != session_id)
+      if (p_ack_packet->session_id != session_id)
       {
-        //printf("Wrong session id in ack msg, got %d instead of %d ignoring packet\n", ((ack_packet_t *)data)->session_id, session_id);
+        //printf("Wrong session id in ack msg, got %d instead of %d ignoring packet\n", p_ack_packet->session_id, session_id);
         return; // ignoring the packet
       }
     }
+
+    // Check protocol version
+    if(p_ack_packet->protocol_version != PROTOCOL_VERSION)
+    {
+      std::ostringstream err_msg;
+      err_msg << "Error during init : Protocol version mismatch (using version "
+          << PROTOCOL_VERSION
+          << " while board expects "
+          << p_ack_packet->protocol_version
+          << ")";
+      printf("%s\n", err_msg.str());
+      throw std::runtime_error( err_msg.str());
+      return;
+    }
+
+
 
     // reset variables for feedback on packet loss
     ResetPacketLossStats();
