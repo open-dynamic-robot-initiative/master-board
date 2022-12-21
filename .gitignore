@@ -10,3 +10,4 @@ firmware/sdkconfig\.old
 *.s#*
 *.b#*
 *.l#*
+.vscode
