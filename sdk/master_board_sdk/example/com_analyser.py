@@ -6,9 +6,9 @@ import os
 import sys
 import time
 try:
-  from time import clock
+  from time import process_time
 except(ImportError):
-  from time import process_time as clock
+  from time import clock as process_time
 
 import libmaster_board_sdk_pywrap as mbs
 import matplotlib.pyplot as plt
@@ -65,12 +65,12 @@ def example_script(name_interface):
         robot_if.GetDriver(i).SetTimeout(5)
         robot_if.GetDriver(i).Enable()
 
-    last = clock()
+    last = process_time()
     prev_time = 0
 
     while (not robot_if.IsTimeout() and not robot_if.IsAckMsgReceived()):
-        if ((clock() - last) > dt):
-            last = clock()
+        if ((process_time() - last) > dt):
+            last = process_time()
             robot_if.SendInit()
 
     if robot_if.IsTimeout():
@@ -90,7 +90,7 @@ def example_script(name_interface):
     last_cmd_packet_index = first_cmd_index
 
     while ((not robot_if.IsTimeout())
-           and (clock() < duration)):  # Stop after 15 seconds (around 5 seconds are used at the start for calibration)
+           and (process_time() < duration)):  # Stop after 15 seconds (around 5 seconds are used at the start for calibration)
 
         if (robot_if.GetLastRecvCmdIndex() > robot_if.GetCmdPacketIndex()):
             last_recv_cmd_index = (overflow_cmd_cpt-1) * 65536 + robot_if.GetLastRecvCmdIndex()
@@ -98,9 +98,9 @@ def example_script(name_interface):
             last_recv_cmd_index = overflow_cmd_cpt * 65536 + robot_if.GetLastRecvCmdIndex()
 
         if (last_recv_cmd_index >= first_cmd_index and received_list[last_recv_cmd_index-first_cmd_index] == 0):
-                received_list[last_recv_cmd_index-first_cmd_index] = clock()
+                received_list[last_recv_cmd_index-first_cmd_index] = process_time()
         
-        if ((clock() - last) > dt):
+        if ((process_time() - last) > dt):
             last += dt
             cpt += 1
 
@@ -137,9 +137,9 @@ def example_script(name_interface):
                 sensor_lost_list.append(robot_if.GetSensorsLost())
                 cmd_ratio_list.append(100.*robot_if.GetCmdLost()/robot_if.GetCmdSent())
                 sensor_ratio_list.append(100.*robot_if.GetSensorsLost()/robot_if.GetSensorsSent())
-                time_list.append(clock())
+                time_list.append(process_time())
 
-            current_time = clock()
+            current_time = process_time()
 
             diff = robot_if.GetCmdPacketIndex() - last_cmd_packet_index
             if diff < 0:
