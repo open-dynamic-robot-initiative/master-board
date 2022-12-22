@@ -39,7 +39,7 @@ CHECK_MINIMAL_CXX_STANDARD(11 ENFORCE)
 # Set component to fetch from boost
 # Get the python interface for the bindings
 IF(BUILD_PYTHON_INTERFACE)
-  FINDPYTHON()
+  FINDPYTHON(REQUIRED)
   SEARCH_FOR_BOOST_PYTHON(REQUIRED)
 ENDIF(BUILD_PYTHON_INTERFACE)
 
@@ -116,3 +116,28 @@ TARGET_LINK_LIBRARIES(master_board_example_pd ${PROJECT_NAME})
 SET_TARGET_PROPERTIES(master_board_example_pd PROPERTIES
   INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 INSTALL(TARGETS master_board_example_pd DESTINATION bin)
+
+ADD_EXECUTABLE(
+  master_board_example_imu_data_collection
+  example/example_imu_data_collection.cpp
+)
+TARGET_LINK_LIBRARIES(
+  master_board_example_imu_data_collection ${PROJECT_NAME}
+)
+INSTALL(
+  TARGETS master_board_example_imu_data_collection DESTINATION bin
+)
+
+# --- UNIT TESTS -----------------------------------------------------------
+if(BUILD_TESTING)
+  find_package(Catch2 3.1 QUIET)
+  if(NOT Catch2_FOUND)
+    Include(FetchContent)
+    FetchContent_Declare(Catch2
+      GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+      GIT_TAG v3.1.0)
+    FetchContent_MakeAvailable(Catch2)
+  endif()
+  add_unit_test(test_protocol tests/test_protocol.cpp)
+  target_link_libraries(test_protocol PRIVATE Catch2::Catch2WithMain)
+endif()
