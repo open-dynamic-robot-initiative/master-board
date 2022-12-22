@@ -37,7 +37,7 @@ The interface on the PC needs to support monitor mode and injection. ASUS PCE-AC
 Data packet
 -----------
 
-### Current protocol version: **3**
+### Current protocol version: **4**
 
 Both WiFi and Ethernet use the same data packet format.
 
@@ -51,14 +51,20 @@ Protocol version | Session ID |
 --- | ---
 2 bytes | 2 bytes
 
-The **Protocol version** field is used to ensure both the interface and the masterboard firmware use the same protocol. The master board checks it when receiving an **Init** packet.
+**Protocol version** : version of the protocol used by the interface. This field is used to ensure both the interface and the masterboard firmware use the same protocol. The master board checks it when receiving an **Init** packet, and sends back its own (using **Ack** packet) for the interface to also perform a check.
 
-### Ack packet (3 Bytes)
-Session ID | SPI connected
---- | --- 
-2 bytes | 1 byte
+**Session ID** : Give a unique id to this session between the computer and the masterboard (set by the interface).
 
-The **SPI connected** field contains an 8 bit integer, each bit of which tells whether or not the corresponding SPI slave is connected (Least significant bit: SPI0, most significant bit: SPI7).
+### Ack packet (5 Bytes)
+Protocol version | Session ID | SPI connected
+--- | --- | --- 
+2 bytes | 2 bytes | 1 byte
+
+**Protocol version** : version of the protocol used by the masterboard.
+
+**Session ID** : Same value as the session ID received in the init packet.
+
+**SPI connected** : This field contains an 8 bit integer, each bit of which tells whether or not the corresponding SPI slave is connected (Least significant bit: SPI0, most significant bit: SPI7).
 
 Both **Command** and **Sensor** packets encapsulate 6 BLMC µDriver SPI interface packets,  without the **Index** and **CRC** fields. Additional, sensor packets also include IMU measurement and AHRS estimation.
 
