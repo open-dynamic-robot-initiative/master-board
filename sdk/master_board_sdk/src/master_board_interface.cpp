@@ -1,5 +1,6 @@
 #include <math.h>
 #include <signal.h>
+#include <sstream>
 #include "master_board_sdk/master_board_interface.h"
 
 MasterBoardInterface *MasterBoardInterface::instance = NULL;
