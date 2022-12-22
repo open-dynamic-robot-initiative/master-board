@@ -1,10 +1,10 @@
 # coding: utf8
 
 import argparse
-import math
 import os
 import sys
 import time
+import subprocess
 try:
   from time import process_time
 except(ImportError):
@@ -14,11 +14,18 @@ import libmaster_board_sdk_pywrap as mbs
 import matplotlib.pyplot as plt
 from matplotlib.offsetbox import AnchoredText
 import numpy as np
-try:
-    from platform import linux_distribution
-except(ImportError):
-    from distro import linux_distribution
-import subprocess
+
+linux_distribution = None
+if not linux_distribution:
+    try:
+        from platform import linux_distribution
+    except(ImportError):
+        pass
+if not linux_distribution:
+    try:
+        from distro import linux_distribution
+    except(ImportError):
+        pass
 
 
 def example_script(name_interface):
@@ -299,7 +306,10 @@ def example_script(name_interface):
     # creation of the text file with system info
     text_file = open("../graphs/" + dir_name + '/' + dir_name + "-system-info.txt", 'w')
     text_file.write("Current date and time: " + time.strftime("%c") + '\n')
-    text_file.write("Linux distribution: " + linux_distribution()[0] + ' ' + linux_distribution()[1] + ' ' + linux_distribution()[2] + '\n')
+    if(linux_distribution):
+        text_file.write("Linux distribution: " + linux_distribution()[0] + ' ' + linux_distribution()[1] + ' ' + linux_distribution()[2] + '\n')
+    else:
+        text_file.write("Linux distribution: ? (`plateform` or `distro` module necessary for logging this info)\n")
     text_file.write("Computer: " + os.uname()[1] + '\n')
     text_file.write("Interface: " + name_interface + '\n')
     if (name_interface[0] == 'w'):
