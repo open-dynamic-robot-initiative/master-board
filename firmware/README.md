@@ -18,7 +18,7 @@ cd ~/esp/esp-idf
 ./install.sh
 ```
 
-For more details, refer to [the offical documentation of esp-idf.](https://docs.espressif.com/projects/esp-idf/en/v4.0.3/get-started/index.html). (We link the documentation for 4.0.3 because the documentation for 4.0.1 is broken at the time of writing. But the content should not differ much.)
+For more details, refer to [the offical documentation of esp-idf](https://docs.espressif.com/projects/esp-idf/en/v4.0.3/get-started/index.html). We link the documentation for 4.0.3 because the documentation for 4.0.1 is broken at the time of writing. But the content should not differ much.
 
 **Note** : If you are using **Python2**, you need to install packages at specific versions before running the installation: `pip install python-socketio==1.5.0 Flask-SocketIO==2.9`
 
@@ -44,7 +44,7 @@ On a freshly assembled board, we first need to burn a configuration fuse  becaus
 `python espefuse.py set_flash_voltage 3.3V`
 
 To flash the board, the esp environment variables must be sourced:
-- Either you installed esp-idf in the standard path, which will be the case if you followed the instructions above. You can simply do:
+- Either you installed esp-idf in the standard path, which would be the case if you followed the instructions above. You can simply do:
   ```bash
   cd master-board/firmware
   source setup_esp_idf.bash
@@ -60,7 +60,7 @@ In addition, you need to checkout an older commit of esp-idf.
 git checkout 8d1a9c0 # Need to checkout this old version for now
 git submodule update --init --recursive
 ```
-[See more discussion](https://github.com/open-dynamic-robot-initiative/master-board/issues/3) on this issue.
+[See more discussion on this issue](https://github.com/open-dynamic-robot-initiative/master-board/issues/3).
 
 Then, from the `master-board/firmware` folder, you can run:
 
