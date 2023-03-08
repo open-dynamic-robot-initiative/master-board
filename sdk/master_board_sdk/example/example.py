@@ -35,8 +35,18 @@ def example_script(name_interface):
     robot_if = mbs.MasterBoardInterface(name_interface)
     robot_if.Init()  # Initialization of the interface between the computer and the master board
     for i in range(N_SLAVES_CONTROLED):  #  We enable each controler driver and its two associated motors
+        # initialise command to zero
         robot_if.GetDriver(i).motor1.SetCurrentReference(0)
+        robot_if.GetDriver(i).motor1.SetPositionReference(0)
+        robot_if.GetDriver(i).motor1.SetVelocityReference(0)
+        robot_if.GetDriver(i).motor1.SetKp(0)
+        robot_if.GetDriver(i).motor1.SetKd(0)
         robot_if.GetDriver(i).motor2.SetCurrentReference(0)
+        robot_if.GetDriver(i).motor2.SetPositionReference(0)
+        robot_if.GetDriver(i).motor2.SetVelocityReference(0)
+        robot_if.GetDriver(i).motor2.SetKp(0)
+        robot_if.GetDriver(i).motor2.SetKd(0)
+
         robot_if.GetDriver(i).motor1.Enable()
         robot_if.GetDriver(i).motor2.Enable()
         robot_if.GetDriver(i).EnablePositionRolloverError()
