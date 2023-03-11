@@ -7,13 +7,14 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
-#ifdef __UNIX__
+#ifdef __linux__
 #include <linux/if_arp.h>
 #include <linux/if_packet.h>
+#else
+#include <net/if_arp.h>
 #endif
 
 #include <ifaddrs.h>
-#include <net/if_arp.h>
 #include <arpa/inet.h>
 #include <assert.h>
 
