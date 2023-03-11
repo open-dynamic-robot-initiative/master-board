@@ -19,7 +19,7 @@ set(PROJECT_USE_CMAKE_EXPORT TRUE)
 SET(PROJECT_VERSION_COMPUTATION_METHODS ROS_PACKAGE_XML_FILE)
 
 # --- OPTIONS ----------------------------------------
-OPTION(BUILD_PYTHON_INTERFACE "Build the python binding" ON)
+OPTION(BUILD_PYTHON_INTERFACE "Build the python binding" OFF)
 OPTION(PYTHON_STANDARD_LAYOUT "Enable standard Python package layout" ON)
 OPTION(PYTHON_DEB_LAYOUT "Enable Debian-style Python package layout" OFF)
 
@@ -47,16 +47,22 @@ ENDIF(BUILD_PYTHON_INTERFACE)
 # --- INCLUDE ----------------------------------------
 # ----------------------------------------------------
 
+
 # --- MAIN LIBRARY -------------------------------------------------------------
 SET(MASTER_BOARD_SRC
-    src/ESPNOW_manager.cpp
-    src/ESPNOW_types.cpp
     src/ETHERNET_types.cpp
     src/Link_manager.cpp
     src/master_board_interface.cpp
     src/motor.cpp
     src/motor_driver.cpp
 )
+IF (NOT APPLE)
+  LIST(APPEND MASTER_BOARD_SRC
+    src/ESPNOW_manager.cpp
+    src/ESPNOW_types.cpp
+)
+ENDIF(NOT APPLE)
+
 ADD_LIBRARY(${PROJECT_NAME} SHARED
   ${MASTER_BOARD_SRC}
 )
