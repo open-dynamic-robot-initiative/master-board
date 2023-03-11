@@ -113,7 +113,7 @@ void LINK_manager::start()
                        (caddr_t)&desc, sizeof(desc))) {
           perror("setsockopt"); exit(4);
          }
-#elif
+#else
 	struct sockaddr_ll s_dest_addr;
 	struct ifreq ifr;
 
@@ -238,7 +238,7 @@ int LINK_manager::send(uint8_t *payload, int len)
                                        (struct sockaddr *)&sa_ndrv,
                                        sizeof(sa_ndrv))
 #else
-                                       NULL,0
+                                NULL,0)
 #endif
                                 );
 }
@@ -253,7 +253,7 @@ int LINK_manager::send()
 #ifdef __APPLE__
                                        (struct sockaddr *)&sa_ndrv, sizeof(sa_ndrv))
 #else
-                                NULL,0
+                                NULL,0)
 #endif
                                 );
 }
