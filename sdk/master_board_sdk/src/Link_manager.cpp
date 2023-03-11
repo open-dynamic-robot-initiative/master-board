@@ -9,7 +9,9 @@
 #include <sys/ioctl.h>
 #ifdef __UNIX__
 #include <linux/if_arp.h>
+#include <linux/if_packet.h>
 #endif
+
 #include <ifaddrs.h>
 #include <net/if_arp.h>
 #include <arpa/inet.h>
