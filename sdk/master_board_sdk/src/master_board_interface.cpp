@@ -65,12 +65,14 @@ int MasterBoardInterface::Init()
   }
   else if (if_name_[0] == 'w')
   {
+#ifndef __APPLE__
     /*WiFi*/
     printf("Using WiFi (%s)\n", if_name_.c_str());
     link_handler_ = new ESPNOW_manager(if_name_, DATARATE_24Mbps, CHANNEL_freq_9, my_mac_, dest_mac_, false); //TODO write setter for espnow specific parametters
     link_handler_->set_recv_callback(this);
     link_handler_->start();
     ((ESPNOW_manager *)link_handler_)->bind_filter();
+#endif
   }
   else
   {
@@ -129,7 +131,11 @@ int MasterBoardInterface::SendInit()
     return -1; // Return -1 since the command has not been sent.
   }
 
-  link_handler_->send((uint8_t *)&init_packet, sizeof(init_packet_t));
+  int r=link_handler_->send((uint8_t *)&init_packet, sizeof(init_packet_t));
+
+  if (r<0)
+  { perror("Packet send error"); }
+
   return 0;
 }
 

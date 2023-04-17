@@ -4,11 +4,21 @@
 #include <pthread.h>
 #include <unistd.h>
 
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
+#ifdef __linux__
 #include <linux/if_arp.h>
+#include <linux/if_packet.h>
+#else
+#include <net/if_arp.h>
+#endif
+
+#include <ifaddrs.h>
 #include <arpa/inet.h>
 #include <assert.h>
+
+
 
 #include "master_board_sdk/Link_manager.h"
 
@@ -34,6 +44,79 @@ void LINK_manager::set_recv_callback(LINK_manager_callback * obj_link_manager_ca
 
 void LINK_manager::start()
 {
+#ifdef __APPLE__
+        int fd,							//file descriptor
+            bind_errno,			//bind errno
+            priority_errno; //Set priority errno
+
+        /// Creates a raw socket
+	fd = socket(PF_NDRV, SOCK_RAW, 0);
+	assert(fd != -1);
+
+        /// Find the interface specified in the argument interface.
+        struct ifaddrs *ifap = NULL;
+        bool found_if=false;
+
+        if(getifaddrs(&ifap) < 0) {
+          printf("Cannot get a list of interfaces\n");
+          return;
+        }
+
+        for(struct ifaddrs *p = ifap; p!=NULL; p=p->ifa_next) {
+          if (strcmp(p->ifa_name, interface.c_str()) == 0)
+          {
+            found_if=true;
+            break; // Go out of the for loop
+          }
+        }
+
+        if(!found_if)
+        {
+          printf("Did not find interface %s\n",interface.c_str());
+          return;
+        }
+        freeifaddrs(ifap);
+
+        /// Indicates that this program wants to use a raw socket (PF_NDRV)
+        /// wants to use interface as interface.
+	this->sa_ndrv.snd_family = PF_NDRV;
+        this->sa_ndrv.snd_len = sizeof (sa_ndrv);
+        strlcpy((char *)sa_ndrv.snd_name, interface.c_str(), sizeof (sa_ndrv.snd_name));
+
+	bind_errno = bind(fd, (struct sockaddr *)&sa_ndrv, sizeof(sa_ndrv));
+	if (bind_errno < 0)
+        {
+          printf("Unable to bind to %s\n",sa_ndrv.snd_name);
+          perror("bind:");
+          return;
+        }
+
+	priority_errno = setsockopt(fd, SOL_SOCKET, SO_NET_SERVICE_TYPE , &(this->socket_priority), sizeof(this->socket_priority));
+
+
+        // Need to set this option for receiving Ethertype packet send from the
+        // masterboard
+        struct ndrv_protocol_desc desc;
+        struct ndrv_demux_desc demux_desc[1];
+        memset(&desc, '\0', sizeof(desc));
+        memset(&demux_desc, '\0', sizeof(demux_desc));
+
+        /* Request kernel for demuxing of one chosen ethertype */
+        desc.version = NDRV_PROTOCOL_DESC_VERS;
+        desc.protocol_family = 0x88b5; // The masterboard Ethertype.
+        desc.demux_count = 1;
+        desc.demux_list = (struct ndrv_demux_desc*)&demux_desc;
+        demux_desc[0].type = NDRV_DEMUXTYPE_ETHERTYPE;
+        demux_desc[0].length = sizeof(unsigned short);
+        demux_desc[0].data.ether_type = ntohs(0x88b5);
+
+        if (setsockopt(fd,
+                       SOL_NDRVPROTO,
+                       NDRV_SETDMXSPEC,
+                       (caddr_t)&desc, sizeof(desc))) {
+          perror("setsockopt"); exit(4);
+         }
+#else
 	struct sockaddr_ll s_dest_addr;
 	struct ifreq ifr;
 
@@ -60,7 +143,12 @@ void LINK_manager::start()
 	assert(bind_errno >= 0); //abort if error
 
 	priority_errno = setsockopt(fd, SOL_SOCKET, SO_PRIORITY, &(this->socket_priority), sizeof(this->socket_priority));
-	assert(priority_errno == 0);
+#endif
+        if (priority_errno < 0)
+        {
+          perror("Unable to start because the program could not set priority on low level link");
+          assert(false);
+        }
 
 	this->sock_fd = fd;
 
@@ -148,7 +236,14 @@ int LINK_manager::send(uint8_t *payload, int len)
 
 	int raw_len = mypacket->toBytes(raw_bytes, LEN_RAWBYTES_MAX);
 
-	return static_cast<int>(sendto(this->sock_fd, raw_bytes, raw_len, 0, NULL, 0));
+	return static_cast<int>(sendto(this->sock_fd, raw_bytes, raw_len, 0,
+#ifdef __APPLE__
+                                       (struct sockaddr *)&sa_ndrv,
+                                       sizeof(sa_ndrv))
+#else
+                                NULL,0)
+#endif
+                                );
 }
 
 int LINK_manager::send()
@@ -157,5 +252,11 @@ int LINK_manager::send()
 
 	int raw_len = mypacket->toBytes(raw_bytes, LEN_RAWBYTES_MAX);
 
-	return static_cast<int>(sendto(this->sock_fd, raw_bytes, raw_len, 0, NULL, 0));
+	return static_cast<int>(sendto(this->sock_fd, raw_bytes, raw_len, 0,
+#ifdef __APPLE__
+                                       (struct sockaddr *)&sa_ndrv, sizeof(sa_ndrv))
+#else
+                                NULL,0)
+#endif
+                                );
 }

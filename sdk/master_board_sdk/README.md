@@ -20,6 +20,19 @@ To disable IPV6 trafic, add this line into ``` /etc/sysctl.conf```
 net.ipv6.conf.MY_INTERFACE.disable_ipv6 = 1
 ``` 
 where MY_INTERFACE is your lan interface name.
+
+##### Optional configuration (macOS):
+To disable IPV6 and IPV4 you can use
+```
+networksetup -listnetworkserviceorder
+```
+to have the list of NetworkService (Hardware Port) related to the interface.
+
+It is then possible to switch off IPV6 with:
+```
+networksetup -setv6off NetworkService
+```
+
 #### Wifi
 Your interface should support monitor mode and injection since the procol used by the master board is not a standard wifi.
 You need to configure your interface. A script is available in the sdk folder. to use it run 
