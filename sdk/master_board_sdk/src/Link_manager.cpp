@@ -146,8 +146,8 @@ void LINK_manager::start()
 #endif
         if (priority_errno < 0)
         {
-          perror("Unable to set priority");
-          return;
+          perror("Unable to start because the program could not set priority on low level link");
+          assert(false);
         }
 
 	this->sock_fd = fd;
