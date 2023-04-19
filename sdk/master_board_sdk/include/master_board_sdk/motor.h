@@ -28,29 +28,29 @@ public:
   double GetPositionOffset();
 
   //state
-  double position;       // [rad]
-  double velocity;       // [rad/s]
-  double current;        // [A]
-  double position_offset;// [rad]
+  double position = 0.0;       // [rad]
+  double velocity = 0.0;       // [rad/s]
+  double current = 0.0;        // [A]
+  double position_offset = 0.0;// [rad]
 
-  bool is_enabled;
-  bool is_ready;
-  bool index_toggle_bit;
-  bool has_index_been_detected;
+  bool is_enabled = false;
+  bool is_ready = false;
+  bool index_toggle_bit = false;
+  bool has_index_been_detected = false;
 
   //commands
-  double position_ref;  // [rad]
-  double velocity_ref;  // [rad/s]
-  double current_ref;   // [A]
-  double current_sat;   // [A]
-  double kp;            // [A/rad]
-  double kd;            // [As/rad]
+  double position_ref = 0.0;  // [rad]
+  double velocity_ref = 0.0;  // [rad/s]
+  double current_ref = 0.0;   // [A]
+  double current_sat = 0.0;   // [A]
+  double kp = 0.0;            // [A/rad]
+  double kd = 0.0;            // [As/rad]
 
 
-  bool enable;
-  bool enable_position_rollover_error;
-  bool enable_index_toggle_bit;
-  bool enable_index_offset_compensation;
+  bool enable = false;
+  bool enable_position_rollover_error = false;
+  bool enable_index_toggle_bit = false;
+  bool enable_index_offset_compensation = false;
 
   MotorDriver *driver;
 

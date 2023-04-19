@@ -71,9 +71,9 @@ boost::python::tuple wrap_adc(MotorDriver const * motDriver)
             .def("SetVelocityReference", &Motor::SetVelocityReference)
             .def("SetPositionReference", &Motor::SetPositionReference)
             .def("SetPositionOffset", &Motor::SetPositionOffset)
-            // .def("SetKp", &Motor::SetKp) // Not defined in motor.cpp but declared in motor.h
-            // .def("SetKd", &Motor::SetKd) // Not defined in motor.cpp but declared in motor.h
-            // .def("SetSaturationCurrent", &Motor::SetSaturationCurrent) // Not defined in motor.cpp but declared in motor.h
+            .def("SetKp", &Motor::SetKp)
+            .def("SetKd", &Motor::SetKd)
+            .def("SetSaturationCurrent", &Motor::SetSaturationCurrent)
             .def("SetDriver", &Motor::SetDriver)
             .def("Print", &Motor::Print)
             .def("Enable", &Motor::Enable)

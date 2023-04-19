@@ -32,17 +32,17 @@ Documentation
 -------------
 Here are some helpful links to the documentation :
 
-[How to flash the Master Board (install esp-idf and flash the firmware)](firmware/README.md)
+[How to Flash the Master Board (install esp-idf and flash the firmware)](firmware/README.md)
 
-[SDK : How to prepare your interface and run the example](sdk/master_board_sdk/README.md )
+[SDK : How to Prepare Your Interface and Run the Example](sdk/master_board_sdk/README.md)
 
 [Master Board State Machine Description](documentation/masterboard_state_machine.md)
 
-[Description of the communication between the Master Board and the computer](documentation/masterboard_communication.md)
+[Description of the Communication Between the Master Board and the Computer](documentation/masterboard_communication.md)
 
-[Description of the BLMC µDriver SPI interface](documentation/BLMC_%C2%B5Driver_SPI_interface.md)
+[Description of the BLMC µDriver SPI Interface](documentation/BLMC_%C2%B5Driver_SPI_interface.md)
 
-[Wiring the MasterBoard](documentation/masterboard_wiring.md)
+[Wiring the Master Board](documentation/masterboard_wiring.md)
 
 [Master Board Ordering and Preparation](documentation/masterboard_ordering_soldering.md)
 

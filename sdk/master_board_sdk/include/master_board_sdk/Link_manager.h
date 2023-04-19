@@ -3,6 +3,9 @@
 
 #include <string>
 #include <thread>
+#ifdef __APPLE__
+#include <net/ndrv.h>
+#endif
 
 #include "master_board_sdk/Link_types.h"
 
@@ -56,6 +59,9 @@ protected:
 	pthread_t recv_thd_id;
 	struct thread_args recv_thread_params;
 	static void *sock_recv_thread(void *p_arg);
+#ifdef __APPLE__
+        struct sockaddr_ndrv sa_ndrv;
+#endif
 };
 
 #endif
