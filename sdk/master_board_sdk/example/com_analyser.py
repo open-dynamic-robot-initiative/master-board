@@ -1,18 +1,31 @@
 # coding: utf8
 
 import argparse
-import math
 import os
 import sys
 import time
-from time import clock
+import subprocess
+try:
+  from time import process_time
+except(ImportError):
+  from time import clock as process_time
 
 import libmaster_board_sdk_pywrap as mbs
 import matplotlib.pyplot as plt
 from matplotlib.offsetbox import AnchoredText
 import numpy as np
-import platform
-import subprocess
+
+linux_distribution = None
+if not linux_distribution:
+    try:
+        from platform import linux_distribution
+    except(ImportError):
+        pass
+if not linux_distribution:
+    try:
+        from distro import linux_distribution
+    except(ImportError):
+        pass
 
 
 def example_script(name_interface):
@@ -59,12 +72,12 @@ def example_script(name_interface):
         robot_if.GetDriver(i).SetTimeout(5)
         robot_if.GetDriver(i).Enable()
 
-    last = clock()
+    last = process_time()
     prev_time = 0
 
     while (not robot_if.IsTimeout() and not robot_if.IsAckMsgReceived()):
-        if ((clock() - last) > dt):
-            last = clock()
+        if ((process_time() - last) > dt):
+            last = process_time()
             robot_if.SendInit()
 
     if robot_if.IsTimeout():
@@ -84,7 +97,7 @@ def example_script(name_interface):
     last_cmd_packet_index = first_cmd_index
 
     while ((not robot_if.IsTimeout())
-           and (clock() < duration)):  # Stop after 15 seconds (around 5 seconds are used at the start for calibration)
+           and (process_time() < duration)):  # Stop after 15 seconds (around 5 seconds are used at the start for calibration)
 
         if (robot_if.GetLastRecvCmdIndex() > robot_if.GetCmdPacketIndex()):
             last_recv_cmd_index = (overflow_cmd_cpt-1) * 65536 + robot_if.GetLastRecvCmdIndex()
@@ -92,9 +105,9 @@ def example_script(name_interface):
             last_recv_cmd_index = overflow_cmd_cpt * 65536 + robot_if.GetLastRecvCmdIndex()
 
         if (last_recv_cmd_index >= first_cmd_index and received_list[last_recv_cmd_index-first_cmd_index] == 0):
-                received_list[last_recv_cmd_index-first_cmd_index] = clock()
+                received_list[last_recv_cmd_index-first_cmd_index] = process_time()
         
-        if ((clock() - last) > dt):
+        if ((process_time() - last) > dt):
             last += dt
             cpt += 1
 
@@ -131,9 +144,9 @@ def example_script(name_interface):
                 sensor_lost_list.append(robot_if.GetSensorsLost())
                 cmd_ratio_list.append(100.*robot_if.GetCmdLost()/robot_if.GetCmdSent())
                 sensor_ratio_list.append(100.*robot_if.GetSensorsLost()/robot_if.GetSensorsSent())
-                time_list.append(clock())
+                time_list.append(process_time())
 
-            current_time = clock()
+            current_time = process_time()
 
             diff = robot_if.GetCmdPacketIndex() - last_cmd_packet_index
             if diff < 0:
@@ -293,7 +306,10 @@ def example_script(name_interface):
     # creation of the text file with system info
     text_file = open("../graphs/" + dir_name + '/' + dir_name + "-system-info.txt", 'w')
     text_file.write("Current date and time: " + time.strftime("%c") + '\n')
-    text_file.write("Linux distribution: " + platform.linux_distribution()[0] + ' ' + platform.linux_distribution()[1] + ' ' + platform.linux_distribution()[2] + '\n')
+    if(linux_distribution):
+        text_file.write("Linux distribution: " + linux_distribution()[0] + ' ' + linux_distribution()[1] + ' ' + linux_distribution()[2] + '\n')
+    else:
+        text_file.write("Linux distribution: ? (`plateform` or `distro` module necessary for logging this info)\n")
     text_file.write("Computer: " + os.uname()[1] + '\n')
     text_file.write("Interface: " + name_interface + '\n')
     if (name_interface[0] == 'w'):
