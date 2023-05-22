@@ -4,7 +4,11 @@ import argparse
 import math
 import os
 import sys
-from time import perf_counter
+try:
+    from time import perf_counter
+except ImportError:
+    # You are still in python2… pleas upgrade :)
+    from time import clock as perf_counter
 
 import libmaster_board_sdk_pywrap as mbs
 
