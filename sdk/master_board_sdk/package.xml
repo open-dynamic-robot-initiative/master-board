@@ -1,3 +1,4 @@
+
 <?xml version="1.0"?>
 <package format="2">
     <name>master_board_sdk</name>
@@ -10,8 +11,6 @@
     <license>BSD 3-Clause</license>
   
     <buildtool_depend>cmake</buildtool_depend>
-
-    <depend></depend>
 
     <export></export>
 </package>
