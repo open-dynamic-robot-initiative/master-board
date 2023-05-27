@@ -32,12 +32,15 @@ option(PYTHON_STANDARD_LAYOUT "Enable standard Python package layout" ON)
 option(PYTHON_DEB_LAYOUT "Enable Debian-style Python package layout" OFF)
 
 include(cmake/base.cmake)
-include(cmake/boost.cmake)
-include(cmake/python.cmake)
-include(cmake/ide.cmake)
 
 compute_project_args(PROJECT_ARGS LANGUAGES CXX)
 project(${PROJECT_NAME} ${PROJECT_ARGS})
+
+include(cmake/boost.cmake)
+include(cmake/python.cmake)
+include(cmake/ide.cmake)
+include(cmake/apple.cmake)
+
 check_minimal_cxx_standard(11 ENFORCE)
 
 # ----------------------------------------------------
@@ -46,8 +49,12 @@ check_minimal_cxx_standard(11 ENFORCE)
 
 # Set component to fetch from boost Get the python interface for the bindings
 if(BUILD_PYTHON_INTERFACE)
+  set(PYTHON_COMPONENTS Interpreter Development.Module NumPy)
+  set(PYTHON_EXPORT_DEPENDENCY ON)
+
   findpython(REQUIRED)
   search_for_boost_python(REQUIRED)
+   
 endif(BUILD_PYTHON_INTERFACE)
 
 # ----------------------------------------------------
