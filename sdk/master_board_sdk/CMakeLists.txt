@@ -39,9 +39,6 @@ if(BUILD_PYTHON_INTERFACE)
   if(NOT Python_FOUND)
      message(FATAL_ERROR "Python executable has not been found.")
   endif(NOT Python_FOUND)
-
-  findpython(REQUIRED)
-  search_for_boost_python(REQUIRED)
    
 endif(BUILD_PYTHON_INTERFACE)
 
@@ -56,6 +53,11 @@ include(cmake/boost.cmake)
 include(cmake/python.cmake)
 include(cmake/ide.cmake)
 include(cmake/apple.cmake)
+
+if(BUILD_PYTHON_INTERFACE)
+  findpython(REQUIRED)
+  search_for_boost_python(REQUIRED)
+endif(BUILD_PYTHON_INTERFACE)
 
 check_minimal_cxx_standard(11 ENFORCE)
 
