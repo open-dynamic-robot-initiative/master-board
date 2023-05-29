@@ -33,8 +33,8 @@ option(PYTHON_DEB_LAYOUT "Enable Debian-style Python package layout" OFF)
 
 # Set component to fetch from boost Get the python interface for the bindings
 if(BUILD_PYTHON_INTERFACE)
-  set(PYTHON_COMPONENTS Interpreter Development)
-  find_package(Python COMPONENTS ${PYTHON_COMPONENTS})
+  #set(PYTHON_COMPONENTS Interpreter Development)
+  find_package(Python )
   set(PYTHON_EXPORT_DEPENDENCY ON)
   if(NOT Python_FOUND)
      message(FATAL_ERROR "Python executable has not been found.")
