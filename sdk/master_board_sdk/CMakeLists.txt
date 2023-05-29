@@ -36,17 +36,6 @@ include(cmake/base.cmake)
 compute_project_args(PROJECT_ARGS LANGUAGES CXX)
 project(${PROJECT_NAME} ${PROJECT_ARGS})
 
-include(cmake/boost.cmake)
-include(cmake/python.cmake)
-include(cmake/ide.cmake)
-include(cmake/apple.cmake)
-
-check_minimal_cxx_standard(11 ENFORCE)
-
-# ----------------------------------------------------
-# --- DEPENDENCIES -----------------------------------
-# ----------------------------------------------------
-
 # Set component to fetch from boost Get the python interface for the bindings
 if(BUILD_PYTHON_INTERFACE)
   set(PYTHON_COMPONENTS Interpreter Development)
@@ -60,6 +49,18 @@ if(BUILD_PYTHON_INTERFACE)
   search_for_boost_python(REQUIRED)
    
 endif(BUILD_PYTHON_INTERFACE)
+
+
+include(cmake/boost.cmake)
+include(cmake/python.cmake)
+include(cmake/ide.cmake)
+include(cmake/apple.cmake)
+
+check_minimal_cxx_standard(11 ENFORCE)
+
+# ----------------------------------------------------
+# --- DEPENDENCIES -----------------------------------
+# ----------------------------------------------------
 
 # ----------------------------------------------------
 # --- INCLUDE ----------------------------------------
