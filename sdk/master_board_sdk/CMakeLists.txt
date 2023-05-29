@@ -49,7 +49,12 @@ check_minimal_cxx_standard(11 ENFORCE)
 
 # Set component to fetch from boost Get the python interface for the bindings
 if(BUILD_PYTHON_INTERFACE)
+  set(PYTHON_COMPONENTS Interpreter Development)
+  find_package(Python COMPONENTS ${PYTHON_COMPONENTS})
   set(PYTHON_EXPORT_DEPENDENCY ON)
+  if(NOT Python_FOUND)
+     message(FATAL_ERROR "Python executable has not been found.")
+  endif(NOT Python_FOUND)
 
   findpython(REQUIRED)
   search_for_boost_python(REQUIRED)
