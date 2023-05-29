@@ -31,11 +31,6 @@ option(BUILD_PYTHON_INTERFACE "Build the python binding" ON)
 option(PYTHON_STANDARD_LAYOUT "Enable standard Python package layout" ON)
 option(PYTHON_DEB_LAYOUT "Enable Debian-style Python package layout" OFF)
 
-include(cmake/base.cmake)
-
-compute_project_args(PROJECT_ARGS LANGUAGES CXX)
-project(${PROJECT_NAME} ${PROJECT_ARGS})
-
 # Set component to fetch from boost Get the python interface for the bindings
 if(BUILD_PYTHON_INTERFACE)
   set(PYTHON_COMPONENTS Interpreter Development)
@@ -49,6 +44,12 @@ if(BUILD_PYTHON_INTERFACE)
   search_for_boost_python(REQUIRED)
    
 endif(BUILD_PYTHON_INTERFACE)
+
+
+include(cmake/base.cmake)
+
+compute_project_args(PROJECT_ARGS LANGUAGES CXX)
+project(${PROJECT_NAME} ${PROJECT_ARGS})
 
 
 include(cmake/boost.cmake)
