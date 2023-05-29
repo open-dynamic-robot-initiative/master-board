@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<package format="2">
+<package format="3">
     <name>master_board_sdk</name>
     <version>1.0.5</version>
     <description>
@@ -8,8 +8,15 @@
     </description>
     <maintainer email="mnaveau@tue.mpg.de">Maximilien Naveau</maintainer>
     <license>BSD 3-Clause</license>
-  
+
     <buildtool_depend>cmake</buildtool_depend>
 
+    <depend condition="$ROS_PYTHON_VERSION == 2">python</depend>
+    <depend condition="$ROS_PYTHON_VERSION == 3">python3</depend>
+    <depend condition="$ROS_PYTHON_VERSION == 2">python-numpy</depend>
+    <depend condition="$ROS_PYTHON_VERSION == 3">python3-numpy</depend>
+    <depend condition="$ROS_PYTHON_VERSION == 3">libboost-python-dev</depend>
+
+    <depend>git</depend>
     <export></export>
 </package>
