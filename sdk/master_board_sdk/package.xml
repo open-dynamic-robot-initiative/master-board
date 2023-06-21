@@ -18,5 +18,7 @@
     <depend condition="$ROS_PYTHON_VERSION == 3">libboost-python-dev</depend>
 
     <depend>git</depend>
-    <export></export>
+    <export>
+      <build_type>ament_cmake</build_type>
+    </export>
 </package>
