@@ -2,7 +2,7 @@
 # Copyright (c) 2019 CNRS
 #
 
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.10)
 
 # ----------------------------------------------------
 # --- CXX FLAGS --------------------------------------
@@ -27,6 +27,11 @@ if(APPLE)
       CACHE BOOL "Build the python binding")
 endif()
 
+# --- DETECTING ROS 1 and 2 ---
+if(DEFINED ENV{ROS_VERSION})
+  set(ROS_VERSION $ENV{ROS_VERSION})
+endif()
+
 option(BUILD_PYTHON_INTERFACE "Build the python binding" ON)
 option(PYTHON_STANDARD_LAYOUT "Enable standard Python package layout" ON)
 option(PYTHON_DEB_LAYOUT "Enable Debian-style Python package layout" OFF)
@@ -43,6 +48,10 @@ check_minimal_cxx_standard(11 ENFORCE)
 # ----------------------------------------------------
 # --- DEPENDENCIES -----------------------------------
 # ----------------------------------------------------
+
+if(ROS_VERSION EQUAL 2)
+  add_project_dependency(ament_cmake REQUIRED)
+endif()
 
 # Set component to fetch from boost Get the python interface for the bindings
 if(BUILD_PYTHON_INTERFACE)
@@ -131,4 +140,9 @@ if(BUILD_TESTING)
   endif()
   add_unit_test(test_protocol tests/test_protocol.cpp)
   target_link_libraries(test_protocol PRIVATE Catch2::Catch2WithMain)
+endif()
+
+# --- Call ROS-2 if possible ---
+if(ROS_VERSION EQUAL 2)
+  ament_package()
 endif()
