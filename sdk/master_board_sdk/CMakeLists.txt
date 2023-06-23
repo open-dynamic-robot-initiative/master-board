@@ -76,7 +76,7 @@ install(
 install(DIRECTORY include/ DESTINATION include)
 
 install(FILES package.xml
-  DESTINATION ${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME})
+  DESTINATION share/${PROJECT_NAME})
 # --- BINDINGS -----------------------------------------------------------------
 
 if(BUILD_PYTHON_INTERFACE)
