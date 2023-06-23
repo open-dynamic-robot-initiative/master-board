@@ -27,10 +27,6 @@ if(APPLE)
       CACHE BOOL "Build the python binding")
 endif()
 
-# --- DETECTING ROS 1 and 2 ---
-if(DEFINED ENV{ROS_VERSION})
-  set(ROS_VERSION $ENV{ROS_VERSION})
-endif()
 
 option(BUILD_PYTHON_INTERFACE "Build the python binding" ON)
 option(PYTHON_STANDARD_LAYOUT "Enable standard Python package layout" ON)
@@ -49,9 +45,6 @@ check_minimal_cxx_standard(11 ENFORCE)
 # --- DEPENDENCIES -----------------------------------
 # ----------------------------------------------------
 
-if(ROS_VERSION EQUAL 2)
-  add_project_dependency(ament_cmake REQUIRED)
-endif()
 
 # Set component to fetch from boost Get the python interface for the bindings
 if(BUILD_PYTHON_INTERFACE)
@@ -143,6 +136,26 @@ if(BUILD_TESTING)
 endif()
 
 # --- Call ROS-2 if possible ---
-if(ROS_VERSION EQUAL 2)
-  ament_package()
-endif()
+# Allows Colcon to find non-Ament packages when using workspace underlays
+file(
+  WRITE
+  ${CMAKE_CURRENT_BINARY_DIR}/share/ament_index/resource_index/packages/${PROJECT_NAME}
+  "")
+install(
+  FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/share/ament_index/resource_index/packages/${PROJECT_NAME}
+  DESTINATION share/ament_index/resource_index/packages)
+file(
+  WRITE
+  ${CMAKE_CURRENT_BINARY_DIR}/share/${PROJECT_NAME}/hook/ament_prefix_path.dsv
+  "prepend-non-duplicate;AMENT_PREFIX_PATH;")
+install(
+  FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/share/${PROJECT_NAME}/hook/ament_prefix_path.dsv
+  DESTINATION share/${PROJECT_NAME}/hook)
+file(WRITE
+     ${CMAKE_CURRENT_BINARY_DIR}/share/${PROJECT_NAME}/hook/python_path.dsv
+     "prepend-non-duplicate;PYTHONPATH;${PYTHON_SITELIB}")
+install(
+  FILES ${CMAKE_CURRENT_BINARY_DIR}/share/${PROJECT_NAME}/hook/python_path.dsv
+  DESTINATION share/${PROJECT_NAME}/hook)
