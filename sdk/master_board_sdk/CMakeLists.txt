@@ -2,7 +2,7 @@
 # Copyright (c) 2019 CNRS
 #
 
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.10)
 
 # ----------------------------------------------------
 # --- CXX FLAGS --------------------------------------
@@ -27,6 +27,7 @@ if(APPLE)
       CACHE BOOL "Build the python binding")
 endif()
 
+
 option(BUILD_PYTHON_INTERFACE "Build the python binding" ON)
 option(PYTHON_STANDARD_LAYOUT "Enable standard Python package layout" ON)
 option(PYTHON_DEB_LAYOUT "Enable Debian-style Python package layout" OFF)
@@ -43,6 +44,7 @@ check_minimal_cxx_standard(11 ENFORCE)
 # ----------------------------------------------------
 # --- DEPENDENCIES -----------------------------------
 # ----------------------------------------------------
+
 
 # Set component to fetch from boost Get the python interface for the bindings
 if(BUILD_PYTHON_INTERFACE)
@@ -73,6 +75,8 @@ install(
   DESTINATION lib)
 install(DIRECTORY include/ DESTINATION include)
 
+install(FILES package.xml
+  DESTINATION share/${PROJECT_NAME})
 # --- BINDINGS -----------------------------------------------------------------
 
 if(BUILD_PYTHON_INTERFACE)
@@ -130,3 +134,27 @@ if(BUILD_TESTING)
   add_unit_test(test_protocol tests/test_protocol.cpp)
   target_link_libraries(test_protocol PRIVATE Catch2::Catch2WithMain)
 endif()
+
+# Allows Colcon to find non-Ament packages when using workspace underlays
+file(
+  WRITE
+  ${CMAKE_CURRENT_BINARY_DIR}/share/ament_index/resource_index/packages/${PROJECT_NAME}
+  "")
+install(
+  FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/share/ament_index/resource_index/packages/${PROJECT_NAME}
+  DESTINATION share/ament_index/resource_index/packages)
+file(
+  WRITE
+  ${CMAKE_CURRENT_BINARY_DIR}/share/${PROJECT_NAME}/hook/ament_prefix_path.dsv
+  "prepend-non-duplicate;AMENT_PREFIX_PATH;")
+install(
+  FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/share/${PROJECT_NAME}/hook/ament_prefix_path.dsv
+  DESTINATION share/${PROJECT_NAME}/hook)
+file(WRITE
+     ${CMAKE_CURRENT_BINARY_DIR}/share/${PROJECT_NAME}/hook/python_path.dsv
+     "prepend-non-duplicate;PYTHONPATH;${PYTHON_SITELIB}")
+install(
+  FILES ${CMAKE_CURRENT_BINARY_DIR}/share/${PROJECT_NAME}/hook/python_path.dsv
+  DESTINATION share/${PROJECT_NAME}/hook)
