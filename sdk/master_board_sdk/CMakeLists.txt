@@ -135,7 +135,6 @@ if(BUILD_TESTING)
   target_link_libraries(test_protocol PRIVATE Catch2::Catch2WithMain)
 endif()
 
-# --- Call ROS-2 if possible ---
 # Allows Colcon to find non-Ament packages when using workspace underlays
 file(
   WRITE
