@@ -118,6 +118,7 @@ def example_script(name_interface):
                 # To read IMU data in Python use robot_if.imu_data_accelerometer(i), robot_if.imu_data_gyroscope(i)
                 # or robot_if.imu_data_attitude(i) with i = 0, 1 or 2
                 robot_if.PrintIMU()
+                robot_if.PrintPowerBoard()
                 robot_if.PrintADC()
                 robot_if.PrintMotors()
                 robot_if.PrintMotorDrivers()
