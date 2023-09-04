@@ -23,7 +23,7 @@ void Motor::SetDriver(MotorDriver *driver)
   this->driver = driver;
 }
 
-void Motor::Print()
+void Motor::Print() const
 {
   printf("%7d | ", is_enabled);
   printf("%5d | ", is_ready);
@@ -80,42 +80,42 @@ void Motor::SetSaturationCurrent(double val)
   current_sat = val;
 }
 
-bool Motor::IsReady()
+bool Motor::IsReady() const
 {
   return is_ready;
 }
 
-bool Motor::IsEnabled()
+bool Motor::IsEnabled() const
 {
   return is_enabled;
 }
 
-bool Motor::HasIndexBeenDetected()
+bool Motor::HasIndexBeenDetected() const
 {
   return has_index_been_detected;
 }
 
-bool Motor::GetIndexToggleBit()
+bool Motor::GetIndexToggleBit() const
 {
   return index_toggle_bit;
 }
 
-double Motor::GetPosition()
+double Motor::GetPosition() const
 {
   return position;
 }
 
-double Motor::GetPositionOffset()
+double Motor::GetPositionOffset() const
 {
   return position_offset;
 }
 
-double Motor::GetVelocity()
+double Motor::GetVelocity() const
 {
   return velocity;
 }
 
-double Motor::GetCurrent()
+double Motor::GetCurrent() const
 {
   return current;
 }
