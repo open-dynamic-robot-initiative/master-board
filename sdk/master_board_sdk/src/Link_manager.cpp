@@ -232,11 +232,13 @@ int LINK_manager::send(uint8_t *payload, int len)
 	//Not the most fastest way to do this :
 	//	copy the payload in the packet array and then copy it back into the buffer...
 	this->mypacket->set_payload_len(len);
-	memcpy(this->mypacket->get_payload_ptr(), payload, len);
+	memcpy(this->mypacket->get_payload_ptr(), payload,
+               static_cast<size_t>(len));
 
 	int raw_len = mypacket->toBytes(raw_bytes, LEN_RAWBYTES_MAX);
 
-	return static_cast<int>(sendto(this->sock_fd, raw_bytes, raw_len, 0,
+	return static_cast<int>(sendto(this->sock_fd, raw_bytes,
+                                       static_cast<size_t>(raw_len), 0,
 #ifdef __APPLE__
                                        (struct sockaddr *)&sa_ndrv,
                                        sizeof(sa_ndrv))
@@ -252,7 +254,8 @@ int LINK_manager::send()
 
 	int raw_len = mypacket->toBytes(raw_bytes, LEN_RAWBYTES_MAX);
 
-	return static_cast<int>(sendto(this->sock_fd, raw_bytes, raw_len, 0,
+	return static_cast<int>(sendto(this->sock_fd, raw_bytes,
+                                       static_cast<size_t>(raw_len), 0,
 #ifdef __APPLE__
                                        (struct sockaddr *)&sa_ndrv, sizeof(sa_ndrv))
 #else
