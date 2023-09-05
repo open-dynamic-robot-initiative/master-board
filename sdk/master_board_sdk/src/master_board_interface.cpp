@@ -260,7 +260,7 @@ void MasterBoardInterface::callback(uint8_t /*src_mac*/[6], uint8_t *data, int l
           << " while board expects "
           << p_ack_packet->protocol_version
           << ")";
-      printf("%s\n", err_msg.str());
+      printf("%s\n", err_msg.str().c_str());
       throw std::runtime_error( err_msg.str());
       return;
     }
