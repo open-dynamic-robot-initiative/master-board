@@ -13,16 +13,17 @@ void ETHERNET_packet::set_dst_mac(uint8_t dst_mac[6]) {
 	memcpy(this->data.dst_mac, dst_mac, sizeof(uint8_t)*6);
 }
 
-int ETHERNET_packet::toBytes(uint8_t *bytes, int max_len) {	
+int ETHERNET_packet::toBytes(uint8_t *bytes, int max_len) {
 	int correct_len = static_cast<int>(sizeof(ETHERNET_data)) + this->data.length - 0xff;
 	int padded_len = max(correct_len, ETH_SEND_SIZE_MIN);
-	
-	assert(padded_len <= max_len); 
 
-	memcpy(bytes, &(this->data), correct_len);	
-	
+	assert(padded_len <= max_len);
+
+	memcpy(bytes, &(this->data), static_cast<size_t>(correct_len));
+
 	if(padded_len > correct_len) {
-		memset(bytes + correct_len, 0, padded_len - correct_len);
+		memset(bytes + correct_len, 0,
+                       static_cast<size_t>(padded_len - correct_len));
 	}
 
 	return padded_len;
@@ -54,6 +55,6 @@ int ETHERNET_packet::get_payload_len_FromRaw(uint8_t *raw_bytes, int len) {
 
 uint8_t* ETHERNET_packet::get_payload_FromRaw(uint8_t *raw_bytes, int len) {
 	if(len < ETH_RECV_SIZE_MIN + 1) return NULL;
-	
+
 	return ((ETHERNET_data *) raw_bytes)->payload;
 }

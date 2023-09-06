@@ -202,12 +202,12 @@ int MasterBoardInterface::SendCommand()
     command_packet.dual_motor_driver_command_packets[i].velocity_ref[1] = FLOAT_TO_D16QN(motor_drivers[i].motor2->velocity_ref * 60. / (2. * M_PI * 1000.), UD_QN_VEL);
     command_packet.dual_motor_driver_command_packets[i].current_ref[0] = FLOAT_TO_D16QN(motor_drivers[i].motor1->current_ref, UD_QN_IQ);
     command_packet.dual_motor_driver_command_packets[i].current_ref[1] = FLOAT_TO_D16QN(motor_drivers[i].motor2->current_ref, UD_QN_IQ);
-    command_packet.dual_motor_driver_command_packets[i].kp[0] = FLOAT_TO_uD16QN(2. * M_PI * motor_drivers[i].motor1->kp, UD_QN_KP);
-    command_packet.dual_motor_driver_command_packets[i].kp[1] = FLOAT_TO_uD16QN(2. * M_PI * motor_drivers[i].motor2->kp, UD_QN_KP);
-    command_packet.dual_motor_driver_command_packets[i].kd[0] = FLOAT_TO_uD16QN(((2. * M_PI * 1000.)/60.0) * motor_drivers[i].motor1->kd, UD_QN_KD);
-    command_packet.dual_motor_driver_command_packets[i].kd[1] = FLOAT_TO_uD16QN(((2. * M_PI * 1000.)/60.0) * motor_drivers[i].motor2->kd, UD_QN_KD);
-    command_packet.dual_motor_driver_command_packets[i].i_sat[0] = FLOAT_TO_uD8QN(motor_drivers[i].motor1->current_sat, UD_QN_ISAT);
-    command_packet.dual_motor_driver_command_packets[i].i_sat[1] = FLOAT_TO_uD8QN(motor_drivers[i].motor2->current_sat, UD_QN_ISAT);
+    command_packet.dual_motor_driver_command_packets[i].kp[0] = FLOAT_TO_D16QN(2. * M_PI * motor_drivers[i].motor1->kp, UD_QN_KP);
+    command_packet.dual_motor_driver_command_packets[i].kp[1] = FLOAT_TO_D16QN(2. * M_PI * motor_drivers[i].motor2->kp, UD_QN_KP);
+    command_packet.dual_motor_driver_command_packets[i].kd[0] = FLOAT_TO_D16QN(((2. * M_PI * 1000.)/60.0) * motor_drivers[i].motor1->kd, UD_QN_KD);
+    command_packet.dual_motor_driver_command_packets[i].kd[1] = FLOAT_TO_D16QN(((2. * M_PI * 1000.)/60.0) * motor_drivers[i].motor2->kd, UD_QN_KD);
+    command_packet.dual_motor_driver_command_packets[i].i_sat[0] = FLOAT_TO_D8QN(motor_drivers[i].motor1->current_sat, UD_QN_ISAT);
+    command_packet.dual_motor_driver_command_packets[i].i_sat[1] = FLOAT_TO_D8QN(motor_drivers[i].motor2->current_sat, UD_QN_ISAT);
   }
 
   // Current time point
@@ -260,7 +260,7 @@ void MasterBoardInterface::callback(uint8_t /*src_mac*/[6], uint8_t *data, int l
           << " while board expects "
           << p_ack_packet->protocol_version
           << ")";
-      printf("%s\n", err_msg.str());
+      printf("%s\n", err_msg.str().c_str());
       throw std::runtime_error( err_msg.str());
       return;
     }
