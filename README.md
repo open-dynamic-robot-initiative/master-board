@@ -53,7 +53,7 @@ Etienne Arlaud
 
 License
 -------
-BSD 3-Clause License
+BSD 2-Clause License
 
 Copyright
 -----------

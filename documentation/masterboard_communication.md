@@ -16,20 +16,14 @@ On the 4 pairs of wires, only 2 are used by the ethernet 100Mbps and cables are 
 
 It is possible to make the ethernet cables lighter by using only 2 twisted pairs of wire. The wires can be attached to the power cables without any issues of packet loss.
 
-For reference, here is the wiring:
-
 On a Straight cable, keep the orange wires (1,2) and green wires (3,6).
-
-Do not untwist the wires!
-
-![straight-through-cable](https://www.fs.com/images/ckfinder/ftp_images/tutorial/straight-through-cable.png)
-
+Do not untwist the wires.
 
 WiFi
 ----
 The WiFi connection is also happening at the lowest level of the 802.11 specification, using vendor specific action frame. No base station or rooter are needed. No identification is needed.
 
-Ideally a free channel should be used, with a minimum of 2.4Ghz devices surrounding. TODO setup a procedure to change the master board channel, currently hard-coded in the firmware.
+Ideally a free channel should be used, with a minimum of 2.4Ghz devices surrounding. The master board will automaticaly detect the chanel used at startup.
 
 The interface on the PC needs to support monitor mode and injection. ASUS PCE-AC51 has been tested with a RT Preempt patched OS.
 
@@ -55,6 +49,8 @@ Protocol version | Session ID |
 
 **Session ID** : Give a unique id to this session between the computer and the masterboard (set by the interface).
 
+The **SPI connected** field contains an 8 bit integer, each bit of which tells whether or not the corresponding SPI slave is connected (Least significant bit: SPI0, most significant bit: SPI7).
+
 ### Ack packet (5 Bytes)
 Protocol version | Session ID | SPI connected
 --- | --- | --- 
@@ -66,14 +62,17 @@ Protocol version | Session ID | SPI connected
 
 **SPI connected** : This field contains an 8 bit integer, each bit of which tells whether or not the corresponding SPI slave is connected (Least significant bit: SPI0, most significant bit: SPI7).
 
+### Packets
 Both **Command** and **Sensor** packets encapsulate 6 BLMC µDriver SPI interface packets,  without the **Index** and **CRC** fields. Additional, sensor packets also include IMU measurement and AHRS estimation.
 
-### Sensor packet (200 Bytes)
-Session ID | µDriver0 | µDriver1 | µDriver2 | µDriver3 | µDriver4 | µDriver5 | IMU | Sensor Index | Packet Loss | Last Command Index
---- | --- | --- | --- | --- | --- | --- | --- | --- | --- | ---
-2 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 24 Bytes | 2 Bytes | 2 Bytes | 2 Bytes
+### Sensor packet (212 Bytes)
+Session ID | µDriver0 | µDriver1 | µDriver2 | µDriver3 | µDriver4 | µDriver5 | IMU | Power Board |Sensor Index | Packet Loss | Last Command Index
+--- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | ---
+2 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 28 Bytes | 24 Bytes | 12 Bytes | 2 Bytes | 2 Bytes | 2 Bytes
  
 **µDriverX** corresponds to a BLMC µDriver SPI interface sensor packet without the CRC and index fields.
+
+**Power Board** correspond the powerboard measurment data composed of bus current, voltage and energy.
 
 **IMU** is composed of Accelerometer, Gyroscope, AHRS, and estimation of Linear Acceleration (without gravity) data:
 

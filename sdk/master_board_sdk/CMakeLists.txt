@@ -109,10 +109,14 @@ endif(BUILD_PYTHON_INTERFACE)
 # --- CHECK EXAMPLES -----------------------------------------------------------
 add_executable(master_board_example example/example.cpp)
 target_link_libraries(master_board_example ${PROJECT_NAME})
+set_target_properties(master_board_example PROPERTIES
+  INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 install(TARGETS master_board_example DESTINATION bin)
 
 add_executable(master_board_example_pd example/example_pd.cpp)
 target_link_libraries(master_board_example_pd ${PROJECT_NAME})
+set_target_properties(master_board_example_pd PROPERTIES
+  INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 install(TARGETS master_board_example_pd DESTINATION bin)
 
 add_executable(master_board_example_imu_data_collection

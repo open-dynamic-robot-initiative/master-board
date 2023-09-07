@@ -30,6 +30,7 @@ public:
 	void ParseSensorData();								 //Parse and convert the latest received sensor data. User need to call this before reading any field.
 	
 	void PrintIMU();											 //Print IMU data on stdout. Usefull for debug.
+    void PrintPowerBoard();
 	void PrintADC();											 //Print ACD data on stdout. Usefull for debug.
 	void PrintMotors();										 //Print motors data on stdout. Usefull for debug.
 	void PrintMotorDrivers();							 //Print motor drivers data on stdout. Usefull for debug.  void PrintMotors(); //Print Motors data on stdout. Usefull for debug.
@@ -68,6 +69,7 @@ private:
 	struct sensor_packet_t sensor_packet;
 	struct dual_motor_driver_sensor_data_t dual_motor_driver_sensor_data[N_SLAVES];
 	struct imu_data_t imu_data;
+    struct powerboard_data_t powerboard_data;
 
 	bool first_sensor_received = false;
 
@@ -134,6 +136,9 @@ public:
 	float imu_data_gyroscope(int i) { return (this->imu_data.gyroscope[i]); };
 	float imu_data_attitude(int i) { return (this->imu_data.attitude[i]); };
 	float imu_data_linear_acceleration(int i) { return (this->imu_data.linear_acceleration[i]); };
+	float powerboard_current() { return powerboard_data.current_bus; };
+	float powerboard_voltage() { return powerboard_data.voltage_bus; };
+	float powerboard_energy() { return powerboard_data.energy_bus; };
 	imu_data_t get_imu_data() const { return imu_data; }
 
 };
