@@ -2,65 +2,70 @@
 # Copyright (c) 2019 CNRS
 #
 
-CMAKE_MINIMUM_REQUIRED(VERSION 3.1)
+cmake_minimum_required(VERSION 3.10)
 
 # ----------------------------------------------------
 # --- CXX FLAGS --------------------------------------
 # ----------------------------------------------------
 
-SET(CXX_DISABLE_WERROR True)
-SET(CMAKE_VERBOSE_MAKEFILE True)
+set(CXX_DISABLE_WERROR True)
+set(CMAKE_VERBOSE_MAKEFILE True)
 
 # These variables have to be defined before running SETUP_PROJECT
-SET(PROJECT_NAME master_board_sdk)
-SET(PROJECT_DESCRIPTION "This project contains the sdk for the communication between a computer and the master-board")
-SET(PROJECT_URL https://github.com/open-dynamic-robot-initiative/master-board)
+set(PROJECT_NAME master_board_sdk)
+set(PROJECT_DESCRIPTION
+    "This project contains the sdk for the communication between a computer and the master-board"
+)
+set(PROJECT_URL https://github.com/open-dynamic-robot-initiative/master-board)
 set(PROJECT_USE_CMAKE_EXPORT TRUE)
-SET(PROJECT_VERSION_COMPUTATION_METHODS ROS_PACKAGE_XML_FILE)
+set(PROJECT_VERSION_COMPUTATION_METHODS ROS_PACKAGE_XML_FILE)
 
 # --- OPTIONS ----------------------------------------
-OPTION(BUILD_PYTHON_INTERFACE "Build the python binding" ON)
-OPTION(PYTHON_STANDARD_LAYOUT "Enable standard Python package layout" ON)
-OPTION(PYTHON_DEB_LAYOUT "Enable Debian-style Python package layout" OFF)
+if(APPLE)
+  set(BUILD_PYTHON_INTERFACE
+      OFF
+      CACHE BOOL "Build the python binding")
+endif()
 
-INCLUDE(cmake/base.cmake)
-INCLUDE(cmake/boost.cmake)
-INCLUDE(cmake/python.cmake)
-INCLUDE(cmake/ide.cmake)
 
-COMPUTE_PROJECT_ARGS(PROJECT_ARGS LANGUAGES CXX)
-PROJECT(${PROJECT_NAME} ${PROJECT_ARGS})
-CHECK_MINIMAL_CXX_STANDARD(11 ENFORCE)
+option(BUILD_PYTHON_INTERFACE "Build the python binding" ON)
+option(PYTHON_STANDARD_LAYOUT "Enable standard Python package layout" ON)
+option(PYTHON_DEB_LAYOUT "Enable Debian-style Python package layout" OFF)
+
+include(cmake/base.cmake)
+include(cmake/boost.cmake)
+include(cmake/python.cmake)
+include(cmake/ide.cmake)
+
+compute_project_args(PROJECT_ARGS LANGUAGES CXX)
+project(${PROJECT_NAME} ${PROJECT_ARGS})
+check_minimal_cxx_standard(11 ENFORCE)
 
 # ----------------------------------------------------
 # --- DEPENDENCIES -----------------------------------
 # ----------------------------------------------------
 
-# Set component to fetch from boost
-# Get the python interface for the bindings
-IF(BUILD_PYTHON_INTERFACE)
-  FINDPYTHON(REQUIRED)
-  SEARCH_FOR_BOOST_PYTHON(REQUIRED)
-ENDIF(BUILD_PYTHON_INTERFACE)
+
+# Set component to fetch from boost Get the python interface for the bindings
+if(BUILD_PYTHON_INTERFACE)
+  findpython(REQUIRED)
+  search_for_boost_python(REQUIRED)
+endif(BUILD_PYTHON_INTERFACE)
 
 # ----------------------------------------------------
 # --- INCLUDE ----------------------------------------
 # ----------------------------------------------------
 
 # --- MAIN LIBRARY -------------------------------------------------------------
-SET(MASTER_BOARD_SRC
-    src/ESPNOW_manager.cpp
-    src/ESPNOW_types.cpp
-    src/ETHERNET_types.cpp
-    src/Link_manager.cpp
-    src/master_board_interface.cpp
-    src/motor.cpp
-    src/motor_driver.cpp
-)
-ADD_LIBRARY(${PROJECT_NAME} SHARED
-  ${MASTER_BOARD_SRC}
-)
-TARGET_LINK_LIBRARIES(${PROJECT_NAME} pthread)
+set(MASTER_BOARD_SRC
+    src/ETHERNET_types.cpp src/Link_manager.cpp src/master_board_interface.cpp
+    src/motor.cpp src/motor_driver.cpp)
+if(NOT APPLE)
+  list(APPEND MASTER_BOARD_SRC src/ESPNOW_manager.cpp src/ESPNOW_types.cpp)
+endif(NOT APPLE)
+
+add_library(${PROJECT_NAME} SHARED ${MASTER_BOARD_SRC})
+target_link_libraries(${PROJECT_NAME} pthread)
 target_include_directories(
   ${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
                          $<INSTALL_INTERFACE:include>)
@@ -70,70 +75,62 @@ install(
   DESTINATION lib)
 install(DIRECTORY include/ DESTINATION include)
 
+install(FILES package.xml
+  DESTINATION share/${PROJECT_NAME})
 # --- BINDINGS -----------------------------------------------------------------
 
-IF(BUILD_PYTHON_INTERFACE)
+if(BUILD_PYTHON_INTERFACE)
   # --- Setup the wrapper name and source files --- #
-  SET(PYWRAP ${PROJECT_NAME}_pywrap)
-  SET(${PYWRAP}_HEADERS
-    srcpy/my_bindings_headr.h
-  )
-  SET(${PYWRAP}_SOURCES
-    srcpy/my_bindings_headr.cpp
-  )
+  set(PYWRAP ${PROJECT_NAME}_pywrap)
+  set(${PYWRAP}_HEADERS srcpy/my_bindings_headr.h)
+  set(${PYWRAP}_SOURCES srcpy/my_bindings_headr.cpp)
 
   # --- Build the wrapper library --- #
-  SET(${PYWRAP}_INSTALL_DIR ${PYTHON_SITELIB})
-  ADD_LIBRARY(${PYWRAP} SHARED ${${PYWRAP}_SOURCES} ${${PYWRAP}_HEADERS})
-  TARGET_INCLUDE_DIRECTORIES(${PYWRAP} SYSTEM PRIVATE ${PYTHON_INCLUDE_DIR})
-  TARGET_LINK_LIBRARIES(${PYWRAP} ${PROJECT_NAME})
-  TARGET_LINK_BOOST_PYTHON(${PYWRAP})
-  SET_TARGET_PROPERTIES(${PYWRAP} PROPERTIES
-    INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
-  INSTALL(TARGETS ${PYWRAP} DESTINATION ${${PYWRAP}_INSTALL_DIR})
+  set(${PYWRAP}_INSTALL_DIR ${PYTHON_SITELIB})
+  add_library(${PYWRAP} SHARED ${${PYWRAP}_SOURCES} ${${PYWRAP}_HEADERS})
+  target_include_directories(${PYWRAP} SYSTEM PRIVATE ${PYTHON_INCLUDE_DIR})
+  target_link_libraries(${PYWRAP} ${PROJECT_NAME})
+  target_link_boost_python(${PYWRAP})
+  set_target_properties(${PYWRAP} PROPERTIES INSTALL_RPATH
+                                             "${CMAKE_INSTALL_PREFIX}/lib")
+  install(TARGETS ${PYWRAP} DESTINATION ${${PYWRAP}_INSTALL_DIR})
 
   # --- Allow to do: make python --- #
-  ADD_CUSTOM_TARGET(python)
-  SET_TARGET_PROPERTIES(python PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD True)
-  ADD_DEPENDENCIES(python ${PYWRAP})
+  add_custom_target(python)
+  set_target_properties(python PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD True)
+  add_dependencies(python ${PYWRAP})
 
   # --- Pre-build the python files for efficiency --- #
-  PYTHON_BUILD(example example.py)
-  PYTHON_BUILD(example listener.py)
-  PYTHON_BUILD(example com_analyser.py)
-ENDIF(BUILD_PYTHON_INTERFACE)
-
+  python_build(example example.py)
+  python_build(example listener.py)
+  python_build(example com_analyser.py)
+endif(BUILD_PYTHON_INTERFACE)
 
 # --- CHECK EXAMPLES -----------------------------------------------------------
-ADD_EXECUTABLE(master_board_example example/example.cpp)
-TARGET_LINK_LIBRARIES(master_board_example ${PROJECT_NAME})
-SET_TARGET_PROPERTIES(master_board_example PROPERTIES
+add_executable(master_board_example example/example.cpp)
+target_link_libraries(master_board_example ${PROJECT_NAME})
+set_target_properties(master_board_example PROPERTIES
   INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
-INSTALL(TARGETS master_board_example DESTINATION bin)
+install(TARGETS master_board_example DESTINATION bin)
 
-ADD_EXECUTABLE(master_board_example_pd example/example_pd.cpp)
-TARGET_LINK_LIBRARIES(master_board_example_pd ${PROJECT_NAME})
-SET_TARGET_PROPERTIES(master_board_example_pd PROPERTIES
+add_executable(master_board_example_pd example/example_pd.cpp)
+target_link_libraries(master_board_example_pd ${PROJECT_NAME})
+set_target_properties(master_board_example_pd PROPERTIES
   INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
-INSTALL(TARGETS master_board_example_pd DESTINATION bin)
+install(TARGETS master_board_example_pd DESTINATION bin)
 
-ADD_EXECUTABLE(
-  master_board_example_imu_data_collection
-  example/example_imu_data_collection.cpp
-)
-TARGET_LINK_LIBRARIES(
-  master_board_example_imu_data_collection ${PROJECT_NAME}
-)
-INSTALL(
-  TARGETS master_board_example_imu_data_collection DESTINATION bin
-)
+add_executable(master_board_example_imu_data_collection
+               example/example_imu_data_collection.cpp)
+target_link_libraries(master_board_example_imu_data_collection ${PROJECT_NAME})
+install(TARGETS master_board_example_imu_data_collection DESTINATION bin)
 
 # --- UNIT TESTS -----------------------------------------------------------
 if(BUILD_TESTING)
   find_package(Catch2 3.1 QUIET)
   if(NOT Catch2_FOUND)
-    Include(FetchContent)
-    FetchContent_Declare(Catch2
+    include(FetchContent)
+    FetchContent_Declare(
+      Catch2
       GIT_REPOSITORY https://github.com/catchorg/Catch2.git
       GIT_TAG v3.1.0)
     FetchContent_MakeAvailable(Catch2)
@@ -141,3 +138,27 @@ if(BUILD_TESTING)
   add_unit_test(test_protocol tests/test_protocol.cpp)
   target_link_libraries(test_protocol PRIVATE Catch2::Catch2WithMain)
 endif()
+
+# Allows Colcon to find non-Ament packages when using workspace underlays
+file(
+  WRITE
+  ${CMAKE_CURRENT_BINARY_DIR}/share/ament_index/resource_index/packages/${PROJECT_NAME}
+  "")
+install(
+  FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/share/ament_index/resource_index/packages/${PROJECT_NAME}
+  DESTINATION share/ament_index/resource_index/packages)
+file(
+  WRITE
+  ${CMAKE_CURRENT_BINARY_DIR}/share/${PROJECT_NAME}/hook/ament_prefix_path.dsv
+  "prepend-non-duplicate;AMENT_PREFIX_PATH;")
+install(
+  FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/share/${PROJECT_NAME}/hook/ament_prefix_path.dsv
+  DESTINATION share/${PROJECT_NAME}/hook)
+file(WRITE
+     ${CMAKE_CURRENT_BINARY_DIR}/share/${PROJECT_NAME}/hook/python_path.dsv
+     "prepend-non-duplicate;PYTHONPATH;${PYTHON_SITELIB}")
+install(
+  FILES ${CMAKE_CURRENT_BINARY_DIR}/share/${PROJECT_NAME}/hook/python_path.dsv
+  DESTINATION share/${PROJECT_NAME}/hook)

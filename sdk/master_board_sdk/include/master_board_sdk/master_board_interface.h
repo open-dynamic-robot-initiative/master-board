@@ -4,7 +4,9 @@
 #include <mutex>
 #include <chrono>
 
+#ifndef __APPLE__
 #include "master_board_sdk/ESPNOW_manager.h"
+#endif
 #include "master_board_sdk/ETHERNET_manager.h"
 #include "master_board_sdk/defines.h"
 #include "master_board_sdk/motor_driver.h"

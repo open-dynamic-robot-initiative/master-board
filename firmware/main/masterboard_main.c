@@ -126,6 +126,8 @@ static void periodic_timer_callback(void *arg)
             wifi_eth_tx_ack.session_id = session_id;
             wifi_eth_tx_data.session_id = session_id;
 
+            wifi_eth_tx_ack.protocol_version = PROTOCOL_VERSION;
+
             // updating spi_connected in ack packet
             wifi_eth_tx_ack.spi_connected = spi_connected;
 
@@ -454,7 +456,18 @@ void wifi_eth_receive_cb(uint8_t src_mac[6], uint8_t *data, int len, char eth_or
 
         if (packet_recv->protocol_version != PROTOCOL_VERSION)
         {
-            //printf("Wrong protocol version, got %d instead of %d, ignoring init packet\n", packet_recv->protocol_version, PROTOCOL_VERSION);
+            wifi_eth_tx_ack.protocol_version = PROTOCOL_VERSION;
+            wifi_eth_tx_ack.session_id = packet_recv->session_id;
+            /* Send acknowledge packets to PC to inform version mismatch */
+            if (use_wifi)
+            {
+                wifi_send_data(&wifi_eth_tx_ack, sizeof(struct wifi_eth_packet_ack));
+            }
+            else
+            {
+                eth_send_data(&wifi_eth_tx_ack, sizeof(struct wifi_eth_packet_ack));
+            }
+            ESP_LOGW("", "Wrong protocol version, got %d instead of %d, ignoring init packet.", packet_recv->protocol_version, PROTOCOL_VERSION);
             return; // ignoring packet
         }
 

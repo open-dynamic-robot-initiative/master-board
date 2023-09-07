@@ -97,11 +97,9 @@ struct init_packet_t
 	uint16_t session_id;
 } __attribute__((packed));
 
-struct ack_packet_t
-{
+struct ack_packet_t {
+	uint16_t protocol_version;
 	uint16_t session_id;
-	uint8_t spi_connected; // least significant bit: SPI0
-						   // most significant bit: SPI7
-} __attribute__((packed));
-
+	uint8_t spi_connected; // least significant bit: SPI0 - most significant bit: SPI7
+} __attribute__ ((packed));
 #endif

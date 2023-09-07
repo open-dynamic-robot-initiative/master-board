@@ -54,9 +54,9 @@ struct wifi_eth_packet_command {
 } __attribute__ ((packed));
 
 struct wifi_eth_packet_ack {
+	uint16_t protocol_version;
 	uint16_t session_id;
-	uint8_t spi_connected; // least significant bit: SPI0
-						   // most significant bit: SPI7
+	uint8_t spi_connected; // least significant bit: SPI0 - most significant bit: SPI7
 } __attribute__ ((packed));
 
 struct wifi_eth_packet_sensor {

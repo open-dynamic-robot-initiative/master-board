@@ -1,5 +1,6 @@
 #include <math.h>
 #include <signal.h>
+#include <sstream>
 #include "master_board_sdk/master_board_interface.h"
 
 MasterBoardInterface *MasterBoardInterface::instance = NULL;
@@ -65,12 +66,14 @@ int MasterBoardInterface::Init()
   }
   else if (if_name_[0] == 'w')
   {
+#ifndef __APPLE__
     /*WiFi*/
     printf("Using WiFi (%s)\n", if_name_.c_str());
     link_handler_ = new ESPNOW_manager(if_name_, DATARATE_24Mbps, CHANNEL_freq_9, my_mac_, dest_mac_, false); //TODO write setter for espnow specific parametters
     link_handler_->set_recv_callback(this);
     link_handler_->start();
     ((ESPNOW_manager *)link_handler_)->bind_filter();
+#endif
   }
   else
   {
@@ -129,7 +132,11 @@ int MasterBoardInterface::SendInit()
     return -1; // Return -1 since the command has not been sent.
   }
 
-  link_handler_->send((uint8_t *)&init_packet, sizeof(init_packet_t));
+  int r=link_handler_->send((uint8_t *)&init_packet, sizeof(init_packet_t));
+
+  if (r<0)
+  { perror("Packet send error"); }
+
   return 0;
 }
 
@@ -195,12 +202,12 @@ int MasterBoardInterface::SendCommand()
     command_packet.dual_motor_driver_command_packets[i].velocity_ref[1] = FLOAT_TO_D16QN(motor_drivers[i].motor2->velocity_ref * 60. / (2. * M_PI * 1000.), UD_QN_VEL);
     command_packet.dual_motor_driver_command_packets[i].current_ref[0] = FLOAT_TO_D16QN(motor_drivers[i].motor1->current_ref, UD_QN_IQ);
     command_packet.dual_motor_driver_command_packets[i].current_ref[1] = FLOAT_TO_D16QN(motor_drivers[i].motor2->current_ref, UD_QN_IQ);
-    command_packet.dual_motor_driver_command_packets[i].kp[0] = FLOAT_TO_uD16QN(2. * M_PI * motor_drivers[i].motor1->kp, UD_QN_KP);
-    command_packet.dual_motor_driver_command_packets[i].kp[1] = FLOAT_TO_uD16QN(2. * M_PI * motor_drivers[i].motor2->kp, UD_QN_KP);
-    command_packet.dual_motor_driver_command_packets[i].kd[0] = FLOAT_TO_uD16QN(((2. * M_PI * 1000.)/60.0) * motor_drivers[i].motor1->kd, UD_QN_KD);
-    command_packet.dual_motor_driver_command_packets[i].kd[1] = FLOAT_TO_uD16QN(((2. * M_PI * 1000.)/60.0) * motor_drivers[i].motor2->kd, UD_QN_KD);
-    command_packet.dual_motor_driver_command_packets[i].i_sat[0] = FLOAT_TO_uD8QN(motor_drivers[i].motor1->current_sat, UD_QN_ISAT);
-    command_packet.dual_motor_driver_command_packets[i].i_sat[1] = FLOAT_TO_uD8QN(motor_drivers[i].motor2->current_sat, UD_QN_ISAT);
+    command_packet.dual_motor_driver_command_packets[i].kp[0] = FLOAT_TO_D16QN(2. * M_PI * motor_drivers[i].motor1->kp, UD_QN_KP);
+    command_packet.dual_motor_driver_command_packets[i].kp[1] = FLOAT_TO_D16QN(2. * M_PI * motor_drivers[i].motor2->kp, UD_QN_KP);
+    command_packet.dual_motor_driver_command_packets[i].kd[0] = FLOAT_TO_D16QN(((2. * M_PI * 1000.)/60.0) * motor_drivers[i].motor1->kd, UD_QN_KD);
+    command_packet.dual_motor_driver_command_packets[i].kd[1] = FLOAT_TO_D16QN(((2. * M_PI * 1000.)/60.0) * motor_drivers[i].motor2->kd, UD_QN_KD);
+    command_packet.dual_motor_driver_command_packets[i].i_sat[0] = FLOAT_TO_D8QN(motor_drivers[i].motor1->current_sat, UD_QN_ISAT);
+    command_packet.dual_motor_driver_command_packets[i].i_sat[1] = FLOAT_TO_D8QN(motor_drivers[i].motor2->current_sat, UD_QN_ISAT);
   }
 
   // Current time point
@@ -228,20 +235,37 @@ void MasterBoardInterface::callback(uint8_t /*src_mac*/[6], uint8_t *data, int l
 {
   if ((listener_mode || (init_sent && !ack_received)) && len == sizeof(ack_packet_t))
   {
+    const ack_packet_t *p_ack_packet = (ack_packet_t *)data;
     if (listener_mode)
     {
       // ack packets are used to set up the session id in listener mode
-      session_id = ((ack_packet_t *)data)->session_id;
+      session_id = p_ack_packet->session_id;
     }
     else
     {
       // ensuring that session id is right if in normal mode
-      if (((ack_packet_t *)data)->session_id != session_id)
+      if (p_ack_packet->session_id != session_id)
       {
-        //printf("Wrong session id in ack msg, got %d instead of %d ignoring packet\n", ((ack_packet_t *)data)->session_id, session_id);
+        //printf("Wrong session id in ack msg, got %d instead of %d ignoring packet\n", p_ack_packet->session_id, session_id);
         return; // ignoring the packet
       }
     }
+
+    // Check protocol version
+    if(p_ack_packet->protocol_version != PROTOCOL_VERSION)
+    {
+      std::ostringstream err_msg;
+      err_msg << "Error during init : Protocol version mismatch (using version "
+          << PROTOCOL_VERSION
+          << " while board expects "
+          << p_ack_packet->protocol_version
+          << ")";
+      printf("%s\n", err_msg.str().c_str());
+      throw std::runtime_error( err_msg.str());
+      return;
+    }
+
+
 
     // reset variables for feedback on packet loss
     ResetPacketLossStats();

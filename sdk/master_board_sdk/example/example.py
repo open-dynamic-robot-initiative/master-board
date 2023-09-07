@@ -4,7 +4,7 @@ import argparse
 import math
 import os
 import sys
-from time import clock
+from time import perf_counter
 
 import libmaster_board_sdk_pywrap as mbs
 
@@ -35,19 +35,30 @@ def example_script(name_interface):
     robot_if = mbs.MasterBoardInterface(name_interface)
     robot_if.Init()  # Initialization of the interface between the computer and the master board
     for i in range(N_SLAVES_CONTROLED):  #  We enable each controler driver and its two associated motors
+        # initialise command to zero
         robot_if.GetDriver(i).motor1.SetCurrentReference(0)
+        robot_if.GetDriver(i).motor1.SetPositionReference(0)
+        robot_if.GetDriver(i).motor1.SetVelocityReference(0)
+        robot_if.GetDriver(i).motor1.SetKp(0)
+        robot_if.GetDriver(i).motor1.SetKd(0)
         robot_if.GetDriver(i).motor2.SetCurrentReference(0)
+        robot_if.GetDriver(i).motor2.SetPositionReference(0)
+        robot_if.GetDriver(i).motor2.SetVelocityReference(0)
+        robot_if.GetDriver(i).motor2.SetKp(0)
+        robot_if.GetDriver(i).motor2.SetKd(0)
+
         robot_if.GetDriver(i).motor1.Enable()
         robot_if.GetDriver(i).motor2.Enable()
         robot_if.GetDriver(i).EnablePositionRolloverError()
         robot_if.GetDriver(i).SetTimeout(5)
         robot_if.GetDriver(i).Enable()
 
-    last = clock()
+    start = perf_counter()
+    last = start
 
     while (not robot_if.IsTimeout() and not robot_if.IsAckMsgReceived()):
-        if ((clock() - last) > dt):
-            last = clock()
+        if ((perf_counter() - last) > dt):
+            last = perf_counter()
             robot_if.SendInit()
 
     if robot_if.IsTimeout():
@@ -61,11 +72,12 @@ def example_script(name_interface):
                 motors_spi_connected_indexes.append(2 * i)
                 motors_spi_connected_indexes.append(2 * i + 1)
 
+    # Stop after 15 seconds (around 5 seconds are used at the start for calibration)
     while ((not robot_if.IsTimeout())
-           and (clock() < 20)):  # Stop after 15 seconds (around 5 seconds are used at the start for calibration)
+           and (perf_counter() - start < 20)):
 
-        if ((clock() - last) > dt):
-            last = clock()
+        if ((perf_counter() - last) > dt):
+            last = perf_counter()
             cpt += 1
             t += dt
             robot_if.ParseSensorData()  # Read sensor data sent by the masterboard
