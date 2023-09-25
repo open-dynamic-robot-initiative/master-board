@@ -144,7 +144,7 @@ if(BUILD_TESTING)
     FetchContent_Declare(
       Catch2
       GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-      GIT_TAG v3.1.0)
+      GIT_TAG v3.4.0)
     FetchContent_MakeAvailable(Catch2)
   endif()
   add_unit_test(test_protocol tests/test_protocol.cpp)
