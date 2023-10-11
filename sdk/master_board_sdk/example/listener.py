@@ -5,9 +5,10 @@ import math
 import os
 import sys
 try:
-  from time import process_time
-except(ImportError):
-  from time import clock as process_time
+    from time import perf_counter
+except ImportError:
+    # You are still in python2… pleas upgrade :)
+    from time import clock as perf_counter
 
 import libmaster_board_sdk_pywrap as mbs
 
@@ -24,12 +25,12 @@ def listener_script(name_interface):
     robot_if = mbs.MasterBoardInterface(name_interface, True)
     robot_if.Init()  # Initialization of the interface between the computer and the master board
 
-    last = process_time()
+    last = perf_counter()
 
     while (True):
 
-        if ((process_time() - last) > dt):
-            last = process_time()
+        if ((perf_counter() - last) > dt):
+            last = perf_counter()
             cpt += 1
             t += dt
             robot_if.ParseSensorData()  # Read sensor data sent by the masterboard
