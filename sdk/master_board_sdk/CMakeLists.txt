@@ -2,7 +2,7 @@
 # Copyright (c) 2019 CNRS
 #
 
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.14)
 
 # ----------------------------------------------------
 # --- CXX FLAGS --------------------------------------
@@ -32,10 +32,22 @@ option(BUILD_PYTHON_INTERFACE "Build the python binding" ON)
 option(PYTHON_STANDARD_LAYOUT "Enable standard Python package layout" ON)
 option(PYTHON_DEB_LAYOUT "Enable Debian-style Python package layout" OFF)
 
-include(cmake/base.cmake)
-include(cmake/boost.cmake)
-include(cmake/python.cmake)
-include(cmake/ide.cmake)
+# Check if the submodule cmake have been initialized
+set(JRL_CMAKE_MODULES "${CMAKE_CURRENT_LIST_DIR}/cmake")
+if(NOT EXISTS "${CMAKE_SOURCE_DIR}/cmake/base.cmake")
+  message(STATUS "JRL cmakemodules not found. Let's fetch it.")
+  include(FetchContent)
+  FetchContent_Declare(
+    "jrl-cmakemodules"
+    GIT_REPOSITORY "https://github.com/jrl-umi3218/jrl-cmakemodules.git")
+  FetchContent_MakeAvailable("jrl-cmakemodules")
+  FetchContent_GetProperties("jrl-cmakemodules" SOURCE_DIR JRL_CMAKE_MODULES)
+endif()
+
+include("${JRL_CMAKE_MODULES}/base.cmake")
+include("${JRL_CMAKE_MODULES}/boost.cmake")
+include("${JRL_CMAKE_MODULES}/python.cmake")
+include("${JRL_CMAKE_MODULES}/ide.cmake")
 
 compute_project_args(PROJECT_ARGS LANGUAGES CXX)
 project(${PROJECT_NAME} ${PROJECT_ARGS})
@@ -57,14 +69,28 @@ endif(BUILD_PYTHON_INTERFACE)
 # ----------------------------------------------------
 
 # --- MAIN LIBRARY -------------------------------------------------------------
-set(MASTER_BOARD_SRC
+set(${PROJECT_NAME}_SOURCES
     src/ETHERNET_types.cpp src/Link_manager.cpp src/master_board_interface.cpp
     src/motor.cpp src/motor_driver.cpp)
 if(NOT APPLE)
-  list(APPEND MASTER_BOARD_SRC src/ESPNOW_manager.cpp src/ESPNOW_types.cpp)
+  list(APPEND ${PROJECT_NAME}_SOURCES src/ESPNOW_manager.cpp
+       src/ESPNOW_types.cpp)
 endif(NOT APPLE)
+set(${PROJECT_NAME}_HEADERS
+    "include/${PROJECT_NAME}/defines.h"
+    "include/${PROJECT_NAME}/ESPNOW_manager.h"
+    "include/${PROJECT_NAME}/ESPNOW_types.h"
+    "include/${PROJECT_NAME}/ETHERNET_manager.h"
+    "include/${PROJECT_NAME}/ETHERNET_types.h"
+    "include/${PROJECT_NAME}/Link_manager.h"
+    "include/${PROJECT_NAME}/Link_types.h"
+    "include/${PROJECT_NAME}/master_board_interface.h"
+    "include/${PROJECT_NAME}/motor.h"
+    "include/${PROJECT_NAME}/motor_driver.h"
+    "include/${PROJECT_NAME}/protocol.h")
 
-add_library(${PROJECT_NAME} SHARED ${MASTER_BOARD_SRC})
+add_library(${PROJECT_NAME} SHARED ${${PROJECT_NAME}_SOURCES}
+                                   ${${PROJECT_NAME}_HEADERS})
 target_link_libraries(${PROJECT_NAME} pthread)
 target_include_directories(
   ${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -73,7 +99,6 @@ install(
   TARGETS ${PROJECT_NAME}
   EXPORT ${TARGETS_EXPORT_NAME}
   DESTINATION lib)
-install(DIRECTORY include/ DESTINATION include)
 
 install(FILES package.xml
   DESTINATION share/${PROJECT_NAME})
@@ -91,8 +116,9 @@ if(BUILD_PYTHON_INTERFACE)
   target_include_directories(${PYWRAP} SYSTEM PRIVATE ${PYTHON_INCLUDE_DIR})
   target_link_libraries(${PYWRAP} ${PROJECT_NAME})
   target_link_boost_python(${PYWRAP})
+  get_relative_rpath(${${PYWRAP}_INSTALL_DIR} ${PYWRAP}_INSTALL_RPATH)
   set_target_properties(${PYWRAP} PROPERTIES INSTALL_RPATH
-                                             "${CMAKE_INSTALL_PREFIX}/lib")
+                                             "${${PYWRAP}_INSTALL_RPATH}")
   install(TARGETS ${PYWRAP} DESTINATION ${${PYWRAP}_INSTALL_DIR})
 
   # --- Allow to do: make python --- #
@@ -100,7 +126,7 @@ if(BUILD_PYTHON_INTERFACE)
   set_target_properties(python PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD True)
   add_dependencies(python ${PYWRAP})
 
-  # --- Pre-build the python files for efficiency --- #
+  # --- build the python files to check them --- #
   python_build(example example.py)
   python_build(example listener.py)
   python_build(example com_analyser.py)
@@ -132,7 +158,7 @@ if(BUILD_TESTING)
     FetchContent_Declare(
       Catch2
       GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-      GIT_TAG v3.1.0)
+      GIT_TAG v3.4.0)
     FetchContent_MakeAvailable(Catch2)
   endif()
   add_unit_test(test_protocol tests/test_protocol.cpp)
