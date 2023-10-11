@@ -4,7 +4,11 @@ import argparse
 import math
 import os
 import sys
-from time import perf_counter
+try:
+    from time import perf_counter
+except ImportError:
+    # You are still in python2… pleas upgrade :)
+    from time import clock as perf_counter
 
 import libmaster_board_sdk_pywrap as mbs
 
@@ -53,9 +57,8 @@ def example_script(name_interface):
         robot_if.GetDriver(i).SetTimeout(5)
         robot_if.GetDriver(i).Enable()
 
-    start = perf_counter()
-    last = start
-
+    last = perf_counter()
+    print("last =",last)
     while (not robot_if.IsTimeout() and not robot_if.IsAckMsgReceived()):
         if ((perf_counter() - last) > dt):
             last = perf_counter()
@@ -71,10 +74,11 @@ def example_script(name_interface):
                 # if slave i is connected then motors 2i and 2i+1 are potentially connected
                 motors_spi_connected_indexes.append(2 * i)
                 motors_spi_connected_indexes.append(2 * i + 1)
+    glob_last = perf_counter()
 
     # Stop after 15 seconds (around 5 seconds are used at the start for calibration)
     while ((not robot_if.IsTimeout())
-           and (perf_counter() - start < 20)):
+           and ( (perf_counter() - glob_last) < 20)):  # Stop after 15 seconds (around 5 seconds are used at the start for calibration)
 
         if ((perf_counter() - last) > dt):
             last = perf_counter()
@@ -102,6 +106,7 @@ def example_script(name_interface):
                         continue #user should decide what to do in that case, here we ignore that motor
 
                     if robot_if.GetMotor(i).IsEnabled():
+                        print("sending ",i," motor settings.")
                         ref = init_pos[i] + amplitude * math.sin(2.0 * math.pi * freq * t)  # Sine wave pattern
                         v_ref = 2.0 * math.pi * freq * amplitude * math.cos(2.0 * math.pi * freq * t)
                         p_err = ref - robot_if.GetMotor(i).GetPosition()  # Position error
