@@ -5,13 +5,15 @@ Electrical connection
 The new µDriver v2 includes a SPI port. Controlling the µDriver via this interface allow fast communication compared to CAN, and facilitate the control of multiple µDriver from one master controller such as the Quadruped master board.
 µDriver is acting as a SPI Slave device.
 
-Pin Name | I/O | Function 
---- | --- | --- 
-GND | - | Ground reference	
-MISO | Output | Data - Master In Slave Out	
-MOSI | Input | Data - Master Out Slave In
-CS | Input | Chip Select, active low 	
-CLK | Input | Clock
+DF13 Pin | Pin Name | I/O | Function 
+--- | --- | --- | --- 
+1 | GND | - | Ground reference	
+2 | MISO | Output | Data - Master In Slave Out	
+3 | CLK | Input | Clock
+4 | CS | Input | Chip Select, active low 	
+5 | MOSI | Input | Data - Master Out Slave In
+
+
 
 Connection link between a master controller and the µDriver should be kept short (20cm). The  µDriver inputs are not 5v Tolerant. Make sure not to apply more than 3.3V.
 
