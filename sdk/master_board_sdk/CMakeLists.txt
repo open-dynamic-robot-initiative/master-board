@@ -27,7 +27,6 @@ if(APPLE)
       CACHE BOOL "Build the python binding")
 endif()
 
-
 option(BUILD_PYTHON_INTERFACE "Build the python binding" ON)
 option(PYTHON_STANDARD_LAYOUT "Enable standard Python package layout" ON)
 option(PYTHON_DEB_LAYOUT "Enable Debian-style Python package layout" OFF)
@@ -56,7 +55,6 @@ check_minimal_cxx_standard(11 ENFORCE)
 # ----------------------------------------------------
 # --- DEPENDENCIES -----------------------------------
 # ----------------------------------------------------
-
 
 # Set component to fetch from boost Get the python interface for the bindings
 if(BUILD_PYTHON_INTERFACE)
@@ -100,8 +98,7 @@ install(
   EXPORT ${TARGETS_EXPORT_NAME}
   DESTINATION lib)
 
-install(FILES package.xml
-  DESTINATION share/${PROJECT_NAME})
+install(FILES package.xml DESTINATION share/${PROJECT_NAME})
 # --- BINDINGS -----------------------------------------------------------------
 
 if(BUILD_PYTHON_INTERFACE)
@@ -135,14 +132,14 @@ endif(BUILD_PYTHON_INTERFACE)
 # --- CHECK EXAMPLES -----------------------------------------------------------
 add_executable(master_board_example example/example.cpp)
 target_link_libraries(master_board_example ${PROJECT_NAME})
-set_target_properties(master_board_example PROPERTIES
-  INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+set_target_properties(master_board_example
+                      PROPERTIES INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 install(TARGETS master_board_example DESTINATION bin)
 
 add_executable(master_board_example_pd example/example_pd.cpp)
 target_link_libraries(master_board_example_pd ${PROJECT_NAME})
-set_target_properties(master_board_example_pd PROPERTIES
-  INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+set_target_properties(master_board_example_pd
+                      PROPERTIES INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 install(TARGETS master_board_example_pd DESTINATION bin)
 
 add_executable(master_board_example_imu_data_collection
