@@ -1,29 +1,29 @@
 #include "my_bindings_headr.h"
 
-using namespace boost::python;
+namespace bp = boost::python;
 
 // Wrapper to access the adc property, an array of 2 floats (read-only access)) 
-boost::python::tuple wrap_adc(MotorDriver const * motDriver) 
+bp::tuple wrap_adc(MotorDriver const * motDriver) 
 {
-  boost::python::list a;
+  bp::list a;
   for (int i = 0; i < 2; ++i) 
   {
     a.append(motDriver->adc[i]);
   }
-  return boost::python::tuple(a);
+  return bp::tuple(a);
 }
 
 
     BOOST_PYTHON_MODULE(libmaster_board_sdk_pywrap)
     {
         // Bindings for LINK_manager_callback class
-        class_<LINK_manager_callback, boost::noncopyable>("LINK_manager_callback", no_init)
-            .def("callback", pure_virtual(&LINK_manager_callback::callback)) 
+        bp::class_<LINK_manager_callback, boost::noncopyable>("LINK_manager_callback", bp::no_init)
+            .def("callback", bp::pure_virtual(&LINK_manager_callback::callback)) 
         ;
         // End of bindings for LINK_manager_callback class
 
         // Bindings for MasterBoardInterface class
-        class_<MasterBoardInterface, bases<LINK_manager_callback> >("MasterBoardInterface", init<std::string, optional<bool> >())
+        bp::class_<MasterBoardInterface, bp::bases<LINK_manager_callback> >("MasterBoardInterface", bp::init<std::string, bp::optional<bool> >())
             // Methods of MasterBoardInterface class
             .def("Init", &MasterBoardInterface::Init)
             .def("Stop", &MasterBoardInterface::Stop)
@@ -38,15 +38,15 @@ boost::python::tuple wrap_adc(MotorDriver const * motDriver)
             .def("PrintStats", &MasterBoardInterface::PrintStats)
             .def("ResetTimeout", &MasterBoardInterface::ResetTimeout)
             .def("IsTimeout", &MasterBoardInterface::IsTimeout)
-            .def("GetDriver", make_function(&MasterBoardInterface::GetDriver, return_value_policy<boost::python::reference_existing_object>()))
-            .def("GetMotor", make_function(&MasterBoardInterface::GetMotor, return_value_policy<boost::python::reference_existing_object>()))
-            .def("imu_data_accelerometer", make_function(&MasterBoardInterface::imu_data_accelerometer))
-            .def("imu_data_gyroscope", make_function(&MasterBoardInterface::imu_data_gyroscope))
-            .def("imu_data_attitude", make_function(&MasterBoardInterface::imu_data_attitude))
-            .def("imu_data_linear_acceleration", make_function(&MasterBoardInterface::imu_data_linear_acceleration))
-            .def("powerboard_current", make_function(&MasterBoardInterface::powerboard_current))
-            .def("powerboard_voltage", make_function(&MasterBoardInterface::powerboard_voltage))
-            .def("powerboard_energy", make_function(&MasterBoardInterface::powerboard_energy))
+            .def("GetDriver", bp::make_function(&MasterBoardInterface::GetDriver, bp::return_value_policy<bp::reference_existing_object>()))
+            .def("GetMotor", bp::make_function(&MasterBoardInterface::GetMotor, bp::return_value_policy<bp::reference_existing_object>()))
+            .def("imu_data_accelerometer", bp::make_function(&MasterBoardInterface::imu_data_accelerometer))
+            .def("imu_data_gyroscope", bp::make_function(&MasterBoardInterface::imu_data_gyroscope))
+            .def("imu_data_attitude", bp::make_function(&MasterBoardInterface::imu_data_attitude))
+            .def("imu_data_linear_acceleration", bp::make_function(&MasterBoardInterface::imu_data_linear_acceleration))
+            .def("powerboard_current", bp::make_function(&MasterBoardInterface::powerboard_current))
+            .def("powerboard_voltage", bp::make_function(&MasterBoardInterface::powerboard_voltage))
+            .def("powerboard_energy", bp::make_function(&MasterBoardInterface::powerboard_energy))
 
             .def("IsAckMsgReceived", &MasterBoardInterface::IsAckMsgReceived)
             .def("SendInit", &MasterBoardInterface::SendInit)
@@ -69,7 +69,7 @@ boost::python::tuple wrap_adc(MotorDriver const * motDriver)
         // End of bindings for MasterBoardInterface class
         
         // Bindings for Motor class
-        class_<Motor>("Motor", init<>())
+        bp::class_<Motor>("Motor", bp::init<>(("self")))
             // Methods of Motor class
             .def("SetCurrentReference", &Motor::SetCurrentReference)
             .def("SetVelocityReference", &Motor::SetVelocityReference)
@@ -108,13 +108,13 @@ boost::python::tuple wrap_adc(MotorDriver const * motDriver)
             .add_property("enable_position_rollover_error", &Motor::get_enable_position_rollover_error, &Motor::set_enable_position_rollover_error)
             .add_property("enable_index_toggle_bit", &Motor::get_enable_index_toggle_bit, &Motor::set_enable_index_toggle_bit)
             .add_property("enable_index_offset_compensation", &Motor::get_enable_index_offset_compensation, &Motor::set_enable_index_offset_compensation)
-            .add_property("driver", make_function(&Motor::get_driver, return_value_policy<boost::python::reference_existing_object>()), &Motor::set_driver)
+            .add_property("driver", bp::make_function(&Motor::get_driver, bp::return_value_policy<bp::reference_existing_object>()), &Motor::set_driver)
         ;
         // End of bindings for Motor class
 
         
         // Bindings for MotorDriver class
-        class_<MotorDriver>("MotorDriver", init<>())
+        bp::class_<MotorDriver>("MotorDriver", bp::init<>(("self")))
             // Methods of MotorDriver class
             // .def("EnableMotorDriver", &MotorDriver::EnableMotorDriver) // Not defined in motor_driver.cpp but declared in motor_driver.h
             // .def("DisableMotorDriver", &MotorDriver::DisableMotorDriver) // Not defined in motor_driver.cpp but declared in motor_driver.h
@@ -130,8 +130,8 @@ boost::python::tuple wrap_adc(MotorDriver const * motDriver)
             .def("Disable", &MotorDriver::Disable)
             
             // Public properties of MotorDriver class
-            .add_property("motor1", make_function(&MotorDriver::get_motor1, return_value_policy<boost::python::reference_existing_object>()), &MotorDriver::set_motor1)
-            .add_property("motor2", make_function(&MotorDriver::get_motor2, return_value_policy<boost::python::reference_existing_object>()), &MotorDriver::set_motor2)
+            .add_property("motor1", bp::make_function(&MotorDriver::get_motor1, bp::return_value_policy<bp::reference_existing_object>()), &MotorDriver::set_motor1)
+            .add_property("motor2", bp::make_function(&MotorDriver::get_motor2, bp::return_value_policy<bp::reference_existing_object>()), &MotorDriver::set_motor2)
             .add_property("is_connected", &MotorDriver::get_is_connected, &MotorDriver::set_is_connected)
             .add_property("is_enabled", &MotorDriver::get_is_enabled, &MotorDriver::set_is_enabled)
             .add_property("error_code", &MotorDriver::get_error_code, &MotorDriver::set_error_code)

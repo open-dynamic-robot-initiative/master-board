@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019 CNRS
+# Copyright (c) 2019 CNRS Copyright (c) 2024 CNRS INRIA
 #
 
 cmake_minimum_required(VERSION 3.14)
@@ -20,13 +20,6 @@ set(PROJECT_URL https://github.com/open-dynamic-robot-initiative/master-board)
 set(PROJECT_USE_CMAKE_EXPORT TRUE)
 set(PROJECT_VERSION_COMPUTATION_METHODS ROS_PACKAGE_XML_FILE)
 
-# --- OPTIONS ----------------------------------------
-if(APPLE)
-  set(BUILD_PYTHON_INTERFACE
-      OFF
-      CACHE BOOL "Build the python binding")
-endif()
-
 option(BUILD_PYTHON_INTERFACE "Build the python binding" ON)
 option(PYTHON_STANDARD_LAYOUT "Enable standard Python package layout" ON)
 option(PYTHON_DEB_LAYOUT "Enable Debian-style Python package layout" OFF)
@@ -44,12 +37,14 @@ if(NOT EXISTS "${CMAKE_SOURCE_DIR}/cmake/base.cmake")
 endif()
 
 include("${JRL_CMAKE_MODULES}/base.cmake")
+include("${JRL_CMAKE_MODULES}/apple.cmake")
 include("${JRL_CMAKE_MODULES}/boost.cmake")
 include("${JRL_CMAKE_MODULES}/python.cmake")
 include("${JRL_CMAKE_MODULES}/ide.cmake")
 
 compute_project_args(PROJECT_ARGS LANGUAGES CXX)
 project(${PROJECT_NAME} ${PROJECT_ARGS})
+apply_default_apple_configuration()
 check_minimal_cxx_standard(11 ENFORCE)
 
 # ----------------------------------------------------
@@ -58,6 +53,7 @@ check_minimal_cxx_standard(11 ENFORCE)
 
 # Set component to fetch from boost Get the python interface for the bindings
 if(BUILD_PYTHON_INTERFACE)
+  set(PYTHON_COMPONENTS Interpreter Development.Module)
   findpython(REQUIRED)
   search_for_boost_python(REQUIRED)
 endif(BUILD_PYTHON_INTERFACE)
@@ -89,7 +85,7 @@ set(${PROJECT_NAME}_HEADERS
 
 add_library(${PROJECT_NAME} SHARED ${${PROJECT_NAME}_SOURCES}
                                    ${${PROJECT_NAME}_HEADERS})
-target_link_libraries(${PROJECT_NAME} pthread)
+target_link_libraries(${PROJECT_NAME} PUBLIC pthread)
 target_include_directories(
   ${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
                          $<INSTALL_INTERFACE:include>)
@@ -110,12 +106,16 @@ if(BUILD_PYTHON_INTERFACE)
   # --- Build the wrapper library --- #
   set(${PYWRAP}_INSTALL_DIR ${PYTHON_SITELIB})
   add_library(${PYWRAP} SHARED ${${PYWRAP}_SOURCES} ${${PYWRAP}_HEADERS})
-  target_include_directories(${PYWRAP} SYSTEM PRIVATE ${PYTHON_INCLUDE_DIR})
-  target_link_libraries(${PYWRAP} ${PROJECT_NAME})
-  target_link_boost_python(${PYWRAP})
-  get_relative_rpath(${${PYWRAP}_INSTALL_DIR} ${PYWRAP}_INSTALL_RPATH)
-  set_target_properties(${PYWRAP} PROPERTIES INSTALL_RPATH
-                                             "${${PYWRAP}_INSTALL_RPATH}")
+  set_target_properties(${PYWRAP} PROPERTIES SUFFIX ${PYTHON_EXT_SUFFIX})
+  target_include_directories(${PYWRAP} SYSTEM PRIVATE ${PYTHON_INCLUDE_DIRS})
+  target_link_libraries(${PYWRAP} PUBLIC ${PROJECT_NAME})
+  target_link_boost_python(${PYWRAP} PUBLIC)
+  if(UNIX)
+    get_relative_rpath(${${PYWRAP}_INSTALL_DIR} ${PYWRAP}_INSTALL_RPATH)
+    set_target_properties(${PYWRAP} PROPERTIES INSTALL_RPATH
+                                               "${${PYWRAP}_INSTALL_RPATH}")
+  endif()
+
   install(TARGETS ${PYWRAP} DESTINATION ${${PYWRAP}_INSTALL_DIR})
 
   # --- Allow to do: make python --- #
@@ -131,20 +131,21 @@ endif(BUILD_PYTHON_INTERFACE)
 
 # --- CHECK EXAMPLES -----------------------------------------------------------
 add_executable(master_board_example example/example.cpp)
-target_link_libraries(master_board_example ${PROJECT_NAME})
+target_link_libraries(master_board_example PRIVATE ${PROJECT_NAME})
 set_target_properties(master_board_example
                       PROPERTIES INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 install(TARGETS master_board_example DESTINATION bin)
 
 add_executable(master_board_example_pd example/example_pd.cpp)
-target_link_libraries(master_board_example_pd ${PROJECT_NAME})
+target_link_libraries(master_board_example_pd PRIVATE ${PROJECT_NAME})
 set_target_properties(master_board_example_pd
                       PROPERTIES INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 install(TARGETS master_board_example_pd DESTINATION bin)
 
 add_executable(master_board_example_imu_data_collection
                example/example_imu_data_collection.cpp)
-target_link_libraries(master_board_example_imu_data_collection ${PROJECT_NAME})
+target_link_libraries(master_board_example_imu_data_collection
+                      PRIVATE ${PROJECT_NAME})
 install(TARGETS master_board_example_imu_data_collection DESTINATION bin)
 
 # --- UNIT TESTS -----------------------------------------------------------
