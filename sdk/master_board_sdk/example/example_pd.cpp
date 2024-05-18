@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <chrono>
+#include <stdexcept>
 #include <math.h>
 #include <stdio.h>
 #include <sys/stat.h>
