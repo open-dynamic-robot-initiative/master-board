@@ -150,19 +150,11 @@ install(TARGETS master_board_example_imu_data_collection DESTINATION bin)
 
 # --- UNIT TESTS -----------------------------------------------------------
 if(BUILD_TESTING)
-  find_package(Catch2 3.1 QUIET)
-  if(NOT Catch2_FOUND)
-    include(FetchContent)
-    FetchContent_Declare(
-      Catch2
-      GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-      GIT_TAG v3.4.0)
-    FetchContent_MakeAvailable(Catch2)
-  endif()
+  find_package(Catch2 2.13 QUIET)
+  add_definitions(-DFOUND_CATCH2_MAJOR_VERSION=${Catch2_VERSION_MAJOR})
   add_unit_test(test_protocol tests/test_protocol.cpp)
   target_link_libraries(test_protocol PRIVATE Catch2::Catch2WithMain)
 endif()
-
 # Allows Colcon to find non-Ament packages when using workspace underlays
 file(
   WRITE
