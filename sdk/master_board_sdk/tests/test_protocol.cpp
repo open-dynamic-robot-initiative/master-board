@@ -1,4 +1,14 @@
+#ifdef FOUND_CATCH2_MAJOR_VERSION
+#if (FOUND_CATCH2_MAJOR_VERSION == 2 )
+#include "catch2/catch.hpp"
+#elif (FOUND_CATCH2_MAJOR_VERSION == 3)
 #include "catch2/catch_all.hpp"
+#else
+#error "FOUND_CATCH_MAJOR_VERSION not supported"
+#endif
+#endif
+
+
 #include "master_board_sdk/protocol.h"
 #include <limits>
 
