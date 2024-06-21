@@ -150,7 +150,7 @@ install(TARGETS master_board_example_imu_data_collection DESTINATION bin)
 
 # --- UNIT TESTS -----------------------------------------------------------
 if(BUILD_TESTING)
-  find_package(Catch2 2.13 QUIET)
+  find_package(Catch2)
   add_definitions(-DFOUND_CATCH2_MAJOR_VERSION=${Catch2_VERSION_MAJOR})
   add_unit_test(test_protocol tests/test_protocol.cpp)
   target_link_libraries(test_protocol PRIVATE Catch2::Catch2WithMain)
