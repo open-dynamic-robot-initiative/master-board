@@ -1,0 +1,40 @@
+# This config uses industrial_ci (https://github.com/ros-industrial/industrial_ci.git).
+# For troubleshooting, see readme (https://github.com/ros-industrial/industrial_ci/blob/master/README.rst)
+
+name: CI - Linux ROS Jazzy
+
+# This determines when this workflow is run
+on: [push, pull_request] # on all pushes and PRs
+
+jobs:
+  CI:
+    strategy:
+      matrix:
+        env:
+          - {ROS_DISTRO: jazzy, BUILDER: colcon}
+    env:
+      CCACHE_DIR: /github/home/.ccache             # Enable ccache
+      # The following is a work-around for ROS tooling in conjunction with jrl-cmakemodules:
+      #  - catkin_make_isolated has issues with Industrial-CI right now
+      #  - colcon cannot find example-robot-data's python bindings due to ROS1 workspace integration hooks
+      #  - catkin_tools correctly finds example-robot-data in the upstream_ws, but does not execute the 'run_tests' target
+      #    as catkin-tools performs tests as '--catkin-make-args' instead of '--make-args' as colcon and catkin_make_isolated
+      # The work-around is thus to use catkin_tools for building and sourcing, and to manually specify execution of the test
+      # target after completion of the regular test target. The output of this step does affect the output of the CI process.
+      # Note, this does not affect projects that do not have pure CMake projects in their upstream_ws.
+      BUILDER: catkin_tools
+      AFTER_RUN_TARGET_TEST: 'ici_with_unset_variables source /root/target_ws/install/setup.bash && cd /root/target_ws/build/master_board_sdk && make test'
+      IMMEDIATE_TEST_OUTPUT: 1
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      # This step will fetch/store the directory used by ccache before/after the ci run
+      - uses: actions/cache@v4
+        with:
+          path: ${{ env.CCACHE_DIR }}
+          key: ccache-${{ matrix.env.ROS_DISTRO }}-${{ matrix.env.ROS_REPO }}
+      # Run industrial_ci
+      - uses: 'ros-industrial/industrial_ci@875c2aebfd634eebaa84dbe5198f2fdb4c5f1b7e'
+        env: ${{ matrix.env }}
