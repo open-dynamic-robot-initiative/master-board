@@ -75,6 +75,7 @@ if(BUILD_PYTHON_INTERFACE)
   set(PYTHON_COMPONENTS Interpreter Development.Module)
   findpython(REQUIRED)
   set_boost_default_options()
+  search_for_boost_python(REQUIRED)
 endif(BUILD_PYTHON_INTERFACE)
 
 # ----------------------------------------------------
