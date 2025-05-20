@@ -3,6 +3,7 @@
 
 #include <mutex>
 #include <chrono>
+#include <string>
 
 #ifndef __APPLE__
 #include "master_board_sdk/ESPNOW_manager.h"

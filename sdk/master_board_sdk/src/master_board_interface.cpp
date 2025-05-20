@@ -1,4 +1,5 @@
 #include <math.h>
+#include <cstdio>
 #include <signal.h>
 #include <sstream>
 #include "master_board_sdk/master_board_interface.h"
