@@ -33,7 +33,7 @@
         # from package.xml
         buildInputs = with pkgs; [ python312Packages.numpy ];
 
-        nativeCheckInputs = with pkgs; [ catch2 ];
+        nativeCheckInputs = with pkgs; [ catch2_3 ];
 
         propagatedBuildInputs = with pkgs; [ python312Packages.boost ];
       };
