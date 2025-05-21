@@ -24,6 +24,7 @@
         doCheck = true;
 
         nativeBuildInputs = with pkgs; [
+          jrl-cmakemodules
           cmake
           python312
           python312Packages.boost
