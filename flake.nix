@@ -18,12 +18,13 @@
     }:
     let
       pkgs = nixpkgs.legacyPackages.x86_64-linux;
+      rosVersion = utils.lib.rosVersion pkgs;
     in
     {
       packages.x86_64-linux.default = pkgs.stdenv.mkDerivation {
 
         pname = "odri-masterboard-sdk";
-        version = utils.lib.rosVersion pkgs ./sdk/master_board_sdk/package.xml;
+        version = rosVersion ./sdk/master_board_sdk/package.xml;
 
         src = builtins.path {
           name = "sdk";
