@@ -21,6 +21,8 @@
           path = ./sdk/master_board_sdk;
         };
 
+        doCheck = true;
+
         nativeBuildInputs = with pkgs; [
           cmake
           python312
@@ -29,6 +31,8 @@
 
         # from package.xml
         buildInputs = with pkgs; [ python312Packages.numpy ];
+
+        nativeCheckInputs = with pkgs; [ catch2 ];
 
         propagatedBuildInputs = with pkgs; [ python312Packages.boost ];
       };
