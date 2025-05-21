@@ -1,0 +1,10 @@
+name: CI - Nix Master board SDK
+
+on: [push, pull_request]
+
+jobs:
+  CI:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: cachix/install-nix-action@v30
+      - run: nix build .?submodules=1#sdk
