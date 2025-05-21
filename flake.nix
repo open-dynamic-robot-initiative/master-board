@@ -3,11 +3,7 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
-
-    utils = {
-      url = "github:Gepetto/nix-lib";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    utils.url = "github:Gepetto/nix-lib";
   };
 
   outputs =
