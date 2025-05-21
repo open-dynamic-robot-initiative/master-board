@@ -11,3 +11,6 @@ firmware/sdkconfig\.old
 *.b#*
 *.l#*
 .vscode
+
+# nix build result
+result
