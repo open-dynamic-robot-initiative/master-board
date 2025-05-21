@@ -27,6 +27,9 @@
           python312Packages.boost
         ];
 
+        # from package.xml
+        buildInputs = with pkgs; [ python312Packages.numpy ];
+
         propagatedBuildInputs = with pkgs; [ python312Packages.boost ];
       };
     };
