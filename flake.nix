@@ -3,10 +3,19 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
+
+    utils = {
+      url = "github:Gepetto/nix-lib";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
-    { self, nixpkgs }:
+    {
+      self,
+      nixpkgs,
+      utils,
+    }:
     let
       pkgs = nixpkgs.legacyPackages.x86_64-linux;
     in
@@ -14,7 +23,7 @@
       packages.x86_64-linux.default = pkgs.stdenv.mkDerivation {
 
         pname = "odri-masterboard-sdk";
-        version = "1.0.7";
+        version = utils.lib.rosVersion pkgs ./sdk/master_board_sdk/package.xml;
 
         src = builtins.path {
           name = "sdk";
