@@ -11,7 +11,7 @@
       pkgs = nixpkgs.legacyPackages.x86_64-linux;
     in
     {
-      packages.x86_64-linux.sdk = pkgs.stdenv.mkDerivation {
+      packages.x86_64-linux.default = pkgs.stdenv.mkDerivation {
 
         pname = "odri-masterboard-sdk";
         version = "1.0.7";

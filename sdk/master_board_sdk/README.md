@@ -125,5 +125,5 @@ sudo setcap -r /usr/bin/python3.6
 From the repository's root directory, run:
 
 ```
-nix build .?submodules=1#sdk
+nix build .?submodules=1
 ```

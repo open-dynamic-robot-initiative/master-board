@@ -9,4 +9,4 @@ jobs:
       - uses: actions/checkout@v4
         with: { submodules: recursive }
       - uses: cachix/install-nix-action@v30
-      - run: nix build .?submodules=1#sdk
+      - run: nix build .?submodules=1
