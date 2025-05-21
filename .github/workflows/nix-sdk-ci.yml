@@ -8,5 +8,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: { submodules: recursive }
+      - run: ls -l sdk/master_board_sdk
+      - run: ls -l sdk/master_board_sdk/cmake
+      - run: tree sdk/master_board_sdk
       - uses: cachix/install-nix-action@v30
       - run: nix build .?submodules=1
