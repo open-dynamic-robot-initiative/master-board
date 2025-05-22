@@ -18,7 +18,23 @@
     },
     "root": {
       "inputs": {
-        "nixpkgs": "nixpkgs"
+        "nixpkgs": "nixpkgs",
+        "utils": "utils"
+      }
+    },
+    "utils": {
+      "locked": {
+        "lastModified": 1747841438,
+        "narHash": "sha256-+Qsp1GQZFqXUU+QgPpq+GfwyfDMnclxcMXdDDfHEOeM=",
+        "owner": "Gepetto",
+        "repo": "nix-lib",
+        "rev": "f48e2ef19e6aa2c87612b714b07507c4adaa71e2",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Gepetto",
+        "repo": "nix-lib",
+        "type": "github"
       }
     }
   },
