@@ -1,46 +1,50 @@
 {
-  description = "Hardware and Firmware of the Solo Quadruped Master Board.";
+  description = "SDK for the ODRI Master board";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
+    gepetto.url = "github:gwennlbh/gepetto-nix/odri";
+    flake-parts.follows = "gepetto/flake-parts";
+    nixpkgs.follows = "gepetto/nixpkgs";
+    nix-ros-overlay.follows = "gepetto/nix-ros-overlay";
+    systems.follows = "gepetto/systems";
+    treefmt-nix.follows = "gepetto/treefmt-nix";
     utils.url = "github:Gepetto/nix-lib";
   };
 
   outputs =
-    {
-      self,
-      nixpkgs,
-      utils,
-    }:
-    let
-      pkgs = nixpkgs.legacyPackages.x86_64-linux;
-      rosVersion = utils.lib.rosVersion pkgs;
-    in
-    {
-      packages.x86_64-linux.default = pkgs.stdenv.mkDerivation {
-
-        pname = "odri-masterboard-sdk";
-        version = rosVersion ./sdk/master_board_sdk/package.xml;
-
-        src = builtins.path {
-          name = "sdk";
-          path = ./sdk/master_board_sdk;
+    inputs:
+    inputs.flake-parts.lib.mkFlake { inherit inputs; } {
+      systems = import inputs.systems;
+      imports = [ inputs.gepetto.flakeModule ];
+      perSystem =
+        {
+          lib,
+          pkgs,
+          self',
+          ...
+        }:
+        {
+          packages = {
+            default = self'.packages.odri-masterboard-sdk;
+            odri-masterboard-sdk = pkgs.odri-masterboard-sdk.overrideAttrs {
+              version = inputs.utils.lib.rosVersion ./sdk/master_board_sdk/package.xml;
+              src = lib.fileset.toSource {
+                root = ./sdk/master_board_sdk;
+                fileset = lib.fileset.unions [
+                  ./sdk/master_board_sdk/src
+                  ./sdk/master_board_sdk/include
+                  ./sdk/master_board_sdk/IMU_vs_ENC.kst
+                  ./sdk/master_board_sdk/Makefile
+                  ./sdk/master_board_sdk/package.xml
+                  ./sdk/master_board_sdk/srcpy
+                  ./sdk/master_board_sdk/CMakeLists.txt
+                  ./sdk/master_board_sdk/CMakeFiles
+                  ./sdk/master_board_sdk/Testing
+                  ./sdk/master_board_sdk/tests
+                ];
+              };
+            };
+          };
         };
-
-        doCheck = true;
-
-        nativeBuildInputs = with pkgs; [
-          jrl-cmakemodules
-          cmake
-          python312
-        ];
-
-        # from package.xml
-        buildInputs = with pkgs; [ python312Packages.numpy ];
-
-        nativeCheckInputs = with pkgs; [ catch2_3 ];
-
-        propagatedBuildInputs = with pkgs; [ python312Packages.boost ];
-      };
     };
 }
