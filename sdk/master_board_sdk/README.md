@@ -127,3 +127,11 @@ From the repository's root directory, run:
 ```
 nix build
 ```
+
+If you want to run demo scripts (in the `demos/` folder), you can enter a shell with python and all the required dependencies (including the SDK's python bindings)
+
+```
+nix develop
+```
+
+Then, simply run the demo scripts with `python`.
