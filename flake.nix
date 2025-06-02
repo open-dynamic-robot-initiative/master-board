@@ -1,4 +1,4 @@
-{
+  {
   description = "SDK for the ODRI Master board";
 
   inputs = {
@@ -27,19 +27,18 @@
           packages = {
             default = self'.packages.odri-masterboard-sdk;
             odri-masterboard-sdk = pkgs.odri-masterboard-sdk.overrideAttrs {
-              version = inputs.utils.lib.rosVersion ./sdk/master_board_sdk/package.xml;
+              version = inputs.utils.lib.rosVersion pkgs ./sdk/master_board_sdk/package.xml;
               src = lib.fileset.toSource {
-                root = ./sdk/master_board_sdk;
+                root = ./.;
                 fileset = lib.fileset.unions [
                   ./sdk/master_board_sdk/src
+                  ./sdk/master_board_sdk/example
                   ./sdk/master_board_sdk/include
                   ./sdk/master_board_sdk/IMU_vs_ENC.kst
                   ./sdk/master_board_sdk/Makefile
                   ./sdk/master_board_sdk/package.xml
                   ./sdk/master_board_sdk/srcpy
                   ./sdk/master_board_sdk/CMakeLists.txt
-                  ./sdk/master_board_sdk/CMakeFiles
-                  ./sdk/master_board_sdk/Testing
                   ./sdk/master_board_sdk/tests
                 ];
               };
