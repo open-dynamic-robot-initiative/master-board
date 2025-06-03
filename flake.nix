@@ -2,7 +2,8 @@
   description = "SDK for the ODRI Master board";
 
   inputs = {
-    gepetto.url = "github:gwennlbh/gepetto-nix/odri";
+    # TODO: drop `/module` after https://github.com/Gepetto/nix/pull/54
+    gepetto.url = "github:gepetto/nix/module";
     flake-parts.follows = "gepetto/flake-parts";
     nixpkgs.follows = "gepetto/nixpkgs";
     nix-ros-overlay.follows = "gepetto/nix-ros-overlay";
