@@ -21,7 +21,7 @@ sudo ifconfig MY_INTERFACE -arp
 
 where MY_INTERFACE is your lan interface name.
 
-To disable IPV6 trafic, add this line into ` /etc/sysctl.conf`
+To disable IPV6 trafic, add this line into `/etc/sysctl.conf`
 
 ```
 net.ipv6.conf.MY_INTERFACE.disable_ipv6 = 1
