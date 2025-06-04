@@ -19,7 +19,8 @@ jobs:
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - run: nix build -L
       - name: Debug Nix inputs
-        if: "!cancelled()"
+        if: ${{ !cancelled() }}
         run: nix show-derivation ./.
       - name: Check if there are changes
+        if: ${{ matrix.os == 'ubuntu-latest' }}
         uses: NathanielHill/fail-if-changes@v1.1.1
