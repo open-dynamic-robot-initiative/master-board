@@ -39,7 +39,7 @@ To flash the firmware without admin rights, make sure your local user is part of
 ```bash
 sudo usermod -a -G dialout $USER
 ``` 
-You need to reboot your computer for this change to take effect.
+You need to reboot your computer for this change to take effect, or run `newgrp dialout` to enter a shell where the group has been added to your user
 
 The master board need to be connected to a host computer via the PROG connector, and to be powered from a DC source from 5V to 60V. The programmer is a simple USB to SERIAL adapter with line RTS and DTR accessible.
 
@@ -77,5 +77,22 @@ git submodule update --init --recursive
 Then, from the `master-board/firmware` folder, you can run:
 
 * Flash the board: `make flash`
+  The baud rate is assumed to be 2M by default, but the ESP32 dev board might be configured to a different rate, resulting in a timing error:
+
+  ```
+  $ make flash
+  Changing baud rate to 2000000
+  Changed.
+  Configuring flash size...
+
+  A fatal error occurred: Timed out waiting for packet header
+  ```
+  
+  you can change it to e.g. 115200 with the `ESPBAUD` environment variable:
+
+  ```
+  ESPBAUD=115200 make flash
+  ```
+
 * Change configurations: `make menuconfig`
 * Debug the board: `make monitor`
