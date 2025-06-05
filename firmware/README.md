@@ -77,6 +77,7 @@ git submodule update --init --recursive
 Then, from the `master-board/firmware` folder, you can run:
 
 * Flash the board: `make flash`
+
   The baud rate is assumed to be 2M by default, but the ESP32 dev board might be configured to a different rate, resulting in a timing error:
 
   ```
