@@ -4,6 +4,7 @@
 #include <string>
 #include <thread>
 #ifdef __APPLE__
+#include <net/if.h>
 #include <net/ndrv.h>
 #endif
 

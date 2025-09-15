@@ -11,6 +11,7 @@
 #include <linux/if_arp.h>
 #include <linux/if_packet.h>
 #else
+#include <net/if.h>
 #include <net/if_arp.h>
 #endif
 
