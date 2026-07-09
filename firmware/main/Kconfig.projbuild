@@ -16,11 +16,11 @@ menu "Main App"
 
 
     config WIFI_ETH_TIMEOUT_CONTROL
-            int "Timeout wifi/eth while in control mode"
-            default 20
-            help
-                Maximum time in ms without the masterboard receiving any data from wifi/ethernet
-                while in active control mode
+        int "Timeout wifi/eth while in control mode"
+        default 20
+        help
+            Maximum time in ms without the masterboard receiving any data from wifi/ethernet
+            while in active control mode
 
 
     config SPI_N_ATTEMPT
@@ -38,10 +38,30 @@ menu "Main App"
             Output GPIO on which the built-in led is wired.    
 
 	config BUTTON_GPIO
-	        int "Intput button GPIO"
-	        default 36
-	        range 0 39
-	        help
-	            Input GPIO on which the button (pull-down) is wired.
+        int "Input button GPIO"
+        default 36
+        range 0 39
+        help
+            Input GPIO on which the button (pull-down) is wired.
+
+    choice
+        prompt "IMU Model"
+        default IMU_CX5_AHRS
+
+        help
+            Model of Microstrain IMU in use. This will affect the communication protocol between
+            the Masterboard and the IMU.
+
+        config IMU_CV7_AHRS
+            bool "CV7-AHRS"
+            help
+                Microstrain CV7-AHRS IMU is in use.
+        
+        config IMU_CX5_AHRS
+            bool "CX5-AHRS"
+            help
+                Microstrain CX5-AHRS IMU is in use (default for ODRI robots).
+        
+    endchoice
 
 endmenu

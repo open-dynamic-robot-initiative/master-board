@@ -79,3 +79,15 @@ Then, from the `master-board/firmware` folder, you can run:
 * Flash the board: `make flash`
 * Change configurations: `make menuconfig`
 * Debug the board: `make monitor`
+
+Selecting IMU Model
+--------
+The firmware supports two IMU models:
+- Microstrain 3DM-CX5-AHRS (_**default for ODRI robots**_)
+- Microstrain 3DM-CV7-AHRS (_more recent, better performance & cheaper_)
+
+You can select the model in use by configuring the firmware before building:
+1. Run the configuration utility: `make menuconfig`
+1. Navigate to `Main App`, then `IMU Model`
+1. Select the appropriate model, exit then save settings
+1. Build and flash the firmware: `make flash`

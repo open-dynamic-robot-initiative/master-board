@@ -238,15 +238,39 @@ int imu_init()
     uart_param_config(UART_NUM, &uart_config);
     uart_set_rx_timeout(UART_NUM, 3); //timeout in symbols, this will generate an interrupt per RX data frame
     uart_set_pin(UART_NUM, PIN_TXD, PIN_RXD, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
-    /*
-    75 65 01 02 02 02 E1 C7                           // Put the Device in Idle Mode
-    75 65 0C 0A 0A 08 01 02 04 00 01 05 00 01 10 73   // IMU data: acc+gyr at 1000Hz
-    75 65 0C 0A 0A 0A 01 02 05 00 01 0D 00 01 1B A3   // EF data: RPY + LinACC at 500Hz (max)
-    75 65 0C 07 07 0A 01 01 05 00 01 06 23            // EF data: RPY at 500Hz (max)
-    75 65 0C 0A 05 11 01 01 01 05 11 01 03 01 24 CC   // Enable the data stream for IMU and EF
-    75 65 0D 06 06 03 00 00 00 00 F6 E4               // set heading at 0
-    75 65 01 02 02 06 E5 CB                           // Resume the Device (is it needed?)
-    */
+
+    #ifdef CONFIG_IMU_CV7_AHRS
+
+    /* More recent IMU version in use: Microstrain CV7-AHRS */
+    printf("Configuring for CV7-AHRS IMU...\n");
+
+    // Set device to idle mode:
+    const char cmd0[] = {0x75, 0x65, 0x01, 0x02, 0x02, 0x02, 0xE1, 0xC7};
+
+    // Message Format (0C 0F), 3DM - Acc (80 04) + Gyro (80 05) at /1 decimation (1kHz):
+    const char cmd1[] = {0x75, 0x65, 0x0C, 0x0B, 0x0B, 0x0F, 0x01, 0x80, 0x02, 0x04, 0x00, 0x01, 0x05, 0x00, 0x01, 0x99, 0xD3};
+
+    // Message Format (0C 0F), Filter - RPY (82 05) + LinAcc (82 0D) at /1 decimation (1kHz):
+    const char cmd2[] = {0x75, 0x65, 0x0C, 0x0B, 0x0B, 0x0F, 0x01, 0x82, 0x02, 0x05, 0x00, 0x01, 0x0D, 0x00, 0x01, 0xA4, 0x01};
+
+    // Enable data stream for IMU and Filter:
+    const char cmd3[] = {0x75, 0x65, 0x0C, 0x0A, 0x05, 0x11, 0x01, 0x01, 0x01, 0x05, 0x11, 0x01, 0x03, 0x01, 0x24, 0xCC};
+
+    // Set accelerometer range to +-16g and gyroscope to +- 1000rad/s:
+    // The 04 settings are determined by 0C 53.
+    const char cmd4[] = {0x75, 0x65, 0x0C, 0x0A, 0x05, 0x52, 0x01, 0x01, 0x04, 0x05, 0x52, 0x01, 0x02, 0x04, 0xAB, 0x2C};                  
+
+    // Resume device:
+    const char cmd5[] = {0x75, 0x65, 0x01, 0x02, 0x02, 0x06, 0xE5, 0xCB};
+
+    // Set UART baud rate to 921600
+    const char cmd6[] = {0x75, 0x65, 0x0C, 0x07, 0x07, 0x40, 0x01, 0x00, 0x0e, 0x10, 0x00, 0x53, 0x9D};
+
+    #else
+
+    /* Default IMU in use: Microstrain CX5-AHRS (default) */
+    printf("Configuring for CX5-AHRS IMU...\n");
+
     const char cmd0[8] = {0x75, 0x65, 0x01, 0x02, 0x02, 0x02, 0xE1, 0xC7};                                                  // Put the Device in Idle Mode
     const char cmd1[16] = {0x75, 0x65, 0x0C, 0x0A, 0x0A, 0x08, 0x01, 0x02, 0x04, 0x00, 0x01, 0x05, 0x00, 0x01, 0x10, 0x73}; // IMU data: acc+gyr at 1000Hz
     const char cmd2[16] = {0x75, 0x65, 0x0C, 0x0A, 0x0A, 0x0A, 0x01, 0x02, 0x05, 0x00, 0x01, 0x0D, 0x00, 0x01, 0x1b, 0xa3}; // EF data: RPY + LinACC at 500Hz (max)
@@ -255,6 +279,8 @@ int imu_init()
     const char cmd5[8] = {0x75, 0x65, 0x01, 0x02, 0x02, 0x06, 0xE5, 0xCB};                                                  // Resume the Device
     const char cmd6[13] = {0x75, 0x65, 0x0C, 0x07, 0x07, 0x40, 0x01, 0x00, 0x0E, 0x10, 0x00, 0x53, 0x9D};                   // 921600 bauds
 
+    #endif
+    
     vTaskDelay(100 / portTICK_PERIOD_MS); //Let the IMU some time to boot    (TODO: read uart and wait for IMU acknoledgment on cmd0 to optimize boot time and/or detect the absence of IMU)
     custom_write_uart(cmd0, sizeof(cmd0));
     vTaskDelay(3);
