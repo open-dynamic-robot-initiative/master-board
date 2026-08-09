@@ -1,13 +1,17 @@
 
 firmware/build/
-
+firmware/managed_components/
 sdk/master_board_sdk/bin/
 sdk/master_board_sdk/build/
 sdk/master_board_sdk/graphs/
 
 firmware/sdkconfig\.old
-
+firmware/firmware.code-workspace
 *.s#*
 *.b#*
 *.l#*
-.vscode
+
+firmware/.vscode
+firmware/SPI2_HOST
+firmware/SPI3_HOST
+firmware/dependencies.lock

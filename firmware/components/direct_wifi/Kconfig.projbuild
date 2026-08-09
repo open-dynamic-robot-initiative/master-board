@@ -20,8 +20,8 @@ menu "Direct_Wifi"
             bool "36 MBps"
         config WIFI_DATARATE_48
             bool "48 MBps"
-        config WIFI_DATARATE_56
-            bool "56 MBps"
+        config WIFI_DATARATE_54
+            bool "54 MBps"
     endchoice
 
 endmenu

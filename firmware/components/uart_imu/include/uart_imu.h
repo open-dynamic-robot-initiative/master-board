@@ -6,9 +6,13 @@
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/queue.h"
+#include "freertos/portmacro.h"
 #include "driver/uart.h"
-#include "driver/gpio.h"
 #include "esp_intr_alloc.h"
+#include "hal/uart_ll.h"
+#include "soc/uart_struct.h"
+#include "esp_log.h"
 
 int imu_init();
 int parse_IMU_data();
@@ -31,5 +35,3 @@ uint16_t get_linacc_y_in_D16QN();
 uint16_t get_linacc_z_in_D16QN();
 
 #endif
-
-

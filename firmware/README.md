@@ -2,7 +2,7 @@
 
 Install esp-idf
 --------
-The master board is based on a ESP32 module programmed in C++ using the [esp-idf SDK](https://github.com/espressif/esp-idf). Currently, the firmware is only compatible up to the esp-idf version 3.x. While [this pull request](https://github.com/open-dynamic-robot-initiative/master-board/pull/63) has made the firmware compatible with the esp-idf version 4.0.1, it is not merged to the main branch. [See more discussion on this issue](https://github.com/open-dynamic-robot-initiative/master-board/issues/3). The instruction below will first utilize the installtion script from version 4.0.1 and later roll back to an older commit when flashing the master board.
+The master board is based on a ESP32 module programmed in C++ using the [esp-idf SDK](https://github.com/espressif/esp-idf). The firmware was originally compatible only with ESP-IDF 3.x and has recently been migrated to ESP-IDF 6.x to make it more accessible to new contributors. This guide assumes ESP-IDF v6.0.1.
 
 To install the SDK, first install the dependencies
 ```bash
@@ -19,12 +19,12 @@ Now, clone and install the esp-idf repo
 ```bash
 mkdir ~/esp
 cd ~/esp
-git clone -b v4.0.1 --recursive https://github.com/espressif/esp-idf.git
+git clone --recursive https://github.com/espressif/esp-idf.git
 cd ~/esp/esp-idf
 ./install.sh
 ```
 
-For more details, refer to [the offical documentation of esp-idf](https://docs.espressif.com/projects/esp-idf/en/v4.0.3/get-started/index.html). We link the documentation for 4.0.3 because the documentation for 4.0.1 is broken at the time of writing. But the content should not differ much.
+For more details, refer to [the offical documentation of esp-idf](https://docs.espressif.com/projects/esp-idf/en/v6.0.1/esp32/index.html).
 
 Finally, you need to install the [esptool](https://github.com/espressif/esptool). You can install it via pip:
 ```bash
@@ -41,7 +41,7 @@ sudo usermod -a -G dialout $USER
 ``` 
 You need to reboot your computer for this change to take effect.
 
-The master board need to be connected to a host computer via the PROG connector, and to be powered from a DC source from 5V to 60V. The programmer is a simple USB to SERIAL adapter with line RTS and DTR accessible.
+The master board needs to be connected to a host computer via the PROG connector, and to be powered from a DC source from 5V to 60V. The programmer is a simple USB to SERIAL adapter with line RTS and DTR accessible.
 
 To put the ESP32 in a flash mode, a special circuit is needed to lower the G0 pin from the RTS and DTR lines and generate a reset. To avoid using a dedicated hardware, we can use an ESP dev board containing this circuit and the USB to SERIAL adapter, where the orginal ESP module have been removed:
 
@@ -67,15 +67,8 @@ To flash the board, the esp environment variables must be sourced:
   source export.sh
   ```
 
-Now, you need to roll back to an older commit of esp-idf. [See more discussion on this issue](https://github.com/open-dynamic-robot-initiative/master-board/issues/3).
-```bash
-cd ~/esp/esp-idf
-git checkout 8d1a9c0 # Need to checkout this old version for now
-git submodule update --init --recursive
-```
-
 Then, from the `master-board/firmware` folder, you can run:
 
-* Flash the board: `make flash`
-* Change configurations: `make menuconfig`
-* Debug the board: `make monitor`
+* Flash the board: `idf.py flash`
+* Change configurations: `idf.py menuconfig`
+* Debug the board: `idf.py monitor`

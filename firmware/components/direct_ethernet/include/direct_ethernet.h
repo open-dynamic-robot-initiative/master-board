@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -10,14 +11,15 @@
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_eth.h"
-#include "tcpip_adapter.h"
+#include "esp_netif.h"
+#include "driver/gpio.h"
 
-#include "eth_phy/phy_lan8720.h"
+#include "esp_eth_phy_lan87xx.h"
 
-#define CONFIG_PHY_CLOCK_MODE 3
-#define ETHERNET_PHY_CONFIG phy_lan8720_default_ethernet_config
-#define PIN_SMI_MDC 23
-#define PIN_SMI_MDIO 18
+#define CONFIG_PHY_CLOCK_MODE EMAC_CLK_EXT_IN
+#define PIN_SMI_MDC GPIO_NUM_23
+#define PIN_SMI_MDIO GPIO_NUM_18
+#define PIN_CLK_50HZ GPIO_NUM_17
 
 #define DEVICE_IP "192.168.1.0"
 #define DEVICE_NETMASK "255.255.255.0"
@@ -26,7 +28,7 @@
 #define WIFI_CONNECTED_BIT BIT0
 #define ETHERTYPE 0xb588
 
-EventGroupHandle_t udp_event_group;
+extern EventGroupHandle_t udp_event_group;
 
 typedef struct
 {
@@ -42,9 +44,9 @@ typedef struct
 extern uint8_t eth_src_mac[6];
 extern uint8_t eth_dst_mac[6];
 
-void (*eth_recv_cb)(uint8_t src_mac[6], uint8_t *data, int len, char eth_or_wifi); // eth_or_wifi = 'e' when eth is used, 'w' when wifi is used
-
-void (*eth_link_state_cb)(bool link_state);
+// function pointers
+extern void (*eth_recv_cb)(uint8_t src_mac[6], uint8_t *data, int len, char eth_or_wifi); // eth_or_wifi = 'e' when eth is used, 'w' when wifi is used
+extern void (*eth_link_state_cb)(bool link_state);
 
 void eth_init();
 void eth_deinit();
